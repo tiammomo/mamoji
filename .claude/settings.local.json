@@ -10,7 +10,13 @@
       "Bash(timeout:*)",
       "Bash(npm run dev)",
       "Bash(powershell -Command:*)",
-      "Bash(git config:*)"
+      "Bash(git config:*)",
+      "Bash(gofmt:*)",
+      "Bash(git commit:*)",
+      "Bash(go mod tidy:*)",
+      "Bash(go run:*)",
+      "Bash(go test:*)",
+      "Bash(go build:*)"
     ]
   }
 }

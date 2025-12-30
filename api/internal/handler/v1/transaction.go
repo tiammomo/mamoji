@@ -14,37 +14,22 @@ import (
 func ListTransactions(ctx context.Context, c *app.RequestContext) {
 	enterpriseId := c.GetInt64("enterpriseId")
 
-	// 解析查询参数
-	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
-	pageSize, _ := strconv.Atoi(c.DefaultQuery("pageSize", "20"))
-	unitIdStr := c.Query("unitId")
-	typeStr := c.Query("type")
-	category := c.Query("category")
-
-	var unitId int64
-	if unitIdStr != "" {
-		unitId, _ = strconv.ParseInt(unitIdStr, 10, 64)
-	}
-
 	req := dto.ListTransactionRequest{
 		EnterpriseId: enterpriseId,
-		UnitId:       unitId,
-		Type:         typeStr,
-		Category:     category,
-		Page:         page,
-		PageSize:     pageSize,
+		Page:         1,
+		PageSize:     20,
 	}
 
-	result, err := service.TransactionService.List(req)
+	result, err := service.TransactionService.List(enterpriseId, req)
 	if err != nil {
-		c.JSON(utils.H{
+		c.JSON(200, utils.H{
 			"code":    500,
 			"message": err.Error(),
 		})
 		return
 	}
 
-	c.JSON(utils.H{
+	c.JSON(200, utils.H{
 		"code": 0,
 		"data": result,
 	})
@@ -56,14 +41,14 @@ func GetTransaction(ctx context.Context, c *app.RequestContext) {
 
 	transaction, err := service.TransactionService.GetById(transactionId)
 	if err != nil {
-		c.JSON(utils.H{
+		c.JSON(200, utils.H{
 			"code":    404,
 			"message": "交易记录不存在",
 		})
 		return
 	}
 
-	c.JSON(utils.H{
+	c.JSON(200, utils.H{
 		"code": 0,
 		"data": transaction,
 	})
@@ -72,8 +57,8 @@ func GetTransaction(ctx context.Context, c *app.RequestContext) {
 // CreateTransaction 创建交易
 func CreateTransaction(ctx context.Context, c *app.RequestContext) {
 	var req dto.CreateTransactionRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(utils.H{
+	if err := c.BindJSON(&req); err != nil {
+		c.JSON(200, utils.H{
 			"code":    400,
 			"message": "参数错误",
 		})
@@ -85,16 +70,16 @@ func CreateTransaction(ctx context.Context, c *app.RequestContext) {
 	req.EnterpriseId = enterpriseId
 	req.UserId = userId
 
-	transaction, err := service.TransactionService.Create(req)
+	transaction, err := service.TransactionService.Create(enterpriseId, req)
 	if err != nil {
-		c.JSON(utils.H{
+		c.JSON(200, utils.H{
 			"code":    500,
 			"message": err.Error(),
 		})
 		return
 	}
 
-	c.JSON(utils.H{
+	c.JSON(200, utils.H{
 		"code":    0,
 		"message": "创建成功",
 		"data":    transaction,
@@ -106,8 +91,8 @@ func UpdateTransaction(ctx context.Context, c *app.RequestContext) {
 	transactionId, _ := strconv.ParseInt(c.Param("transactionId"), 10, 64)
 
 	var req dto.UpdateTransactionRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(utils.H{
+	if err := c.BindJSON(&req); err != nil {
+		c.JSON(200, utils.H{
 			"code":    400,
 			"message": "参数错误",
 		})
@@ -116,14 +101,14 @@ func UpdateTransaction(ctx context.Context, c *app.RequestContext) {
 
 	transaction, err := service.TransactionService.Update(transactionId, req)
 	if err != nil {
-		c.JSON(utils.H{
+		c.JSON(200, utils.H{
 			"code":    500,
 			"message": err.Error(),
 		})
 		return
 	}
 
-	c.JSON(utils.H{
+	c.JSON(200, utils.H{
 		"code":    0,
 		"message": "更新成功",
 		"data":    transaction,
@@ -136,14 +121,14 @@ func DeleteTransaction(ctx context.Context, c *app.RequestContext) {
 
 	err := service.TransactionService.Delete(transactionId)
 	if err != nil {
-		c.JSON(utils.H{
+		c.JSON(200, utils.H{
 			"code":    500,
 			"message": err.Error(),
 		})
 		return
 	}
 
-	c.JSON(utils.H{
+	c.JSON(200, utils.H{
 		"code":    0,
 		"message": "删除成功",
 	})
