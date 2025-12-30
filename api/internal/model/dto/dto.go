@@ -90,6 +90,7 @@ type CreateTransactionRequest struct {
 	Category      string   `json:"category" binding:"required"`
 	Amount        float64  `json:"amount" binding:"required,gt=0"`
 	AccountId     int64    `json:"accountId" binding:"required"`
+	BudgetId      *int64   `json:"budgetId,omitempty"`
 	OccurredAt    string   `json:"occurredAt"`
 	Tags          []string `json:"tags,omitempty"`
 	Note          string   `json:"note,omitempty"`
@@ -103,6 +104,7 @@ type UpdateTransactionRequest struct {
 	Category      string   `json:"category,omitempty"`
 	Amount        float64  `json:"amount,omitempty"`
 	AccountId     int64    `json:"accountId,omitempty"`
+	BudgetId      *int64   `json:"budgetId,omitempty"`
 	OccurredAt    string   `json:"occurredAt,omitempty"`
 	Tags          []string `json:"tags,omitempty"`
 	Note          string   `json:"note,omitempty"`
@@ -121,6 +123,7 @@ type TransactionResponse struct {
 	Amount        float64  `json:"amount"`
 	AccountId     int64    `json:"accountId"`
 	AccountName   string   `json:"accountName,omitempty"`
+	BudgetId      *int64   `json:"budgetId,omitempty"`
 	OccurredAt    string   `json:"occurredAt"`
 	Tags          []string `json:"tags,omitempty"`
 	Note          string   `json:"note,omitempty"`

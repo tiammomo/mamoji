@@ -56,6 +56,7 @@ interface Transaction {
   note: string;
   accountId: number;
   accountName: string;
+  budgetId?: number;
   occurredAt: string;
   tags: string[];
   images?: string[];
@@ -71,12 +72,26 @@ interface TransactionFormData {
   accountId: string;
   date: string;
   note: string;
+  budgetId?: string; // 关联预算ID
+}
+
+// 预算选项数据
+interface BudgetOption {
+  budgetId: number;
+  name: string;
+  category: string;
+  totalAmount: number;
+  usedAmount: number;
+  periodStart: string;
+  periodEnd: string;
+  status: string; // 用于过滤活跃预算
 }
 
 export default function TransactionsPage() {
   const { toast } = useToast();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [accounts, setAccounts] = useState<{ accountId: number; name: string }[]>([]);
+  const [budgets, setBudgets] = useState<BudgetOption[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState('all');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -92,6 +107,124 @@ export default function TransactionsPage() {
     accountId: '',
     dateRange: '',
   });
+
+  // ========== 时间筛选功能 ==========
+  // 获取北京时间（Asia/Shanghai）
+  const getBeijingDate = () => {
+    // 通过添加时区偏移获取北京时间
+    const now = new Date();
+    const beijingTime = new Date(now.getTime() + 8 * 60 * 60 * 1000);
+    return beijingTime;
+  };
+
+  // 格式化日期为 YYYY-MM-DD
+  const formatDateToString = (date: Date) => {
+    const year = date.getUTCFullYear();
+    const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+    const day = String(date.getUTCDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  // 获取当月最后一天
+  const getMonthLastDay = (year: number, month: number) => {
+    return new Date(Date.UTC(year, month + 1, 0));
+  };
+
+  // 默认时间范围：当月第一天到今天（基于北京时间）
+  const [dateRange, setDateRange] = useState<{ start: string; end: string }>(() => {
+    const beijingNow = getBeijingDate();
+    const year = beijingNow.getUTCFullYear();
+    const month = beijingNow.getUTCMonth();
+    const firstDay = new Date(Date.UTC(year, month, 1));
+    const today = new Date(Date.UTC(year, month, beijingNow.getUTCDate()));
+    return {
+      start: formatDateToString(firstDay),
+      end: formatDateToString(today),
+    };
+  });
+
+  // 快速选择时间范围
+  const quickRanges = [
+    { label: '今日', value: 'today' },
+    { label: '本周', value: 'week' },
+    { label: '本月', value: 'month' },
+    { label: '本季', value: 'quarter' },
+    { label: '本年', value: 'year' },
+  ];
+
+  // 计算时间范围（基于北京时间，严格按照自然周/月/年定义）
+  const calculateDateRange = (type: string): { start: string; end: string } => {
+    const beijingNow = getBeijingDate();
+    const year = beijingNow.getUTCFullYear();
+    const month = beijingNow.getUTCMonth();
+    const day = beijingNow.getUTCDate();
+
+    switch (type) {
+      case 'today':
+        // 今日：当天 00:00:00 至 23:59:59
+        return {
+          start: formatDateToString(beijingNow),
+          end: formatDateToString(beijingNow),
+        };
+      case 'week':
+        // 本周：本周一 00:00:00 至 本周日 23:59:59
+        // 获取本周一（星期日为0，星期一到星期六为1-6）
+        const dayOfWeek = beijingNow.getUTCDay();
+        const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+        const weekStart = new Date(Date.UTC(year, month, day + mondayOffset));
+        const weekEnd = new Date(Date.UTC(year, month, day + mondayOffset + 6));
+        return {
+          start: formatDateToString(weekStart),
+          end: formatDateToString(weekEnd),
+        };
+      case 'month':
+        // 本月：当月1号 00:00:00 至 当月最后一天 23:59:59
+        const monthStart = new Date(Date.UTC(year, month, 1));
+        const monthEnd = getMonthLastDay(year, month);
+        return {
+          start: formatDateToString(monthStart),
+          end: formatDateToString(monthEnd),
+        };
+      case 'quarter':
+        // 本季：本季度第一天 00:00:00 至 本季度最后一天 23:59:59
+        const quarterMonth = Math.floor(month / 3) * 3;
+        const quarterStart = new Date(Date.UTC(year, quarterMonth, 1));
+        const quarterEnd = getMonthLastDay(year, quarterMonth + 2);
+        return {
+          start: formatDateToString(quarterStart),
+          end: formatDateToString(quarterEnd),
+        };
+      case 'year':
+        // 本年：当年1月1日 00:00:00 至 当年12月31日 23:59:59
+        return {
+          start: `${year}-01-01`,
+          end: `${year}-12-31`,
+        };
+      default:
+        return {
+          start: formatDateToString(beijingNow),
+          end: formatDateToString(beijingNow),
+        };
+    }
+  };
+
+  // 格式化日期显示
+  const formatDateRangeDisplay = (start: string, end: string) => {
+    return `${start} 至 ${end}`;
+  };
+
+  // 检查交易日期是否在范围内
+  const isTransactionInRange = (tx: Transaction) => {
+    // 兼容后端返回的两种日期格式：ISO (2025-01-01T00:00:00) 或 普通格式 (2025-01-01 00:00:00)
+    let txDate = tx.occurredAt;
+    if (txDate.includes('T')) {
+      txDate = txDate.split('T')[0];
+    } else if (txDate.includes(' ')) {
+      txDate = txDate.split(' ')[0];
+    }
+    return txDate >= dateRange.start && txDate <= dateRange.end;
+  };
+  // ========== 时间筛选功能结束 ==========
 
   // 表单状态
   const [formData, setFormData] = useState<TransactionFormData>({
@@ -114,6 +247,7 @@ export default function TransactionsPage() {
 
     fetchTransactions();
     fetchAccounts();
+    fetchBudgets();
 
     return () => clearTimeout(timer);
   }, []);
@@ -145,6 +279,32 @@ export default function TransactionsPage() {
     }
   };
 
+  // 获取预算列表（用于关联预算）
+  const fetchBudgets = async () => {
+    try {
+      const data = await get<BudgetOption[]>('/api/v1/budgets');
+      if (data) {
+        setBudgets(data);
+      }
+    } catch (error) {
+      console.error('无法加载预算列表');
+    }
+  };
+
+  // 筛选有效预算（支出类型+在有效期内的活跃预算）
+  const availableBudgets = useMemo(() => {
+    return budgets.filter((budget) => {
+      // 只处理支出类型
+      if (formData.type !== 'expense') return false;
+      // 排除软删除的预算（status不为active）
+      if (budget.status !== 'active') return false;
+      const now = new Date();
+      const periodStart = new Date(budget.periodStart);
+      const periodEnd = new Date(budget.periodEnd);
+      return now >= periodStart && now <= periodEnd;
+    });
+  }, [budgets, formData.type]);
+
   const filteredTransactions = useMemo(() => {
     return transactions.filter((tx) => {
       const txType = String(tx.type).trim();
@@ -162,17 +322,25 @@ export default function TransactionsPage() {
         (!filter.category || tx.category === filter.category) &&
         (!filter.accountId || tx.accountId.toString() === filter.accountId);
 
-      return typeMatches && matchesSearch && matchesFilter;
+      // 时间范围筛选
+      const matchesDateRange = isTransactionInRange(tx);
+
+      return typeMatches && matchesSearch && matchesFilter && matchesDateRange;
     });
-  }, [transactions, activeTab, searchQuery, filter]);
+  }, [transactions, activeTab, searchQuery, filter, dateRange]);
 
-  const totalIncome = transactions
-    .filter((tx) => tx.type === 'income')
-    .reduce((sum, tx) => sum + tx.amount, 0);
+  // 统计数据基于时间范围
+  const totalIncome = useMemo(() => {
+    return transactions
+      .filter((tx) => tx.type === 'income' && isTransactionInRange(tx))
+      .reduce((sum, tx) => sum + tx.amount, 0);
+  }, [transactions, dateRange]);
 
-  const totalExpense = transactions
-    .filter((tx) => tx.type === 'expense')
-    .reduce((sum, tx) => sum + tx.amount, 0);
+  const totalExpense = useMemo(() => {
+    return transactions
+      .filter((tx) => tx.type === 'expense' && isTransactionInRange(tx))
+      .reduce((sum, tx) => sum + tx.amount, 0);
+  }, [transactions, dateRange]);
 
   // 打开新增对话框
   const handleAddTransaction = () => {
@@ -184,6 +352,7 @@ export default function TransactionsPage() {
       accountId: '',
       date: formatDate(new Date(), 'YYYY-MM-DD'),
       note: '',
+      budgetId: undefined,
     });
     setIsDialogOpen(true);
   };
@@ -198,6 +367,7 @@ export default function TransactionsPage() {
       accountId: tx.accountId.toString(),
       date: formatDate(tx.occurredAt, 'YYYY-MM-DD'),
       note: tx.note,
+      budgetId: tx.budgetId ? tx.budgetId.toString() : 'none',
     });
     setIsDialogOpen(true);
   };
@@ -259,7 +429,7 @@ export default function TransactionsPage() {
 
     setIsLoading(true);
     try {
-      const transactionData = {
+      const transactionData: Record<string, unknown> = {
         type: formData.type,
         amount: parseFloat(formData.amount),
         category: formData.category,
@@ -267,6 +437,11 @@ export default function TransactionsPage() {
         occurredAt: formData.date,
         note: formData.note,
       };
+
+      // 添加预算关联（仅支出且选择了有效预算时）
+      if (formData.type === 'expense' && formData.budgetId && formData.budgetId !== 'none') {
+        transactionData.budgetId = parseInt(formData.budgetId);
+      }
 
       // 获取账户名称
       const account = accounts.find((a) => a.accountId === parseInt(formData.accountId));
@@ -351,6 +526,47 @@ export default function TransactionsPage() {
         title="收支记录"
         subtitle="管理所有收入和支出"
       />
+
+      {/* 时间筛选器 */}
+      <div className="flex items-center justify-between bg-muted/30 p-3 rounded-lg border">
+        <div className="flex items-center gap-2">
+          <Calendar className="w-4 h-4 text-muted-foreground" />
+          <span className="text-sm font-medium">时间范围：</span>
+          <span className="text-sm text-primary font-semibold">{formatDateRangeDisplay(dateRange.start, dateRange.end)}</span>
+        </div>
+        <div className="flex items-center gap-1">
+          {quickRanges.map((range) => (
+            <Button
+              key={range.value}
+              variant={
+                formatDateRangeDisplay(dateRange.start, dateRange.end) ===
+                formatDateRangeDisplay(calculateDateRange(range.value).start, calculateDateRange(range.value).end)
+                  ? 'default'
+                  : 'ghost'
+              }
+              size="sm"
+              onClick={() => setDateRange(calculateDateRange(range.value))}
+            >
+              {range.label}
+            </Button>
+          ))}
+          <div className="flex items-center gap-1 ml-2 border-l pl-2">
+            <Input
+              type="date"
+              value={dateRange.start}
+              onChange={(e) => setDateRange({ ...dateRange, start: e.target.value })}
+              className="w-32 h-8 text-xs"
+            />
+            <span className="text-muted-foreground text-xs">至</span>
+            <Input
+              type="date"
+              value={dateRange.end}
+              onChange={(e) => setDateRange({ ...dateRange, end: e.target.value })}
+              className="w-32 h-8 text-xs"
+            />
+          </div>
+        </div>
+      </div>
 
       {/* Summary */}
       <div className="grid gap-4 md:grid-cols-3">
@@ -668,6 +884,32 @@ export default function TransactionsPage() {
                 onChange={(e) => setFormData({ ...formData, date: e.target.value })}
               />
             </div>
+
+            {/* 预算关联（仅支出时显示） */}
+            {formData.type === 'expense' && (
+              <div className="space-y-2">
+                <Label htmlFor="budget">关联预算</Label>
+                <Select
+                  value={formData.budgetId || 'none'}
+                  onValueChange={(value) => setFormData({ ...formData, budgetId: value === 'none' ? undefined : value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="不关联预算" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">不关联预算</SelectItem>
+                    {availableBudgets.map((budget) => (
+                      <SelectItem key={budget.budgetId} value={budget.budgetId.toString()}>
+                        {budget.name}（剩余 {formatCurrency(budget.totalAmount - budget.usedAmount)}）
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {availableBudgets.length === 0 && (
+                  <p className="text-xs text-muted-foreground">暂无可用预算</p>
+                )}
+              </div>
+            )}
 
             {/* 备注 */}
             <div className="space-y-2">

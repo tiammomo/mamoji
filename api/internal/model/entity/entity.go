@@ -147,6 +147,7 @@ type Transaction struct {
 	Category      string    `gorm:"size:30;not null" json:"category"`
 	Amount        float64   `gorm:"type:decimal(18,2);not null" json:"amount"`
 	AccountId     int64     `gorm:"not null;index" json:"accountId"`
+	BudgetId      *int64    `gorm:"index;default:null" json:"budgetId"`
 	OccurredAt    time.Time `gorm:"not null" json:"occurredAt"`
 	Tags          string    `gorm:"type:json" json:"tags"`
 	Note          string    `gorm:"size:500" json:"note"`

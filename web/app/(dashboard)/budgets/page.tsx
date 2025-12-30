@@ -33,9 +33,14 @@ import {
   Edit,
   Trash2,
   Loader2,
+  Calendar,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
 import { formatCurrency, formatPercent } from '@/lib/utils';
 import { useUser } from '@/stores/auth';
+import { get, post, put, del } from '@/lib/api';
+import { TOKEN_KEY } from '@/lib/constants';
 import {
   BUDGET_TYPE,
   BUDGET_TYPE_LABELS,
@@ -81,8 +86,155 @@ export default function BudgetsPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [isInitialLoading, setIsInitialLoading] = useState(true);
 
-  // 获取当日日期，格式化为 YYYY-MM-DD
-  const getTodayDate = () => new Date().toISOString().split('T')[0];
+  // ========== 时间筛选功能 ==========
+  // 获取北京时间（Asia/Shanghai）
+  const getBeijingDate = () => {
+    // 通过添加时区偏移获取北京时间
+    const now = new Date();
+    const beijingTime = new Date(now.getTime() + 8 * 60 * 60 * 1000);
+    return beijingTime;
+  };
+
+  // 格式化日期为 YYYY-MM-DD
+  const formatDateToString = (date: Date) => {
+    const year = date.getUTCFullYear();
+    const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+    const day = String(date.getUTCDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  // 获取当月最后一天
+  const getMonthLastDay = (year: number, month: number) => {
+    return new Date(Date.UTC(year, month + 1, 0));
+  };
+
+  // 默认时间范围：当月第一天到今天（基于北京时间）
+  const [dateRange, setDateRange] = useState<{ start: string; end: string }>(() => {
+    const beijingNow = getBeijingDate();
+    const year = beijingNow.getUTCFullYear();
+    const month = beijingNow.getUTCMonth();
+    const firstDay = new Date(Date.UTC(year, month, 1));
+    const today = new Date(Date.UTC(year, month, beijingNow.getUTCDate()));
+    return {
+      start: formatDateToString(firstDay),
+      end: formatDateToString(today),
+    };
+  });
+
+  // 快速选择时间范围
+  const quickRanges = [
+    { label: '今日', value: 'today' },
+    { label: '本周', value: 'week' },
+    { label: '本月', value: 'month' },
+    { label: '本季', value: 'quarter' },
+    { label: '本年', value: 'year' },
+  ];
+
+  // 计算时间范围（基于北京时间，严格按照自然周/月/年定义）
+  const calculateDateRange = (type: string): { start: string; end: string } => {
+    const beijingNow = getBeijingDate();
+    const year = beijingNow.getUTCFullYear();
+    const month = beijingNow.getUTCMonth();
+    const day = beijingNow.getUTCDate();
+
+    switch (type) {
+      case 'today':
+        // 今日：当天 00:00:00 至 23:59:59
+        return {
+          start: formatDateToString(beijingNow),
+          end: formatDateToString(beijingNow),
+        };
+      case 'week':
+        // 本周：本周一 00:00:00 至 本周日 23:59:59
+        // 获取本周一（星期日为0，星期一到星期六为1-6）
+        const dayOfWeek = beijingNow.getUTCDay();
+        const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+        const weekStart = new Date(Date.UTC(year, month, day + mondayOffset));
+        const weekEnd = new Date(Date.UTC(year, month, day + mondayOffset + 6));
+        return {
+          start: formatDateToString(weekStart),
+          end: formatDateToString(weekEnd),
+        };
+      case 'month':
+        // 本月：当月1号 00:00:00 至 当月最后一天 23:59:59
+        const monthStart = new Date(Date.UTC(year, month, 1));
+        const monthEnd = getMonthLastDay(year, month);
+        return {
+          start: formatDateToString(monthStart),
+          end: formatDateToString(monthEnd),
+        };
+      case 'quarter':
+        // 本季：本季度第一天 00:00:00 至 本季度最后一天 23:59:59
+        const quarterMonth = Math.floor(month / 3) * 3;
+        const quarterStart = new Date(Date.UTC(year, quarterMonth, 1));
+        const quarterEnd = getMonthLastDay(year, quarterMonth + 2);
+        return {
+          start: formatDateToString(quarterStart),
+          end: formatDateToString(quarterEnd),
+        };
+      case 'year':
+        // 本年：当年1月1日 00:00:00 至 当年12月31日 23:59:59
+        return {
+          start: `${year}-01-01`,
+          end: `${year}-12-31`,
+        };
+      default:
+        return {
+          start: formatDateToString(beijingNow),
+          end: formatDateToString(beijingNow),
+        };
+    }
+  };
+
+  // 格式化日期显示
+  const formatDateRange = (start: string, end: string) => {
+    return `${start} 至 ${end}`;
+  };
+
+  // ========== 时间筛选功能结束 ==========
+
+  // 获取当日日期（北京时间），格式化为 YYYY-MM-DD
+  const getTodayDate = () => {
+    const now = new Date();
+    // 获取北京时间偏移（UTC+8）
+    const beijingTime = new Date(now.getTime() + 8 * 60 * 60 * 1000);
+    return beijingTime.toISOString().split('T')[0];
+  };
+
+  // 根据预算类型获取默认周期（北京时间）
+  const getDefaultPeriod = (type: string): { periodStart: string; periodEnd: string } => {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = now.getMonth();
+
+    // 获取北京时间偏移
+    const beijingOffset = 8 * 60 * 60 * 1000;
+
+    switch (type) {
+      case 'monthly':
+        // 月度预算：当月第一天到最后一天（北京时间）
+        const firstDayOfMonth = new Date(Date.UTC(year, month, 1, 0, 0, 0));
+        const lastDayOfMonth = new Date(Date.UTC(year, month + 1, 0, 23, 59, 59));
+        return {
+          periodStart: firstDayOfMonth.toISOString().split('T')[0],
+          periodEnd: lastDayOfMonth.toISOString().split('T')[0],
+        };
+      case 'yearly':
+        // 年度预算：当年1月1日到12月31日（北京时间）
+        return {
+          periodStart: `${year}-01-01`,
+          periodEnd: `${year}-12-31`,
+        };
+      case 'project':
+      default:
+        // 项目预算：当天（北京时间）
+        const today = new Date(Date.UTC(year, now.getMonth(), now.getDate()));
+        return {
+          periodStart: today.toISOString().split('T')[0],
+          periodEnd: today.toISOString().split('T')[0],
+        };
+    }
+  };
 
   // 新建预算表单状态
   const [newBudget, setNewBudget] = useState({
@@ -90,8 +242,8 @@ export default function BudgetsPage() {
     type: 'monthly',
     category: 'office',
     totalAmount: 0,
-    periodStart: getTodayDate(),
-    periodEnd: getTodayDate(),
+    periodStart: getDefaultPeriod('monthly').periodStart,
+    periodEnd: getDefaultPeriod('monthly').periodEnd,
   });
 
   // 获取预算列表
@@ -101,13 +253,10 @@ export default function BudgetsPage() {
       return;
     }
     try {
-      const response = await fetch(`/api/v1/budgets?unitId=${user.enterpriseId}`);
-      if (response.ok) {
-        const data = await response.json();
-        if (data.code === 0 && data.data) {
-          setBudgets(data.data);
-        }
-      }
+      const data = await get<Budget[]>(`/api/v1/budgets?unitId=${user.enterpriseId}`);
+      // 过滤掉已删除的预算（status=ended）
+      const activeBudgets = (data || []).filter(b => b.status !== 'ended');
+      setBudgets(activeBudgets);
     } catch (error) {
       console.error('获取预算列表失败:', error);
     } finally {
@@ -119,15 +268,25 @@ export default function BudgetsPage() {
     fetchBudgets();
   }, [user?.enterpriseId]);
 
+  // 检查预算周期是否与选择的时间范围重叠
+  const isBudgetInRange = (budget: Budget) => {
+    const budgetStart = new Date(budget.periodStart);
+    const budgetEnd = new Date(budget.periodEnd);
+    const filterStart = new Date(dateRange.start);
+    const filterEnd = new Date(dateRange.end);
+    return budgetStart <= filterEnd && budgetEnd >= filterStart;
+  };
+
   const filteredBudgets = budgets.filter((budget) => {
     if (activeTab === 'all') return true;
     return budget.status === activeTab;
   });
 
-  const activeBudgets = budgets.filter((b) => b.status === 'active');
-  const totalBudget = activeBudgets.reduce((sum, b) => sum + b.totalAmount, 0);
-  const totalUsed = activeBudgets.reduce((sum, b) => sum + b.usedAmount, 0);
-  const exceededCount = budgets.filter((b) => b.status === 'exceeded').length;
+  // 根据时间范围筛选预算（只统计与时间范围重叠的预算）
+  const budgetsInRange = budgets.filter((b) => isBudgetInRange(b) && b.status === 'active');
+  const totalBudget = budgetsInRange.reduce((sum, b) => sum + b.totalAmount, 0);
+  const totalUsed = budgetsInRange.reduce((sum, b) => sum + b.usedAmount, 0);
+  const exceededCount = budgets.filter((b) => isBudgetInRange(b) && b.status === 'exceeded').length;
 
   const handleEdit = (budget: Budget) => {
     setEditingBudget(budget);
@@ -135,20 +294,24 @@ export default function BudgetsPage() {
   };
 
   const handleDelete = async (budgetId: number) => {
-    if (!confirm('确定要删除此预算吗？')) return;
+    console.log('[Budgets] 开始删除预算:', budgetId);
+    if (!confirm('确定要删除此预算吗？')) {
+      console.log('[Budgets] 用户取消删除');
+      return;
+    }
 
     setIsLoading(true);
     try {
-      const response = await fetch(`/api/v1/budgets/${budgetId}`, {
-        method: 'DELETE',
+      console.log('[Budgets] 发送删除请求:', `/api/v1/budgets/${budgetId}`);
+      await del(`/api/v1/budgets/${budgetId}`);
+      console.log('[Budgets] 删除成功，更新本地状态');
+      setBudgets((prev) => {
+        const newBudgets = prev.filter((b) => b.budgetId !== budgetId);
+        console.log('[Budgets] 预算列表更新:', prev.length, '->', newBudgets.length);
+        return newBudgets;
       });
-      if (response.ok) {
-        setBudgets((prev) => prev.filter((b) => b.budgetId !== budgetId));
-      } else {
-        alert('删除失败');
-      }
     } catch (error) {
-      console.error('删除预算失败:', error);
+      console.error('[Budgets] 删除预算失败:', error);
       alert('删除失败');
     } finally {
       setIsLoading(false);
@@ -160,29 +323,20 @@ export default function BudgetsPage() {
 
     setIsLoading(true);
     try {
-      const response = await fetch(`/api/v1/budgets/${editingBudget.budgetId}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: editingBudget.name,
-          type: editingBudget.type,
-          category: editingBudget.category,
-          totalAmount: editingBudget.totalAmount,
-          periodStart: editingBudget.periodStart,
-          periodEnd: editingBudget.periodEnd,
-        }),
+      await put(`/api/v1/budgets/${editingBudget.budgetId}`, {
+        name: editingBudget.name,
+        type: editingBudget.type,
+        category: editingBudget.category,
+        totalAmount: editingBudget.totalAmount,
+        periodStart: editingBudget.periodStart,
+        periodEnd: editingBudget.periodEnd,
       });
-      const data = await response.json();
-      if (data.code === 0) {
-        setBudgets((prev) =>
-          prev.map((b) =>
-            b.budgetId === editingBudget.budgetId ? { ...b, ...editingBudget } : b
-          )
-        );
-        setIsEditDialogOpen(false);
-      } else {
-        alert(data.message || '更新失败');
-      }
+      setBudgets((prev) =>
+        prev.map((b) =>
+          b.budgetId === editingBudget.budgetId ? { ...b, ...editingBudget } : b
+        )
+      );
+      setIsEditDialogOpen(false);
     } catch (error) {
       console.error('更新预算失败:', error);
       alert('更新失败');
@@ -200,17 +354,12 @@ export default function BudgetsPage() {
 
     setIsLoading(true);
     try {
-      const response = await fetch('/api/v1/budgets', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ...newBudget,
-          unitId: user?.enterpriseId,
-        }),
+      const data = await post<Budget>('/api/v1/budgets', {
+        ...newBudget,
+        unitId: user?.enterpriseId,
       });
-      const data = await response.json();
-      if (data.code === 0 && data.data) {
-        setBudgets((prev) => [...prev, data.data]);
+      if (data) {
+        setBudgets((prev) => [...prev, data]);
         setIsDialogOpen(false);
         setNewBudget({
           name: '',
@@ -220,8 +369,6 @@ export default function BudgetsPage() {
           periodStart: '',
           periodEnd: '',
         });
-      } else {
-        alert(data.message || '创建失败');
       }
     } catch (error) {
       console.error('创建预算失败:', error);
@@ -235,6 +382,47 @@ export default function BudgetsPage() {
     <div className="p-6 space-y-6">
       <Header title="预算管理" subtitle="管理预算和审批流程" />
 
+      {/* 时间筛选器 */}
+      <div className="flex items-center justify-between bg-muted/30 p-3 rounded-lg border">
+        <div className="flex items-center gap-2">
+          <Calendar className="w-4 h-4 text-muted-foreground" />
+          <span className="text-sm font-medium">时间范围：</span>
+          <span className="text-sm text-primary font-semibold">{formatDateRange(dateRange.start, dateRange.end)}</span>
+        </div>
+        <div className="flex items-center gap-1">
+          {quickRanges.map((range) => (
+            <Button
+              key={range.value}
+              variant={
+                formatDateRange(dateRange.start, dateRange.end) ===
+                formatDateRange(calculateDateRange(range.value).start, calculateDateRange(range.value).end)
+                  ? 'default'
+                  : 'ghost'
+              }
+              size="sm"
+              onClick={() => setDateRange(calculateDateRange(range.value))}
+            >
+              {range.label}
+            </Button>
+          ))}
+          <div className="flex items-center gap-1 ml-2 border-l pl-2">
+            <Input
+              type="date"
+              value={dateRange.start}
+              onChange={(e) => setDateRange({ ...dateRange, start: e.target.value })}
+              className="w-32 h-8 text-xs"
+            />
+            <span className="text-muted-foreground text-xs">至</span>
+            <Input
+              type="date"
+              value={dateRange.end}
+              onChange={(e) => setDateRange({ ...dateRange, end: e.target.value })}
+              className="w-32 h-8 text-xs"
+            />
+          </div>
+        </div>
+      </div>
+
       {/* Summary */}
       <div className="grid gap-4 md:grid-cols-4">
         <Card>
@@ -244,7 +432,7 @@ export default function BudgetsPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{activeBudgets.length}</div>
+            <div className="text-2xl font-bold">{budgetsInRange.length}</div>
           </CardContent>
         </Card>
         <Card>
@@ -289,7 +477,18 @@ export default function BudgetsPage() {
             <TabsTrigger value="exceeded">已超支</TabsTrigger>
           </TabsList>
         </Tabs>
-        <Button onClick={() => setIsDialogOpen(true)}>
+        <Button onClick={() => {
+          const defaultPeriod = getDefaultPeriod('monthly');
+          setNewBudget({
+            name: '',
+            type: 'monthly',
+            category: 'office',
+            totalAmount: 0,
+            periodStart: defaultPeriod.periodStart,
+            periodEnd: defaultPeriod.periodEnd,
+          });
+          setIsDialogOpen(true);
+        }}>
           <Plus className="w-4 h-4 mr-2" />
           新建预算
         </Button>
@@ -403,7 +602,10 @@ export default function BudgetsPage() {
                 <Label>预算类型</Label>
                 <Select
                   value={newBudget.type}
-                  onValueChange={(value) => setNewBudget({ ...newBudget, type: value })}
+                  onValueChange={(value) => {
+                    const period = getDefaultPeriod(value);
+                    setNewBudget({ ...newBudget, type: value, periodStart: period.periodStart, periodEnd: period.periodEnd });
+                  }}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="选择类型" />

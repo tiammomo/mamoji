@@ -48,6 +48,16 @@ func main() {
 		logStd.Printf("Warning: Failed to migrate core tables: %v", err)
 	}
 
+	// 迁移业务表（添加新字段）
+	if err := database.AutoMigrate(
+		&entity.Transaction{}, // 包含新的budgetId字段
+		&entity.Budget{},
+		&entity.Account{},
+		&entity.AccountingUnit{},
+	); err != nil {
+		logStd.Printf("Warning: Failed to migrate business tables: %v", err)
+	}
+
 	// 移除外键约束（解决历史数据外键约束问题）
 	if err := database.DropForeignKeys(); err != nil {
 		logStd.Printf("Warning: Failed to drop foreign keys: %v", err)
