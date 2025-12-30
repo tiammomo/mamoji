@@ -2,8 +2,8 @@
 # Mamoji - 企业级财务记账系统 .gitignore
 # ===========================================
 #
-# 版本: 1.0.0
-# 更新: 2024-01-30
+# 版本: 2.0.0
+# 更新: 2025-12-31
 #
 
 # ===========================================
@@ -112,7 +112,6 @@ bun.lockb
 
 # ESLint
 .eslintcache
-.eslintrc
 
 # Prettier
 .prettierrc
@@ -142,7 +141,8 @@ dist-ssr/
 *.test
 *.out
 main
-app
+mamoji
+mamoji.exe
 
 # Go 工作区
 go.work
@@ -161,8 +161,12 @@ $GOPATH/pkg/mod/
 # Go 构建缓存
 ~/.cache/go-build/
 
+# API 配置目录（包含敏感信息）
+api/config/*.yaml
+api/config/*.yml
+
 # ===========================================
-# 第五部分：Python（如果有）
+# 第五部分：Python (可选)
 # ===========================================
 __pycache__/
 *.py[cod]
@@ -175,7 +179,6 @@ dist/
 downloads/
 eggs/
 .eggs/
-lib/
 lib64/
 parts/
 sdist/
@@ -210,10 +213,6 @@ env.example
 *.local
 *.secret
 *.pem
-
-# Go 配置
-config/config.yaml
-config/config.local.yaml
 
 # Nginx 配置（如果包含敏感信息）
 nginx/conf.d/*.conf
@@ -361,7 +360,7 @@ storybook-static/
 
 # 示例配置
 !env.example
-!config/config.example.yaml
+!api/config/config.example.yaml
 
 # Go 模块文件
 !go.mod
