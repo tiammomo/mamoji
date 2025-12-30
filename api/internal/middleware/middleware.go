@@ -2,15 +2,15 @@ package middleware
 
 import (
 	"context"
-	"log"
 	"strings"
 	"time"
 
 	"github.com/cloudwego/hertz/pkg/app"
-	"github.com/cloudwego/hertz/pkg/common/bytebufferpool"
+	"github.com/cloudwego/hertz/pkg/app/server"
 	"github.com/cloudwego/hertz/pkg/common/utils"
 	"github.com/cloudwego/hertz/pkg/protocol/consts"
 	"github.com/golang-jwt/jwt/v5"
+	"mamoji/api/internal/logger"
 )
 
 // Register 注册中间件
@@ -31,10 +31,15 @@ func Register(h *server.Hertz) {
 // CORS 跨域中间件
 func CORS() app.HandlerFunc {
 	return func(ctx context.Context, c *app.RequestContext) {
+		// 允许所有来源（生产环境建议改为具体域名）
 		c.Header("Access-Control-Allow-Origin", "*")
 		c.Header("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS")
 		c.Header("Access-Control-Allow-Headers", "Origin, Content-Type, Accept, Authorization")
+		c.Header("Access-Control-Expose-Headers", "Content-Length, Content-Range")
 		c.Header("Access-Control-Max-Age", "86400")
+
+		// 允许携带认证信息（Cookie/Token）
+		c.Header("Access-Control-Allow-Credentials", "true")
 
 		if string(c.Request.Method()) == "OPTIONS" {
 			c.AbortWithStatus(consts.StatusOK)
@@ -51,19 +56,37 @@ func Logger() app.HandlerFunc {
 		start := time.Now()
 		path := string(c.Request.URI().Path())
 		query := string(c.Request.URI().QueryString())
+		requestID := string(c.GetHeader("X-Request-ID"))
+		if requestID == "" {
+			requestID = "unknown"
+		}
+
+		log := logger.Get()
+
+		// 记录请求开始
+		log.Infoc("HTTP请求开始",
+			map[string]interface{}{
+				"method":     string(c.Request.Method()),
+				"path":       path,
+				"query":      query,
+				"request_id": requestID,
+				"user_agent": string(c.Request.Header.Get("User-Agent")),
+				"ip":         string(c.ClientIP()),
+			},
+		)
 
 		c.Next(ctx)
 
 		latency := time.Since(start)
 		status := c.Response.StatusCode()
 
-		log.Printf("[%s] %s %s | %d | %v | %s",
-			time.Now().Format("2006-01-02 15:04:05"),
-			c.Request.Method(),
-			path+"?"+query,
-			status,
-			latency,
-			c.ClientIP(),
+		// 记录请求完成
+		log.Infow("HTTP请求完成",
+			"request_id", requestID,
+			"method", string(c.Request.Method()),
+			"path", path,
+			"status_code", status,
+			"duration_ms", latency.Milliseconds(),
 		)
 	}
 }
@@ -71,12 +94,28 @@ func Logger() app.HandlerFunc {
 // Auth 认证中间件
 func Auth() app.HandlerFunc {
 	return func(ctx context.Context, c *app.RequestContext) {
-		// 公开路由
-		publicPaths := []string{"/api/v1/auth/login", "/api/v1/auth/register", "/api/v1/health"}
+		log := logger.Get()
+		requestID := string(c.GetHeader("X-Request-ID"))
+		if requestID == "" {
+			requestID = "unknown"
+		}
 		path := string(c.Request.URI().Path())
+
+		// 公开路由
+		publicPaths := []string{
+			"/api/v1/auth/login",
+			"/api/v1/auth/register",
+			"/health",
+		}
 
 		for _, p := range publicPaths {
 			if strings.HasPrefix(path, p) {
+				log.Infoc("Auth: 公开路由，放行",
+					map[string]interface{}{
+						"request_id": requestID,
+						"path":       path,
+					},
+				)
 				c.Next(ctx)
 				return
 			}
@@ -89,6 +128,11 @@ func Auth() app.HandlerFunc {
 		}
 
 		if auth == "" {
+			log.Warnw("Auth: 未提供Token",
+				"request_id", requestID,
+				"path", path,
+				"ip", string(c.ClientIP()),
+			)
 			c.JSON(consts.StatusUnauthorized, utils.H{
 				"code":    401,
 				"message": "未登录",
@@ -99,8 +143,31 @@ func Auth() app.HandlerFunc {
 
 		// 验证Token
 		tokenString := strings.TrimPrefix(auth, "Bearer ")
+
+		// 开发模式：支持 mock token（以 mock_ 开头）
+		if strings.HasPrefix(tokenString, "mock_") {
+			log.Infoc("Auth: 开发模式，使用模拟用户",
+				map[string]interface{}{
+					"request_id": requestID,
+					"path":       path,
+					"token_type": "mock",
+				},
+			)
+			// 设置模拟用户信息
+			c.Set("userId", int64(1))
+			c.Set("enterpriseId", int64(1))
+			c.Set("role", "super_admin")
+			c.Next(ctx)
+			return
+		}
+
 		claims, err := ParseToken(tokenString)
 		if err != nil {
+			log.Warnw("Auth: 无效的Token",
+				"request_id", requestID,
+				"path", path,
+				"error", err.Error(),
+			)
 			c.JSON(consts.StatusUnauthorized, utils.H{
 				"code":    401,
 				"message": "无效的Token",
@@ -108,6 +175,15 @@ func Auth() app.HandlerFunc {
 			c.Abort()
 			return
 		}
+
+		log.Infoc("Auth: 认证成功",
+			map[string]interface{}{
+				"request_id":    requestID,
+				"path":          path,
+				"user_id":       claims.UserId,
+				"enterprise_id": claims.EnterpriseId,
+			},
+		)
 
 		// 将用户信息存入上下文
 		c.Set("userId", claims.UserId)
@@ -163,10 +239,10 @@ func RateLimit() app.HandlerFunc {
 
 // JWT Claims
 type JWTClaims struct {
-	UserId        int64  `json:"userId"`
-	Username      string `json:"username"`
-	EnterpriseId  int64  `json:"enterpriseId"`
-	Role          string `json:"role"`
+	UserId       int64  `json:"userId"`
+	Username     string `json:"username"`
+	EnterpriseId int64  `json:"enterpriseId"`
+	Role         string `json:"role"`
 	jwt.RegisteredClaims
 }
 

@@ -11,22 +11,22 @@ import (
 type Config struct {
 	// 应用配置
 	App struct {
-		Name      string `mapstructure:"name"`
-		Host      string `mapstructure:"host"`
-		Port      int    `mapstructure:"port"`
-		Env       string `mapstructure:"env"`
-		Debug     bool   `mapstructure:"debug"`
+		Name  string `mapstructure:"name"`
+		Host  string `mapstructure:"host"`
+		Port  int    `mapstructure:"port"`
+		Env   string `mapstructure:"env"`
+		Debug bool   `mapstructure:"debug"`
 	}
 
 	// 数据库配置
 	Database struct {
-		Host         string `mapstructure:"host"`
-		Port         int    `mapstructure:"port"`
-		Username     string `mapstructure:"username"`
-		Password     string `mapstructure:"password"`
-		Name         string `mapstructure:"name"`
-		MaxOpenConns int    `mapstructure:"max_open_conns"`
-		MaxIdleConns int    `mapstructure:"max_idle_conns"`
+		Host            string        `mapstructure:"host"`
+		Port            int           `mapstructure:"port"`
+		Username        string        `mapstructure:"username"`
+		Password        string        `mapstructure:"password"`
+		Name            string        `mapstructure:"name"`
+		MaxOpenConns    int           `mapstructure:"max_open_conns"`
+		MaxIdleConns    int           `mapstructure:"max_idle_conns"`
 		ConnMaxLifetime time.Duration `mapstructure:"conn_max_lifetime"`
 	}
 
@@ -34,6 +34,7 @@ type Config struct {
 	Redis struct {
 		Host     string `mapstructure:"host"`
 		Port     int    `mapstructure:"port"`
+		Username string `mapstructure:"username"`
 		Password string `mapstructure:"password"`
 		DB       int    `mapstructure:"db"`
 		PoolSize int    `mapstructure:"pool_size"`

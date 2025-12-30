@@ -2,17 +2,17 @@ package dto
 
 // LoginRequest 登录请求
 type LoginRequest struct {
-	Username string `json:"username" binding:"required,min=3,max=50"`
-	Password string `json:"password" binding:"required,min=6"`
-	Captcha  string `json:"captcha"`
+	Username  string `json:"username" binding:"required,min=3,max=50"`
+	Password  string `json:"password" binding:"required,min=6"`
+	Captcha   string `json:"captcha"`
 	CaptchaId string `json:"captchaId"`
 }
 
 // LoginResponse 登录响应
 type LoginResponse struct {
-	Token     string `json:"token"`
+	Token     string    `json:"token"`
 	User      *UserInfo `json:"user"`
-	ExpiresAt string `json:"expiresAt"`
+	ExpiresAt string    `json:"expiresAt"`
 }
 
 // RegisterRequest 注册请求
@@ -25,14 +25,14 @@ type RegisterRequest struct {
 
 // UserInfo 用户信息
 type UserInfo struct {
-	UserId       int64  `json:"userId"`
-	Username     string `json:"username"`
-	Phone        string `json:"phone,omitempty"`
-	Email        string `json:"email,omitempty"`
-	Avatar       string `json:"avatar,omitempty"`
-	EnterpriseId int64  `json:"enterpriseId,omitempty"`
+	UserId         int64  `json:"userId"`
+	Username       string `json:"username"`
+	Phone          string `json:"phone,omitempty"`
+	Email          string `json:"email,omitempty"`
+	Avatar         string `json:"avatar,omitempty"`
+	EnterpriseId   int64  `json:"enterpriseId,omitempty"`
 	EnterpriseName string `json:"enterpriseName,omitempty"`
-	Role         string `json:"role,omitempty"`
+	Role           string `json:"role,omitempty"`
 }
 
 // CreateAccountRequest 创建账户请求
@@ -83,18 +83,18 @@ type ListTransactionRequest struct {
 
 // CreateTransactionRequest 创建交易请求
 type CreateTransactionRequest struct {
-	EnterpriseId  int64  `json:"enterpriseId"`
-	UnitId        int64  `json:"unitId" binding:"required"`
-	UserId        int64  `json:"userId"`
-	Type          string `json:"type" binding:"required,oneof=income expense"`
-	Category      string `json:"category" binding:"required"`
-	Amount        float64 `json:"amount" binding:"required,gt=0"`
-	AccountId     int64  `json:"accountId" binding:"required"`
-	OccurredAt    string `json:"occurredAt"`
+	EnterpriseId  int64    `json:"enterpriseId"`
+	UnitId        int64    `json:"unitId" binding:"required"`
+	UserId        int64    `json:"userId"`
+	Type          string   `json:"type" binding:"required,oneof=income expense"`
+	Category      string   `json:"category" binding:"required"`
+	Amount        float64  `json:"amount" binding:"required,gt=0"`
+	AccountId     int64    `json:"accountId" binding:"required"`
+	OccurredAt    string   `json:"occurredAt"`
 	Tags          []string `json:"tags,omitempty"`
-	Note          string `json:"note,omitempty"`
+	Note          string   `json:"note,omitempty"`
 	Images        []string `json:"images,omitempty"`
-	EcommerceInfo string `json:"ecommerceInfo,omitempty"`
+	EcommerceInfo string   `json:"ecommerceInfo,omitempty"`
 }
 
 // UpdateTransactionRequest 更新交易请求
@@ -131,11 +131,11 @@ type TransactionResponse struct {
 
 // PaginatedResponse 分页响应
 type PaginatedResponse struct {
-	List      interface{} `json:"list"`
-	Total     int64       `json:"total"`
-	Page      int         `json:"page"`
-	PageSize  int         `json:"pageSize"`
-	TotalPages int        `json:"totalPages"`
+	List       interface{} `json:"list"`
+	Total      int64       `json:"total"`
+	Page       int         `json:"page"`
+	PageSize   int         `json:"pageSize"`
+	TotalPages int         `json:"totalPages"`
 }
 
 // ListBudgetRequest 预算列表查询请求
@@ -147,14 +147,14 @@ type ListBudgetRequest struct {
 
 // CreateBudgetRequest 创建预算请求
 type CreateBudgetRequest struct {
-	EnterpriseId int64  `json:"enterpriseId"`
-	UnitId       int64  `json:"unitId" binding:"required"`
-	Name         string `json:"name" binding:"required,min=1,max=50"`
-	Type         string `json:"type" binding:"required,oneof=monthly yearly project"`
-	Category     string `json:"category" binding:"required"`
+	EnterpriseId int64   `json:"enterpriseId"`
+	UnitId       int64   `json:"unitId" binding:"required"`
+	Name         string  `json:"name" binding:"required,min=1,max=50"`
+	Type         string  `json:"type" binding:"required,oneof=monthly yearly project"`
+	Category     string  `json:"category" binding:"required"`
 	TotalAmount  float64 `json:"totalAmount" binding:"required,gt=0"`
-	PeriodStart  string `json:"periodStart" binding:"required"`
-	PeriodEnd    string `json:"periodEnd" binding:"required"`
+	PeriodStart  string  `json:"periodStart" binding:"required"`
+	PeriodEnd    string  `json:"periodEnd" binding:"required"`
 }
 
 // UpdateBudgetRequest 更新预算请求
@@ -168,8 +168,8 @@ type UpdateBudgetRequest struct {
 
 // ApplyBudgetRequest 申请预算请求
 type ApplyBudgetRequest struct {
-	Amount     float64 `json:"amount" binding:"required,gt=0"`
-	Reason     string  `json:"reason" binding:"required"`
+	Amount float64 `json:"amount" binding:"required,gt=0"`
+	Reason string  `json:"reason" binding:"required"`
 }
 
 // ApproveBudgetRequest 审批预算请求
@@ -236,33 +236,33 @@ type UpdateInvestmentRequest struct {
 
 // CreateInvestRecordRequest 创建投资记录请求
 type CreateInvestRecordRequest struct {
-	Type      string  `json:"type" binding:"required,oneof=buy sell profit dividend interest"`
-	Amount    float64 `json:"amount" binding:"required"`
-	Price     float64 `json:"price,omitempty"`
-	Quantity  float64 `json:"quantity,omitempty"`
-	RecordedAt string `json:"recordedAt"`
-	Note      string  `json:"note,omitempty"`
+	Type       string  `json:"type" binding:"required,oneof=buy sell profit dividend interest"`
+	Amount     float64 `json:"amount" binding:"required"`
+	Price      float64 `json:"price,omitempty"`
+	Quantity   float64 `json:"quantity,omitempty"`
+	RecordedAt string  `json:"recordedAt"`
+	Note       string  `json:"note,omitempty"`
 }
 
 // InvestmentResponse 投资响应
 type InvestmentResponse struct {
-	InvestmentId   int64    `json:"investmentId"`
-	EnterpriseId   int64    `json:"enterpriseId"`
-	UnitId         int64    `json:"unitId"`
-	Name           string   `json:"name"`
-	ProductType    string   `json:"productType"`
-	ProductCode    string   `json:"productCode,omitempty"`
-	Principal      float64  `json:"principal"`
-	CurrentValue   float64  `json:"currentValue"`
-	TotalProfit    float64  `json:"totalProfit"`
-	ReturnRate     float64  `json:"returnRate"`
-	Quantity       float64  `json:"quantity,omitempty"`
-	CostPrice      float64  `json:"costPrice,omitempty"`
-	CurrentPrice   float64  `json:"currentPrice,omitempty"`
-	LastUpdatedAt  string   `json:"lastUpdatedAt,omitempty"`
-	ReminderDays   int      `json:"reminderDays"`
-	Status         int      `json:"status"`
-	CreatedAt      string   `json:"createdAt"`
+	InvestmentId  int64   `json:"investmentId"`
+	EnterpriseId  int64   `json:"enterpriseId"`
+	UnitId        int64   `json:"unitId"`
+	Name          string  `json:"name"`
+	ProductType   string  `json:"productType"`
+	ProductCode   string  `json:"productCode,omitempty"`
+	Principal     float64 `json:"principal"`
+	CurrentValue  float64 `json:"currentValue"`
+	TotalProfit   float64 `json:"totalProfit"`
+	ReturnRate    float64 `json:"returnRate"`
+	Quantity      float64 `json:"quantity,omitempty"`
+	CostPrice     float64 `json:"costPrice,omitempty"`
+	CurrentPrice  float64 `json:"currentPrice,omitempty"`
+	LastUpdatedAt string  `json:"lastUpdatedAt,omitempty"`
+	ReminderDays  int     `json:"reminderDays"`
+	Status        int     `json:"status"`
+	CreatedAt     string  `json:"createdAt"`
 }
 
 // OverviewReportRequest 概览报表请求
@@ -274,14 +274,14 @@ type OverviewReportRequest struct {
 
 // OverviewReportResponse 概览报表响应
 type OverviewReportResponse struct {
-	TotalAssets     float64                `json:"totalAssets"`
-	MonthlyIncome   float64                `json:"monthlyIncome"`
-	MonthlyExpense  float64                `json:"monthlyExpense"`
-	MonthlyBalance  float64                `json:"monthlyBalance"`
-	TotalInvestments float64               `json:"totalInvestments"`
-	InvestProfit    float64                `json:"investProfit"`
-	BudgetUsage     []BudgetUsageItem      `json:"budgetUsage"`
-	AccountBalance  []AccountBalanceItem   `json:"accountBalance"`
+	TotalAssets      float64              `json:"totalAssets"`
+	MonthlyIncome    float64              `json:"monthlyIncome"`
+	MonthlyExpense   float64              `json:"monthlyExpense"`
+	MonthlyBalance   float64              `json:"monthlyBalance"`
+	TotalInvestments float64              `json:"totalInvestments"`
+	InvestProfit     float64              `json:"investProfit"`
+	BudgetUsage      []BudgetUsageItem    `json:"budgetUsage"`
+	AccountBalance   []AccountBalanceItem `json:"accountBalance"`
 }
 
 // BudgetUsageItem 预算使用项
@@ -310,13 +310,13 @@ type IncomeExpenseReportRequest struct {
 
 // IncomeExpenseReportResponse 收支报表响应
 type IncomeExpenseReportResponse struct {
-	TotalIncome   float64             `json:"totalIncome"`
-	TotalExpense  float64             `json:"totalExpense"`
-	Balance       float64             `json:"balance"`
-	IncomeByCategory  []CategoryItem  `json:"incomeByCategory"`
-	ExpenseByCategory []CategoryItem  `json:"expenseByCategory"`
-	IncomeTrend   []TrendItem         `json:"incomeTrend"`
-	ExpenseTrend  []TrendItem         `json:"expenseTrend"`
+	TotalIncome       float64        `json:"totalIncome"`
+	TotalExpense      float64        `json:"totalExpense"`
+	Balance           float64        `json:"balance"`
+	IncomeByCategory  []CategoryItem `json:"incomeByCategory"`
+	ExpenseByCategory []CategoryItem `json:"expenseByCategory"`
+	IncomeTrend       []TrendItem    `json:"incomeTrend"`
+	ExpenseTrend      []TrendItem    `json:"expenseTrend"`
 }
 
 // CategoryItem 分类项
