@@ -16,7 +16,11 @@
       "Bash(go mod tidy:*)",
       "Bash(go run:*)",
       "Bash(go test:*)",
-      "Bash(go build:*)"
+      "Bash(go build:*)",
+      "Bash(go get golang.org/x/crypto/bcrypt)",
+      "Bash(netstat:*)",
+      "Bash(findstr:*)",
+      "Bash(taskkill:*)"
     ]
   }
 }

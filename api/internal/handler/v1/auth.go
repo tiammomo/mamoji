@@ -6,7 +6,9 @@ import (
 
 	"github.com/cloudwego/hertz/pkg/app"
 	"github.com/cloudwego/hertz/pkg/common/utils"
+	"mamoji/api/internal/database"
 	"mamoji/api/internal/model/dto"
+	"mamoji/api/internal/model/entity"
 	"mamoji/api/internal/service"
 )
 
@@ -22,7 +24,7 @@ func Login(ctx context.Context, c *app.RequestContext) {
 	}
 
 	// 调用服务层
-	_, token, err := service.AuthService.Login(req.Username, req.Password)
+	user, token, err := service.AuthService.Login(req.Username, req.Password)
 	if err != nil {
 		c.JSON(200, utils.H{
 			"code":    401,
@@ -31,11 +33,34 @@ func Login(ctx context.Context, c *app.RequestContext) {
 		return
 	}
 
+	// 构建用户响应，包含企业信息
+	userResponse := utils.H{
+		"userId":   user.UserId,
+		"username": user.Username,
+		"phone":    user.Phone,
+		"email":    user.Email,
+		"avatar":   user.Avatar,
+	}
+
+	// 尝试获取用户所属企业和角色
+	var member entity.EnterpriseMember
+	if err := database.DB.Where("user_id = ?", user.UserId).First(&member).Error; err == nil {
+		userResponse["enterpriseId"] = member.EnterpriseId
+		userResponse["role"] = member.Role
+
+		// 获取企业名称
+		var enterprise entity.Enterprise
+		if err := database.DB.Where("enterprise_id = ?", member.EnterpriseId).First(&enterprise).Error; err == nil {
+			userResponse["enterpriseName"] = enterprise.Name
+		}
+	}
+
 	c.JSON(200, utils.H{
 		"code":    0,
 		"message": "登录成功",
 		"data": utils.H{
 			"token":     token,
+			"user":      userResponse,
 			"expiresAt": time.Now().Add(24 * time.Hour).Format("2006-01-02 15:04:05"),
 		},
 	})

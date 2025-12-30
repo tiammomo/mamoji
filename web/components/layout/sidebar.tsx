@@ -12,27 +12,16 @@ import {
   BarChart3,
   Bell,
   Settings,
-  LogOut,
   Menu,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
-import { useAuthStore, useUser } from '@/stores';
 import { useState } from 'react';
 
 const sidebarItems = [
@@ -47,8 +36,6 @@ const sidebarItems = [
 
 export function Sidebar() {
   const pathname = usePathname();
-  const user = useUser();
-  const logout = useAuthStore((state) => state.logout);
   const [collapsed, setCollapsed] = useState(false);
 
   return (
@@ -139,45 +126,6 @@ export function Sidebar() {
             <Settings className="w-5 h-5" />
             {!collapsed && <span>系统设置</span>}
           </Link>
-        </div>
-
-        {/* User Menu */}
-        <div className="border-t p-4">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="w-full justify-start px-2">
-                <Avatar className="w-8 h-8 mr-2">
-                  <AvatarImage src={user?.avatar} />
-                  <AvatarFallback>
-                    {user?.username?.charAt(0).toUpperCase()}
-                  </AvatarFallback>
-                </Avatar>
-                {!collapsed && (
-                  <span className="truncate">{user?.username}</span>
-                )}
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent side="top" align="start" className="w-56">
-              <DropdownMenuLabel>
-                <div className="flex flex-col">
-                  <span>{user?.username}</span>
-                  <span className="text-xs text-muted-foreground">
-                    {user?.enterpriseName}
-                  </span>
-                </div>
-              </DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem>
-                <Settings className="mr-2 h-4 w-4" />
-                个人设置
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={logout} className="text-destructive">
-                <LogOut className="mr-2 h-4 w-4" />
-                退出登录
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
         </div>
 
         {/* Collapse Toggle */}
