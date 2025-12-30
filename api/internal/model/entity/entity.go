@@ -37,16 +37,16 @@ func (UserToken) TableName() string {
 
 // Enterprise 企业表
 type Enterprise struct {
-	EnterpriseId int64     `gorm:"primaryKey;autoIncrement" json:"enterpriseId"`
-	Name         string    `gorm:"size:100;not null" json:"name"`
-	CreditCode   string    `gorm:"size:50" json:"creditCode"`
-	ContactPerson string   `gorm:"size:50" json:"contactPerson"`
-	ContactPhone string    `gorm:"size:20" json:"contactPhone"`
-	Address      string    `gorm:"size:255" json:"address"`
-	LicenseImage string    `gorm:"size:500" json:"licenseImage"`
-	Status       int       `gorm:"default:1" json:"status"`
-	CreatedAt    time.Time `gorm:"autoCreateTime" json:"createdAt"`
-	UpdatedAt    time.Time `gorm:"autoUpdateTime" json:"updatedAt"`
+	EnterpriseId  int64     `gorm:"primaryKey;autoIncrement" json:"enterpriseId"`
+	Name          string    `gorm:"size:100;not null" json:"name"`
+	CreditCode    string    `gorm:"size:50" json:"creditCode"`
+	ContactPerson string    `gorm:"size:50" json:"contactPerson"`
+	ContactPhone  string    `gorm:"size:20" json:"contactPhone"`
+	Address       string    `gorm:"size:255" json:"address"`
+	LicenseImage  string    `gorm:"size:500" json:"licenseImage"`
+	Status        int       `gorm:"default:1" json:"status"`
+	CreatedAt     time.Time `gorm:"autoCreateTime" json:"createdAt"`
+	UpdatedAt     time.Time `gorm:"autoUpdateTime" json:"updatedAt"`
 }
 
 func (Enterprise) TableName() string {
@@ -78,8 +78,8 @@ type AccountingUnit struct {
 	CreatedAt    time.Time `gorm:"autoCreateTime" json:"createdAt"`
 	UpdatedAt    time.Time `gorm:"autoUpdateTime" json:"updatedAt"`
 
-	// 关联
-	Children []*AccountingUnit `gorm:"foreignKey:ParentUnitId" json:"children,omitempty"`
+	// 移除自引用外键约束，避免迁移错误
+	Children []*AccountingUnit `gorm:"-" json:"children,omitempty"`
 }
 
 func (AccountingUnit) TableName() string {
@@ -88,12 +88,12 @@ func (AccountingUnit) TableName() string {
 
 // UnitPermission 单元权限表
 type UnitPermission struct {
-	PermissionId   int64     `gorm:"primaryKey;autoIncrement" json:"permissionId"`
-	EnterpriseId   int64     `gorm:"not null;index" json:"enterpriseId"`
-	UserId         int64     `gorm:"not null;index" json:"userId"`
-	UnitId         int64     `gorm:"not null;index" json:"unitId"`
-	PermissionLevel string   `gorm:"size:20;not null" json:"permissionLevel"`
-	CreatedAt      time.Time `gorm:"autoCreateTime" json:"createdAt"`
+	PermissionId    int64     `gorm:"primaryKey;autoIncrement" json:"permissionId"`
+	EnterpriseId    int64     `gorm:"not null;index" json:"enterpriseId"`
+	UserId          int64     `gorm:"not null;index" json:"userId"`
+	UnitId          int64     `gorm:"not null;index" json:"unitId"`
+	PermissionLevel string    `gorm:"size:20;not null" json:"permissionLevel"`
+	CreatedAt       time.Time `gorm:"autoCreateTime" json:"createdAt"`
 }
 
 func (UnitPermission) TableName() string {
@@ -121,15 +121,15 @@ func (Account) TableName() string {
 
 // AccountFlow 账户流水表
 type AccountFlow struct {
-	FlowId         int64     `gorm:"primaryKey;autoIncrement" json:"flowId"`
-	AccountId      int64     `gorm:"not null;index" json:"accountId"`
-	TransactionId  *int64    `gorm:"index" json:"transactionId"`
-	Type           string    `gorm:"size:10;not null" json:"type"`
-	Amount         float64   `gorm:"type:decimal(18,2);not null" json:"amount"`
-	BalanceBefore  float64   `gorm:"type:decimal(18,2);not null" json:"balanceBefore"`
-	BalanceAfter   float64   `gorm:"type:decimal(18,2);not null" json:"balanceAfter"`
-	Note           string    `gorm:"size:255" json:"note"`
-	CreatedAt      time.Time `gorm:"autoCreateTime" json:"createdAt"`
+	FlowId        int64     `gorm:"primaryKey;autoIncrement" json:"flowId"`
+	AccountId     int64     `gorm:"not null;index" json:"accountId"`
+	TransactionId *int64    `gorm:"index" json:"transactionId"`
+	Type          string    `gorm:"size:10;not null" json:"type"`
+	Amount        float64   `gorm:"type:decimal(18,2);not null" json:"amount"`
+	BalanceBefore float64   `gorm:"type:decimal(18,2);not null" json:"balanceBefore"`
+	BalanceAfter  float64   `gorm:"type:decimal(18,2);not null" json:"balanceAfter"`
+	Note          string    `gorm:"size:255" json:"note"`
+	CreatedAt     time.Time `gorm:"autoCreateTime" json:"createdAt"`
 }
 
 func (AccountFlow) TableName() string {
@@ -138,22 +138,22 @@ func (AccountFlow) TableName() string {
 
 // Transaction 账单表
 type Transaction struct {
-	TransactionId  int64     `gorm:"primaryKey;autoIncrement" json:"transactionId"`
-	EnterpriseId   int64     `gorm:"not null;index" json:"enterpriseId"`
-	UnitId         int64     `gorm:"not null;index" json:"unitId"`
-	UserId         int64     `gorm:"not null;index" json:"userId"`
-	Type           string    `gorm:"size:10;not null" json:"type"`
-	Category       string    `gorm:"size:30;not null" json:"category"`
-	Amount         float64   `gorm:"type:decimal(18,2);not null" json:"amount"`
-	AccountId      int64     `gorm:"not null;index" json:"accountId"`
-	OccurredAt     time.Time `gorm:"not null" json:"occurredAt"`
-	Tags           string    `gorm:"type:json" json:"tags"`
-	Note           string    `gorm:"size:500" json:"note"`
-	Images         string    `gorm:"type:json" json:"images"`
-	EcommerceInfo  string    `gorm:"type:json" json:"ecommerceInfo"`
-	Status         int       `gorm:"default:1" json:"status"`
-	CreatedAt      time.Time `gorm:"autoCreateTime" json:"createdAt"`
-	UpdatedAt      time.Time `gorm:"autoUpdateTime" json:"updatedAt"`
+	TransactionId int64     `gorm:"primaryKey;autoIncrement" json:"transactionId"`
+	EnterpriseId  int64     `gorm:"not null;index" json:"enterpriseId"`
+	UnitId        int64     `gorm:"not null;index" json:"unitId"`
+	UserId        int64     `gorm:"not null;index" json:"userId"`
+	Type          string    `gorm:"size:10;not null" json:"type"`
+	Category      string    `gorm:"size:30;not null" json:"category"`
+	Amount        float64   `gorm:"type:decimal(18,2);not null" json:"amount"`
+	AccountId     int64     `gorm:"not null;index" json:"accountId"`
+	OccurredAt    time.Time `gorm:"not null" json:"occurredAt"`
+	Tags          string    `gorm:"type:json" json:"tags"`
+	Note          string    `gorm:"size:500" json:"note"`
+	Images        string    `gorm:"type:json" json:"images"`
+	EcommerceInfo string    `gorm:"type:json" json:"ecommerceInfo"`
+	Status        int       `gorm:"default:1" json:"status"`
+	CreatedAt     time.Time `gorm:"autoCreateTime" json:"createdAt"`
+	UpdatedAt     time.Time `gorm:"autoUpdateTime" json:"updatedAt"`
 }
 
 func (Transaction) TableName() string {
@@ -162,19 +162,19 @@ func (Transaction) TableName() string {
 
 // Budget 预算表
 type Budget struct {
-	BudgetId      int64     `gorm:"primaryKey;autoIncrement" json:"budgetId"`
-	EnterpriseId  int64     `gorm:"not null;index" json:"enterpriseId"`
-	UnitId        int64     `gorm:"not null;index" json:"unitId"`
-	Name          string    `gorm:"size:50;not null" json:"name"`
-	Type          string    `gorm:"size:20;not null" json:"type"`
-	Category      string    `gorm:"size:30;not null" json:"category"`
-	TotalAmount   float64   `gorm:"type:decimal(18,2);not null" json:"totalAmount"`
-	UsedAmount    float64   `gorm:"type:decimal(18,2);not null;default:0" json:"usedAmount"`
-	PeriodStart   time.Time `gorm:"not null" json:"periodStart"`
-	PeriodEnd     time.Time `gorm:"not null" json:"periodEnd"`
-	Status        string    `gorm:"size:20;not null;default:active" json:"status"`
-	CreatedAt     time.Time `gorm:"autoCreateTime" json:"createdAt"`
-	UpdatedAt     time.Time `gorm:"autoUpdateTime" json:"updatedAt"`
+	BudgetId     int64     `gorm:"primaryKey;autoIncrement" json:"budgetId"`
+	EnterpriseId int64     `gorm:"not null;index" json:"enterpriseId"`
+	UnitId       int64     `gorm:"not null;index" json:"unitId"`
+	Name         string    `gorm:"size:50;not null" json:"name"`
+	Type         string    `gorm:"size:20;not null" json:"type"`
+	Category     string    `gorm:"size:30;not null" json:"category"`
+	TotalAmount  float64   `gorm:"type:decimal(18,2);not null" json:"totalAmount"`
+	UsedAmount   float64   `gorm:"type:decimal(18,2);not null;default:0" json:"usedAmount"`
+	PeriodStart  time.Time `gorm:"not null" json:"periodStart"`
+	PeriodEnd    time.Time `gorm:"not null" json:"periodEnd"`
+	Status       string    `gorm:"size:20;not null;default:active" json:"status"`
+	CreatedAt    time.Time `gorm:"autoCreateTime" json:"createdAt"`
+	UpdatedAt    time.Time `gorm:"autoUpdateTime" json:"updatedAt"`
 }
 
 func (Budget) TableName() string {
@@ -183,16 +183,16 @@ func (Budget) TableName() string {
 
 // BudgetApproval 预算审批表
 type BudgetApproval struct {
-	ApprovalId     int64     `gorm:"primaryKey;autoIncrement" json:"approvalId"`
-	BudgetId       int64     `gorm:"not null;index" json:"budgetId"`
-	ApplicantId    int64     `gorm:"not null;index" json:"applicantId"`
-	ApproverId     *int64    `gorm:"index" json:"approverId"`
-	ApplyAmount    float64   `gorm:"type:decimal(18,2);not null" json:"applyAmount"`
-	ApprovedAmount *float64  `gorm:"type:decimal(18,2)" json:"approvedAmount"`
-	Status         string    `gorm:"size:20;not null;default:pending" json:"status"`
-	ApplyReason    string    `gorm:"size:500" json:"applyReason"`
-	ApproveComment string    `gorm:"size:500" json:"approveComment"`
-	AppliedAt      time.Time `gorm:"autoCreateTime" json:"appliedAt"`
+	ApprovalId     int64      `gorm:"primaryKey;autoIncrement" json:"approvalId"`
+	BudgetId       int64      `gorm:"not null;index" json:"budgetId"`
+	ApplicantId    int64      `gorm:"not null;index" json:"applicantId"`
+	ApproverId     *int64     `gorm:"index" json:"approverId"`
+	ApplyAmount    float64    `gorm:"type:decimal(18,2);not null" json:"applyAmount"`
+	ApprovedAmount *float64   `gorm:"type:decimal(18,2)" json:"approvedAmount"`
+	Status         string     `gorm:"size:20;not null;default:pending" json:"status"`
+	ApplyReason    string     `gorm:"size:500" json:"applyReason"`
+	ApproveComment string     `gorm:"size:500" json:"approveComment"`
+	AppliedAt      time.Time  `gorm:"autoCreateTime" json:"appliedAt"`
 	ApprovedAt     *time.Time `json:"approvedAt"`
 }
 
@@ -202,28 +202,28 @@ func (BudgetApproval) TableName() string {
 
 // Investment 理财账户表
 type Investment struct {
-	InvestmentId   int64     `gorm:"primaryKey;autoIncrement" json:"investmentId"`
-	EnterpriseId   int64     `gorm:"not null;index" json:"enterpriseId"`
-	UnitId         int64     `gorm:"not null;index" json:"unitId"`
-	Name           string    `gorm:"size:50;not null" json:"name"`
-	ProductType    string    `gorm:"size:20;not null" json:"productType"`
-	ProductCode    string    `gorm:"size:50" json:"productCode"`
-	Principal      float64   `gorm:"type:decimal(18,2);not null" json:"principal"`
-	CurrentValue   float64   `gorm:"type:decimal(18,2);not null;default:0" json:"currentValue"`
-	TotalProfit    float64   `gorm:"type:decimal(18,2);not null;default:0" json:"totalProfit"`
-	Quantity       float64   `gorm:"type:decimal(18,4)" json:"quantity"`
-	CostPrice      float64   `gorm:"type:decimal(18,4)" json:"costPrice"`
-	CurrentPrice   float64   `gorm:"type:decimal(18,4)" json:"currentPrice"`
-	Platform       string    `gorm:"size:50" json:"platform"`
-	StartDate      *time.Time `json:"startDate"`
-	EndDate        *time.Time `json:"endDate"`
-	InterestRate   float64   `gorm:"type:decimal(8,4)" json:"interestRate"`
-	LastUpdatedAt  *time.Time `json:"lastUpdatedAt"`
-	ReminderDays   int       `gorm:"default:7" json:"reminderDays"`
-	Status         int       `gorm:"default:1" json:"status"`
-	Note           string    `gorm:"size:500" json:"note"`
-	CreatedAt      time.Time `gorm:"autoCreateTime" json:"createdAt"`
-	UpdatedAt      time.Time `gorm:"autoUpdateTime" json:"updatedAt"`
+	InvestmentId  int64      `gorm:"primaryKey;autoIncrement" json:"investmentId"`
+	EnterpriseId  int64      `gorm:"not null;index" json:"enterpriseId"`
+	UnitId        int64      `gorm:"not null;index" json:"unitId"`
+	Name          string     `gorm:"size:50;not null" json:"name"`
+	ProductType   string     `gorm:"size:20;not null" json:"productType"`
+	ProductCode   string     `gorm:"size:50" json:"productCode"`
+	Principal     float64    `gorm:"type:decimal(18,2);not null" json:"principal"`
+	CurrentValue  float64    `gorm:"type:decimal(18,2);not null;default:0" json:"currentValue"`
+	TotalProfit   float64    `gorm:"type:decimal(18,2);not null;default:0" json:"totalProfit"`
+	Quantity      float64    `gorm:"type:decimal(18,4)" json:"quantity"`
+	CostPrice     float64    `gorm:"type:decimal(18,4)" json:"costPrice"`
+	CurrentPrice  float64    `gorm:"type:decimal(18,4)" json:"currentPrice"`
+	Platform      string     `gorm:"size:50" json:"platform"`
+	StartDate     *time.Time `json:"startDate"`
+	EndDate       *time.Time `json:"endDate"`
+	InterestRate  float64    `gorm:"type:decimal(8,4)" json:"interestRate"`
+	LastUpdatedAt *time.Time `json:"lastUpdatedAt"`
+	ReminderDays  int        `gorm:"default:7" json:"reminderDays"`
+	Status        int        `gorm:"default:1" json:"status"`
+	Note          string     `gorm:"size:500" json:"note"`
+	CreatedAt     time.Time  `gorm:"autoCreateTime" json:"createdAt"`
+	UpdatedAt     time.Time  `gorm:"autoUpdateTime" json:"updatedAt"`
 }
 
 func (Investment) TableName() string {
@@ -265,16 +265,16 @@ func (Notification) TableName() string {
 
 // PushConfig 推送配置表
 type PushConfig struct {
-	ConfigId            int64     `gorm:"primaryKey;autoIncrement" json:"configId"`
-	EnterpriseId        int64     `gorm:"not null;index" json:"enterpriseId"`
-	Type                string    `gorm:"size:20;not null" json:"type"`
-	Target              string    `gorm:"size:100;not null" json:"target"`
-	Enabled             int       `gorm:"default:1" json:"enabled"`
-	PushTime            string    `gorm:"size:10;default:20:00" json:"pushTime"`
-	Frequency           string    `gorm:"size:20;default:daily" json:"frequency"`
-	DailyReportEnabled  int       `gorm:"default:1" json:"dailyReportEnabled"`
-	CreatedAt           time.Time `gorm:"autoCreateTime" json:"createdAt"`
-	UpdatedAt           time.Time `gorm:"autoUpdateTime" json:"updatedAt"`
+	ConfigId           int64     `gorm:"primaryKey;autoIncrement" json:"configId"`
+	EnterpriseId       int64     `gorm:"not null;index" json:"enterpriseId"`
+	Type               string    `gorm:"size:20;not null" json:"type"`
+	Target             string    `gorm:"size:100;not null" json:"target"`
+	Enabled            int       `gorm:"default:1" json:"enabled"`
+	PushTime           string    `gorm:"size:10;default:20:00" json:"pushTime"`
+	Frequency          string    `gorm:"size:20;default:daily" json:"frequency"`
+	DailyReportEnabled int       `gorm:"default:1" json:"dailyReportEnabled"`
+	CreatedAt          time.Time `gorm:"autoCreateTime" json:"createdAt"`
+	UpdatedAt          time.Time `gorm:"autoUpdateTime" json:"updatedAt"`
 }
 
 func (PushConfig) TableName() string {
@@ -283,15 +283,15 @@ func (PushConfig) TableName() string {
 
 // PushLog 推送记录表
 type PushLog struct {
-	LogId        int64     `gorm:"primaryKey;autoIncrement" json:"logId"`
-	EnterpriseId int64     `gorm:"not null;index" json:"enterpriseId"`
-	ConfigId     int64     `gorm:"not null;index" json:"configId"`
-	Type         string    `gorm:"size:20;not null" json:"type"`
-	Content      string    `gorm:"type:text" json:"content"`
-	Status       string    `gorm:"size:20;not null" json:"status"`
-	ErrorMessage string    `gorm:"size:500" json:"errorMessage"`
+	LogId        int64      `gorm:"primaryKey;autoIncrement" json:"logId"`
+	EnterpriseId int64      `gorm:"not null;index" json:"enterpriseId"`
+	ConfigId     int64      `gorm:"not null;index" json:"configId"`
+	Type         string     `gorm:"size:20;not null" json:"type"`
+	Content      string     `gorm:"type:text" json:"content"`
+	Status       string     `gorm:"size:20;not null" json:"status"`
+	ErrorMessage string     `gorm:"size:500" json:"errorMessage"`
 	SentAt       *time.Time `json:"sentAt"`
-	CreatedAt    time.Time `gorm:"autoCreateTime" json:"createdAt"`
+	CreatedAt    time.Time  `gorm:"autoCreateTime" json:"createdAt"`
 }
 
 func (PushLog) TableName() string {

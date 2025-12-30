@@ -44,12 +44,69 @@ interface AuthState {
   updateUser: (user: Partial<UserInfo>) => void;
 }
 
+// 初始化模拟用户数据（用于开发测试）
+function initDevAuth(): { token: string; user: UserInfo } | null {
+  if (typeof window !== 'undefined' && !localStorage.getItem(TOKEN_KEY)) {
+    const mockUser: UserInfo = {
+      userId: 1,
+      username: 'admin',
+      phone: '138****1234',
+      enterpriseId: 1,
+      enterpriseName: '示例企业',
+      role: 'super_admin',
+    };
+    const mockToken = 'mock_jwt_token_dev';
+    localStorage.setItem(TOKEN_KEY, mockToken);
+    localStorage.setItem(USER_INFO_KEY, JSON.stringify(mockUser));
+    return { token: mockToken, user: mockUser };
+  }
+  return null;
+}
+
+// 尝试恢复保存的认证状态
+function getInitialAuthState(): { token: string | null; user: UserInfo | null; isAuthenticated: boolean } {
+  if (typeof window === 'undefined') {
+    return { token: null, user: null, isAuthenticated: false };
+  }
+
+  // 首先检查是否有保存的持久化状态
+  try {
+    const saved = localStorage.getItem('auth-storage');
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      if (parsed.state?.isAuthenticated) {
+        return {
+          token: parsed.state.token,
+          user: parsed.state.user,
+          isAuthenticated: true,
+        };
+      }
+    }
+  } catch {
+    // 忽略解析错误
+  }
+
+  // 如果没有保存的状态，初始化开发模拟认证
+  const devAuth = initDevAuth();
+  if (devAuth) {
+    return {
+      token: devAuth.token,
+      user: devAuth.user,
+      isAuthenticated: true,
+    };
+  }
+
+  return { token: null, user: null, isAuthenticated: false };
+}
+
+const initialState = getInitialAuthState();
+
 export const useAuthStore = create<AuthState>()(
   persist(
     (set, get) => ({
-      token: null,
-      user: null,
-      isAuthenticated: false,
+      token: initialState.token,
+      user: initialState.user,
+      isAuthenticated: initialState.isAuthenticated,
       isLoading: false,
 
       login: async (params: LoginParams) => {
