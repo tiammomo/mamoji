@@ -1,0 +1,902 @@
+package service
+
+import (
+	"encoding/json"
+	"errors"
+	"fmt"
+	"strings"
+	"time"
+
+	"github.com/golang-jwt/jwt/v5"
+	"github.com/google/uuid"
+	"golang.org/x/crypto/bcrypt"
+	"mamoji/api/internal/config"
+	"mamoji/api/internal/database"
+	"mamoji/api/internal/model/dto"
+	"mamoji/api/internal/model/entity"
+)
+
+// Interface 定义数据库模型接口
+type Interface interface {
+	TableName() string
+}
+
+// Service structs
+type AccountService struct{}
+type AuthService struct{}
+type TransactionService struct{}
+type BudgetService struct{}
+type InvestmentService struct{}
+type ReportService struct{}
+
+// Service instances
+var (
+	AccountServiceInst     = &AccountService{}
+	AuthServiceInst        = &AuthService{}
+	TransactionServiceInst = &TransactionService{}
+	BudgetServiceInst      = &BudgetService{}
+	InvestmentServiceInst  = &InvestmentService{}
+	ReportServiceInst      = &ReportService{}
+)
+
+func init() {
+	_ = AccountServiceInst
+	_ = AuthServiceInst
+	_ = TransactionServiceInst
+	_ = BudgetServiceInst
+	_ = InvestmentServiceInst
+	_ = ReportServiceInst
+}
+
+// ===== AccountService =====
+func (s *AccountService) List(enterpriseId, unitId int64) ([]dto.AccountResponse, error) {
+	var accounts []entity.Account
+	query := database.DB.Where("enterprise_id = ? AND status = 1", enterpriseId)
+	if unitId > 0 {
+		query = query.Where("unit_id = ?", unitId)
+	}
+	if err := query.Order("created_at DESC").Find(&accounts).Error; err != nil {
+		return nil, errors.New("查询账户失败")
+	}
+
+	response := make([]dto.AccountResponse, 0, len(accounts))
+	for _, acc := range accounts {
+		response = append(response, dto.AccountResponse{
+			AccountId:    acc.AccountId,
+			EnterpriseId: acc.EnterpriseId,
+			UnitId:       acc.UnitId,
+			Type:         acc.Type,
+			Name:         acc.Name,
+			AccountNo:    acc.AccountNo,
+			BankCardType: acc.BankCardType,
+			Balance:      acc.Balance,
+			Status:       acc.Status,
+			CreatedAt:    acc.CreatedAt.Format("2006-01-02 15:04:05"),
+		})
+	}
+	return response, nil
+}
+
+func (s *AccountService) GetById(accountId int64) (*dto.AccountResponse, error) {
+	var account entity.Account
+	if err := database.DB.Where("account_id = ?", accountId).First(&account).Error; err != nil {
+		return nil, errors.New("账户不存在")
+	}
+
+	response := &dto.AccountResponse{
+		AccountId:    account.AccountId,
+		EnterpriseId: account.EnterpriseId,
+		UnitId:       account.UnitId,
+		Type:         account.Type,
+		Name:         account.Name,
+		AccountNo:    account.AccountNo,
+		BankCardType: account.BankCardType,
+		Balance:      account.Balance,
+		Status:       account.Status,
+		CreatedAt:    account.CreatedAt.Format("2006-01-02 15:04:05"),
+	}
+	return response, nil
+}
+
+func (s *AccountService) Create(req dto.CreateAccountRequest) (*dto.AccountResponse, error) {
+	// 如果没有提供UnitId，使用默认单元
+	unitId := req.UnitId
+	if unitId == 0 {
+		var unitCount int64
+		database.DB.Model(&entity.AccountingUnit{}).Where("enterprise_id = ? AND status = 1", req.EnterpriseId).Count(&unitCount)
+		if unitCount == 0 {
+			// 创建默认单元
+			defaultUnit := &entity.AccountingUnit{
+				EnterpriseId: req.EnterpriseId,
+				Name:         "默认单元",
+				Type:         "main",
+				Level:        1,
+				Status:       1,
+			}
+			if err := database.DB.Create(defaultUnit).Error; err != nil {
+				return nil, errors.New("创建默认单元失败")
+			}
+			unitId = defaultUnit.UnitId
+		} else {
+			var unit entity.AccountingUnit
+			database.DB.Where("enterprise_id = ? AND status = 1", req.EnterpriseId).First(&unit)
+			unitId = unit.UnitId
+		}
+	}
+
+	account := &entity.Account{
+		EnterpriseId: req.EnterpriseId,
+		UnitId:       unitId,
+		Type:         req.Type,
+		Name:         req.Name,
+		AccountNo:    req.AccountNo,
+		BankCardType: req.BankCardType,
+		Balance:      req.Balance,
+		Status:       1,
+	}
+
+	if err := database.DB.Create(account).Error; err != nil {
+		return nil, errors.New("创建账户失败")
+	}
+
+	response := &dto.AccountResponse{
+		AccountId:    account.AccountId,
+		EnterpriseId: account.EnterpriseId,
+		UnitId:       account.UnitId,
+		Type:         account.Type,
+		Name:         account.Name,
+		AccountNo:    account.AccountNo,
+		BankCardType: account.BankCardType,
+		Balance:      account.Balance,
+		Status:       account.Status,
+		CreatedAt:    account.CreatedAt.Format("2006-01-02 15:04:05"),
+	}
+
+	return response, nil
+}
+
+func (s *AccountService) Update(accountId int64, req dto.UpdateAccountRequest) (*dto.AccountResponse, error) {
+	var account entity.Account
+	if err := database.DB.Where("account_id = ?", accountId).First(&account).Error; err != nil {
+		return nil, errors.New("账户不存在")
+	}
+
+	// 更新字段
+	updates := map[string]interface{}{}
+	if req.Name != "" {
+		updates["name"] = req.Name
+	}
+	if req.AccountNo != "" {
+		updates["account_no"] = req.AccountNo
+	}
+	if req.BankCardType != "" {
+		updates["bank_card_type"] = req.BankCardType
+	}
+	if req.Balance != account.Balance {
+		updates["balance"] = req.Balance
+	}
+
+	if len(updates) > 0 {
+		updates["updated_at"] = time.Now()
+		if err := database.DB.Model(&account).Updates(updates).Error; err != nil {
+			return nil, errors.New("更新账户失败")
+		}
+		// 重新加载
+		database.DB.Where("account_id = ?", accountId).First(&account)
+	}
+
+	response := &dto.AccountResponse{
+		AccountId:    account.AccountId,
+		EnterpriseId: account.EnterpriseId,
+		UnitId:       account.UnitId,
+		Type:         account.Type,
+		Name:         account.Name,
+		AccountNo:    account.AccountNo,
+		BankCardType: account.BankCardType,
+		Balance:      account.Balance,
+		Status:       account.Status,
+		CreatedAt:    account.CreatedAt.Format("2006-01-02 15:04:05"),
+	}
+	return response, nil
+}
+
+func (s *AccountService) Delete(accountId int64) error {
+	var account entity.Account
+	if err := database.DB.Where("account_id = ?", accountId).First(&account).Error; err != nil {
+		return errors.New("账户不存在")
+	}
+
+	// 软删除：将状态置为0
+	if err := database.DB.Model(&account).Update("status", 0).Error; err != nil {
+		return errors.New("删除账户失败")
+	}
+
+	return nil
+}
+
+func (s *AccountService) ListFlows(accountId int64) ([]interface{}, error) {
+	return nil, nil
+}
+
+// ===== AuthService =====
+func (s *AuthService) Login(username, password string) (*dto.UserInfo, string, error) {
+	var user entity.User
+
+	result := database.DB.Where("username = ?", username).First(&user)
+	if result.Error != nil {
+		return nil, "", errors.New("用户名或密码错误")
+	}
+
+	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password)); err != nil {
+		return nil, "", errors.New("用户名或密码错误")
+	}
+
+	if user.Status != 1 {
+		return nil, "", errors.New("账户已被禁用")
+	}
+
+	// 查询用户所属企业
+	var enterpriseId int64
+	var enterpriseName string
+	var member entity.EnterpriseMember
+	if err := database.DB.Where("user_id = ?", user.UserId).First(&member).Error; err == nil {
+		enterpriseId = member.EnterpriseId
+		var enterprise entity.Enterprise
+		if err := database.DB.Where("enterprise_id = ?", enterpriseId).First(&enterprise).Error; err == nil {
+			enterpriseName = enterprise.Name
+		}
+	}
+
+	// 如果用户没有企业，创建一个默认企业
+	if enterpriseId == 0 {
+		enterprise := &entity.Enterprise{
+			Name:          user.Username + "的企业",
+			ContactPerson: user.Username,
+			ContactPhone:  user.Phone,
+			Status:        1,
+		}
+		if err := database.DB.Create(enterprise).Error; err == nil {
+			enterpriseId = enterprise.EnterpriseId
+			enterpriseName = enterprise.Name
+			// 添加用户为企业管理员
+			database.DB.Create(&entity.EnterpriseMember{
+				EnterpriseId: enterpriseId,
+				UserId:       user.UserId,
+				Role:         "owner",
+			})
+		}
+	}
+
+	// 生成包含enterpriseId的token
+	token, err := s.generateToken(user.UserId, enterpriseId, user.Username)
+	if err != nil {
+		return nil, "", errors.New("生成令牌失败")
+	}
+
+	// 保存或更新用户token
+	userToken := entity.UserToken{
+		UserId: user.UserId,
+		Token:  token,
+	}
+	userToken.ExpiresAt = time.Now().Add(24 * time.Hour)
+	database.DB.Where("user_id = ?", user.UserId).Assign(userToken).FirstOrCreate(&userToken)
+
+	userInfo := &dto.UserInfo{
+		UserId:         user.UserId,
+		Username:       user.Username,
+		Phone:          user.Phone,
+		Email:          user.Email,
+		Role:           user.Role,
+		EnterpriseId:   enterpriseId,
+		EnterpriseName: enterpriseName,
+	}
+
+	return userInfo, token, nil
+}
+
+func (s *AuthService) Register(req dto.RegisterRequest) (*dto.UserInfo, error) {
+	var count int64
+	database.DB.Model(&entity.User{}).Where("username = ?", req.Username).Count(&count)
+	if count > 0 {
+		return nil, errors.New("用户名已存在")
+	}
+
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
+	if err != nil {
+		return nil, errors.New("密码加密失败")
+	}
+
+	user := entity.User{
+		Username: req.Username,
+		Password: string(hashedPassword),
+		Phone:    req.Phone,
+		Email:    req.Email,
+		Status:   1,
+		Role:     "user",
+	}
+
+	result := database.DB.Create(&user)
+	if result.Error != nil {
+		return nil, errors.New("创建用户失败")
+	}
+
+	userInfo := &dto.UserInfo{
+		UserId:   user.UserId,
+		Username: user.Username,
+		Phone:    user.Phone,
+		Email:    user.Email,
+		Role:     user.Role,
+	}
+
+	return userInfo, nil
+}
+
+func (s *AuthService) Logout(token string) {
+	database.DB.Where("token = ?", token).Delete(&entity.UserToken{})
+}
+
+func (s *AuthService) GetUserById(userId int64) (*dto.UserInfo, error) {
+	var user entity.User
+	result := database.DB.Where("user_id = ?", userId).First(&user)
+	if result.Error != nil {
+		return nil, errors.New("用户不存在")
+	}
+
+	return &dto.UserInfo{
+		UserId:   user.UserId,
+		Username: user.Username,
+		Phone:    user.Phone,
+		Email:    user.Email,
+		Role:     user.Role,
+	}, nil
+}
+
+func (s *AuthService) generateToken(userId, enterpriseId int64, username string) (string, error) {
+	claims := jwt.MapClaims{
+		"userId":       userId,
+		"enterpriseId": enterpriseId,
+		"username":     username,
+		"jti":          uuid.New().String(),
+		"exp":          time.Now().Add(24 * time.Hour).Unix(),
+		"iat":          time.Now().Unix(),
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	return token.SignedString([]byte(config.JWT_SECRET))
+}
+
+func InitAdminUser() error {
+	var count int64
+	database.DB.Model(&entity.User{}).Where("username = ?", "admin").Count(&count)
+
+	if count == 0 {
+		hashedPassword, err := bcrypt.GenerateFromPassword([]byte("admin"), bcrypt.DefaultCost)
+		if err != nil {
+			return err
+		}
+
+		admin := entity.User{
+			Username: "admin",
+			Password: string(hashedPassword),
+			Phone:    "13800000000",
+			Email:    "admin@mamoji.com",
+			Status:   1,
+			Role:     "admin",
+		}
+
+		if err := database.DB.Create(&admin).Error; err != nil {
+			return err
+		}
+
+		fmt.Println("管理员账户已创建: admin / admin")
+	}
+
+	return nil
+}
+
+// ===== TransactionService =====
+func (s *TransactionService) List(enterpriseId int64, req dto.ListTransactionRequest) ([]dto.TransactionResponse, error) {
+	var transactions []entity.Transaction
+	query := database.DB.Where("enterprise_id = ?", enterpriseId)
+	if req.UnitId > 0 {
+		query = query.Where("unit_id = ?", req.UnitId)
+	}
+	if req.Type != "" {
+		query = query.Where("type = ?", req.Type)
+	}
+	if req.Category != "" {
+		query = query.Where("category = ?", req.Category)
+	}
+	if req.StartDate != "" {
+		query = query.Where("occurred_at >= ?", req.StartDate)
+	}
+	if req.EndDate != "" {
+		query = query.Where("occurred_at <= ?", req.EndDate)
+	}
+
+	page := req.Page
+	if page < 1 {
+		page = 1
+	}
+	pageSize := req.PageSize
+	if pageSize < 1 {
+		pageSize = 20
+	}
+	if pageSize > 100 {
+		pageSize = 100
+	}
+
+	offset := (page - 1) * pageSize
+	if err := query.Order("occurred_at DESC, created_at DESC").Offset(offset).Limit(pageSize).Find(&transactions).Error; err != nil {
+		return nil, errors.New("查询交易记录失败")
+	}
+
+	response := make([]dto.TransactionResponse, 0, len(transactions))
+	for _, tx := range transactions {
+		// 获取账户名称
+		var account entity.Account
+		accountName := ""
+		if tx.AccountId > 0 {
+			database.DB.Where("account_id = ?", tx.AccountId).First(&account)
+			accountName = account.Name
+		}
+
+		response = append(response, dto.TransactionResponse{
+			TransactionId: tx.TransactionId,
+			EnterpriseId:  tx.EnterpriseId,
+			UnitId:        tx.UnitId,
+			UserId:        tx.UserId,
+			Type:          tx.Type,
+			Category:      tx.Category,
+			Amount:        tx.Amount,
+			AccountId:     tx.AccountId,
+			AccountName:   accountName,
+			OccurredAt:    tx.OccurredAt.Format("2006-01-02 15:04:05"),
+			Tags:          parseJSONArray(tx.Tags),
+			Note:          tx.Note,
+			Images:        parseJSONArray(tx.Images),
+			Status:        tx.Status,
+			CreatedAt:     tx.CreatedAt.Format("2006-01-02 15:04:05"),
+		})
+	}
+
+	return response, nil
+}
+
+func (s *TransactionService) GetById(transactionId int64) (*dto.TransactionResponse, error) {
+	var tx entity.Transaction
+	if err := database.DB.Where("transaction_id = ?", transactionId).First(&tx).Error; err != nil {
+		return nil, errors.New("交易记录不存在")
+	}
+
+	var account entity.Account
+	accountName := ""
+	if tx.AccountId > 0 {
+		database.DB.Where("account_id = ?", tx.AccountId).First(&account)
+		accountName = account.Name
+	}
+
+	return &dto.TransactionResponse{
+		TransactionId: tx.TransactionId,
+		EnterpriseId:  tx.EnterpriseId,
+		UnitId:        tx.UnitId,
+		UserId:        tx.UserId,
+		Type:          tx.Type,
+		Category:      tx.Category,
+		Amount:        tx.Amount,
+		AccountId:     tx.AccountId,
+		AccountName:   accountName,
+		OccurredAt:    tx.OccurredAt.Format("2006-01-02 15:04:05"),
+		Tags:          parseJSONArray(tx.Tags),
+		Note:          tx.Note,
+		Images:        parseJSONArray(tx.Images),
+		Status:        tx.Status,
+		CreatedAt:     tx.CreatedAt.Format("2006-01-02 15:04:05"),
+	}, nil
+}
+
+func (s *TransactionService) Create(enterpriseId int64, req dto.CreateTransactionRequest) (*dto.TransactionResponse, error) {
+	// 如果没有提供UnitId，使用默认单元
+	unitId := req.UnitId
+	if unitId == 0 {
+		var unitCount int64
+		database.DB.Model(&entity.AccountingUnit{}).Where("enterprise_id = ? AND status = 1", enterpriseId).Count(&unitCount)
+		if unitCount == 0 {
+			defaultUnit := &entity.AccountingUnit{
+				EnterpriseId: enterpriseId,
+				Name:         "默认单元",
+				Type:         "main",
+				Level:        1,
+				Status:       1,
+			}
+			if err := database.DB.Create(defaultUnit).Error; err != nil {
+				return nil, errors.New("创建默认单元失败")
+			}
+			unitId = defaultUnit.UnitId
+		} else {
+			var unit entity.AccountingUnit
+			database.DB.Where("enterprise_id = ? AND status = 1", enterpriseId).First(&unit)
+			unitId = unit.UnitId
+		}
+	}
+
+	// 解析OccurredAt时间
+	var occurredAt time.Time
+	if req.OccurredAt != "" {
+		// 尝试多种日期格式
+		formats := []string{
+			"2006-01-02 15:04:05",
+			"2006-01-02",
+			"2006/01/02 15:04:05",
+			"2006/01/02",
+		}
+		for _, format := range formats {
+			if t, err := time.Parse(format, req.OccurredAt); err == nil {
+				occurredAt = t
+				break
+			}
+		}
+	}
+	if occurredAt.IsZero() {
+		occurredAt = time.Now()
+	}
+
+	// 处理tags和images为JSON字符串
+	tagsJSON := "[]"
+	if len(req.Tags) > 0 {
+		tagsJSON = `["` + joinStrings(req.Tags, `","`) + `"]`
+	}
+	imagesJSON := "[]"
+	if len(req.Images) > 0 {
+		imagesJSON = `["` + joinStrings(req.Images, `","`) + `"]`
+	}
+	// 处理ecommerceInfo为JSON字符串，空字符串转为null
+	ecommerceInfoJSON := "null"
+	if req.EcommerceInfo != "" {
+		ecommerceInfoJSON = req.EcommerceInfo
+	}
+
+	tx := &entity.Transaction{
+		EnterpriseId:  enterpriseId,
+		UnitId:        unitId,
+		UserId:        req.UserId,
+		Type:          req.Type,
+		Category:      req.Category,
+		Amount:        req.Amount,
+		AccountId:     req.AccountId,
+		OccurredAt:    occurredAt,
+		Tags:          tagsJSON,
+		Note:          req.Note,
+		Images:        imagesJSON,
+		EcommerceInfo: ecommerceInfoJSON,
+		Status:        1,
+	}
+
+	if err := database.DB.Create(tx).Error; err != nil {
+		return nil, errors.New("创建交易记录失败")
+	}
+
+	// 更新账户余额
+	if tx.AccountId > 0 {
+		var account entity.Account
+		if err := database.DB.Where("account_id = ?", tx.AccountId).First(&account).Error; err == nil {
+			balanceChange := req.Amount
+			if req.Type == "expense" {
+				balanceChange = -req.Amount
+			}
+			database.DB.Model(&account).Update("balance", account.Balance+balanceChange)
+		}
+	}
+
+	response := &dto.TransactionResponse{
+		TransactionId: tx.TransactionId,
+		EnterpriseId:  tx.EnterpriseId,
+		UnitId:        tx.UnitId,
+		UserId:        tx.UserId,
+		Type:          tx.Type,
+		Category:      tx.Category,
+		Amount:        tx.Amount,
+		AccountId:     tx.AccountId,
+		OccurredAt:    tx.OccurredAt.Format("2006-01-02 15:04:05"),
+		Tags:          req.Tags,
+		Note:          tx.Note,
+		Status:        tx.Status,
+		CreatedAt:     tx.CreatedAt.Format("2006-01-02 15:04:05"),
+	}
+
+	return response, nil
+}
+
+func (s *TransactionService) Update(transactionId int64, req dto.UpdateTransactionRequest) (*dto.TransactionResponse, error) {
+	var tx entity.Transaction
+	if err := database.DB.Where("transaction_id = ?", transactionId).First(&tx).Error; err != nil {
+		return nil, errors.New("交易记录不存在")
+	}
+
+	// 计算金额变化，调整账户余额
+	oldAmount := tx.Amount
+	oldType := tx.Type
+	oldAccountId := tx.AccountId
+
+	// 更新字段
+	updates := map[string]interface{}{}
+	if req.Type != "" {
+		updates["type"] = req.Type
+	}
+	if req.Category != "" {
+		updates["category"] = req.Category
+	}
+	if req.Amount > 0 {
+		updates["amount"] = req.Amount
+	}
+	if req.AccountId > 0 {
+		updates["account_id"] = req.AccountId
+	}
+	if req.OccurredAt != "" {
+		// 解析日期
+		if parsedTime, err := time.Parse("2006-01-02", req.OccurredAt); err == nil {
+			updates["occurred_at"] = parsedTime
+		}
+	}
+	if req.Note != "" {
+		updates["note"] = req.Note
+	}
+	if req.Tags != nil {
+		tagsJSON, _ := json.Marshal(req.Tags)
+		updates["tags"] = string(tagsJSON)
+	}
+	if req.Images != nil {
+		imagesJSON, _ := json.Marshal(req.Images)
+		updates["images"] = string(imagesJSON)
+	}
+
+	if len(updates) > 0 {
+		updates["updated_at"] = time.Now()
+		if err := database.DB.Model(&tx).Updates(updates).Error; err != nil {
+			return nil, errors.New("更新交易记录失败")
+		}
+		// 重新加载
+		database.DB.Where("transaction_id = ?", transactionId).First(&tx)
+	}
+
+	// 如果金额或类型或账户发生变化，需要调整账户余额
+	if req.Amount > 0 && (req.Amount != oldAmount || req.Type != "" || req.AccountId > 0) {
+		// 恢复旧账户的旧金额影响
+		if oldAccountId > 0 {
+			var oldAccount entity.Account
+			if database.DB.Where("account_id = ?", oldAccountId).First(&oldAccount).Error == nil {
+				if oldType == "expense" {
+					database.DB.Model(&oldAccount).Update("balance", oldAccount.Balance+oldAmount)
+				} else if oldType == "income" {
+					database.DB.Model(&oldAccount).Update("balance", oldAccount.Balance-oldAmount)
+				}
+			}
+		}
+
+		// 应用新金额到新账户
+		newAccountId := req.AccountId
+		if newAccountId == 0 {
+			newAccountId = oldAccountId
+		}
+		newType := req.Type
+		if newType == "" {
+			newType = oldType
+		}
+		newAmount := req.Amount
+
+		if newAccountId > 0 {
+			var newAccount entity.Account
+			if database.DB.Where("account_id = ?", newAccountId).First(&newAccount).Error == nil {
+				if newType == "expense" {
+					database.DB.Model(&newAccount).Update("balance", newAccount.Balance-newAmount)
+				} else if newType == "income" {
+					database.DB.Model(&newAccount).Update("balance", newAccount.Balance+newAmount)
+				}
+			}
+		}
+	}
+
+	// 获取账户名称
+	var account entity.Account
+	accountName := ""
+	if tx.AccountId > 0 {
+		database.DB.Where("account_id = ?", tx.AccountId).First(&account)
+		accountName = account.Name
+	}
+
+	response := &dto.TransactionResponse{
+		TransactionId: tx.TransactionId,
+		EnterpriseId:  tx.EnterpriseId,
+		UnitId:        tx.UnitId,
+		UserId:        tx.UserId,
+		Type:          tx.Type,
+		Category:      tx.Category,
+		Amount:        tx.Amount,
+		AccountId:     tx.AccountId,
+		AccountName:   accountName,
+		OccurredAt:    tx.OccurredAt.Format("2006-01-02 15:04:05"),
+		Tags:          parseJSONArray(tx.Tags),
+		Note:          tx.Note,
+		Images:        parseJSONArray(tx.Images),
+		Status:        tx.Status,
+		CreatedAt:     tx.CreatedAt.Format("2006-01-02 15:04:05"),
+	}
+	return response, nil
+}
+
+func (s *TransactionService) Delete(transactionId int64) error {
+	// 先查询记录是否存在
+	var tx entity.Transaction
+	if err := database.DB.Where("transaction_id = ?", transactionId).First(&tx).Error; err != nil {
+		return errors.New("交易记录不存在")
+	}
+
+	// 更新账户余额（反向操作）
+	if tx.AccountId > 0 && tx.Type == "expense" {
+		// 支出删除时，恢复账户余额
+		var account entity.Account
+		if err := database.DB.Where("account_id = ?", tx.AccountId).First(&account).Error; err == nil {
+			database.DB.Model(&account).Update("balance", account.Balance+tx.Amount)
+		}
+	} else if tx.AccountId > 0 && tx.Type == "income" {
+		// 收入删除时，扣减账户余额
+		var account entity.Account
+		if err := database.DB.Where("account_id = ?", tx.AccountId).First(&account).Error; err == nil {
+			database.DB.Model(&account).Update("balance", account.Balance-tx.Amount)
+		}
+	}
+
+	// 删除记录
+	if err := database.DB.Delete(&tx).Error; err != nil {
+		return errors.New("删除交易记录失败")
+	}
+
+	return nil
+}
+
+// ===== BudgetService =====
+func (s *BudgetService) List(enterpriseId int64) ([]dto.BudgetResponse, error) {
+	return nil, nil
+}
+
+func (s *BudgetService) GetById(budgetId int64) (*dto.BudgetResponse, error) {
+	return nil, nil
+}
+
+func (s *BudgetService) Create(enterpriseId int64, req dto.CreateBudgetRequest) (*dto.BudgetResponse, error) {
+	return nil, nil
+}
+
+func (s *BudgetService) Update(budgetId int64, req dto.UpdateBudgetRequest) (*dto.BudgetResponse, error) {
+	return nil, nil
+}
+
+func (s *BudgetService) Delete(budgetId int64) error {
+	return nil
+}
+
+// ===== InvestmentService =====
+func (s *InvestmentService) List(enterpriseId int64) ([]dto.InvestmentResponse, error) {
+	return nil, nil
+}
+
+func (s *InvestmentService) GetById(investmentId int64) (*dto.InvestmentResponse, error) {
+	return nil, nil
+}
+
+func (s *InvestmentService) Create(enterpriseId int64, req dto.CreateInvestmentRequest) (*dto.InvestmentResponse, error) {
+	return nil, nil
+}
+
+func (s *InvestmentService) Update(investmentId int64, req dto.UpdateInvestmentRequest) (*dto.InvestmentResponse, error) {
+	return nil, nil
+}
+
+func (s *InvestmentService) Delete(investmentId int64) error {
+	return nil
+}
+
+// ===== ReportService =====
+func (s *ReportService) GetReport(enterpriseId int64, req interface{}) (interface{}, error) {
+	return nil, nil
+}
+
+func (s *ReportService) GetOverview(enterpriseId int64, req interface{}) (interface{}, error) {
+	return nil, nil
+}
+
+func (s *ReportService) GetCategory(enterpriseId int64, req interface{}) (interface{}, error) {
+	return nil, nil
+}
+
+func (s *ReportService) GetTrend(enterpriseId int64, req interface{}) (interface{}, error) {
+	return nil, nil
+}
+
+func (s *ReportService) GetBalanceSheet(enterpriseId int64, req interface{}) (interface{}, error) {
+	return nil, nil
+}
+
+func (s *ReportService) GetProfitLoss(enterpriseId int64, req interface{}) (interface{}, error) {
+	return nil, nil
+}
+
+// ===== Helper functions =====
+
+// parseJSONArray 解析JSON数组字符串为[]string
+func parseJSONArray(jsonStr string) []string {
+	if jsonStr == "" || jsonStr == "[]" {
+		return []string{}
+	}
+	// 简单解析，去掉首尾的[]，按逗号分割
+	jsonStr = strings.TrimPrefix(jsonStr, "[")
+	jsonStr = strings.TrimSuffix(jsonStr, "]")
+	// 处理引号
+	items := strings.Split(jsonStr, ",")
+	result := make([]string, 0, len(items))
+	for _, item := range items {
+		item = strings.TrimSpace(item)
+		item = strings.Trim(item, `"`)
+		if item != "" {
+			result = append(result, item)
+		}
+	}
+	return result
+}
+
+// joinStrings 将字符串数组合并为JSON数组字符串
+func joinStrings(items []string, sep string) string {
+	return strings.Join(items, sep)
+}
+
+func Save(entity Interface) error {
+	return database.DB.Save(entity).Error
+}
+
+func FindAll(model Interface, dest interface{}) error {
+	return database.DB.Find(dest).Error
+}
+
+func FindOne(model Interface, dest interface{}, conds ...interface{}) error {
+	return database.DB.First(dest, conds...).Error
+}
+
+func Delete(model Interface, conds ...interface{}) error {
+	return database.DB.Delete(model, conds...).Error
+}
+
+// TableName implementations for legacy types
+func (User) TableName() string             { return "users" }
+func (UserToken) TableName() string        { return "user_tokens" }
+func (Enterprise) TableName() string       { return "enterprises" }
+func (EnterpriseMember) TableName() string { return "enterprise_members" }
+func (AccountingUnit) TableName() string   { return "accounting_units" }
+func (UnitPermission) TableName() string   { return "unit_permissions" }
+func (Account) TableName() string          { return "accounts" }
+func (AccountFlow) TableName() string      { return "account_flows" }
+func (Transaction) TableName() string      { return "transactions" }
+func (Budget) TableName() string           { return "budgets" }
+func (BudgetApproval) TableName() string   { return "budget_approvals" }
+func (Investment) TableName() string       { return "investments" }
+func (InvestRecord) TableName() string     { return "invest_records" }
+func (Notification) TableName() string     { return "notifications" }
+func (PushConfig) TableName() string       { return "push_configs" }
+func (PushLog) TableName() string          { return "push_logs" }
+
+// Legacy type definitions
+type User struct{}
+type UserToken struct{}
+type Enterprise struct{}
+type EnterpriseMember struct{}
+type AccountingUnit struct{}
+type UnitPermission struct{}
+type Account struct{}
+type AccountFlow struct{}
+type Transaction struct{}
+type Budget struct{}
+type BudgetApproval struct{}
+type Investment struct{}
+type InvestRecord struct{}
+type Notification struct{}
+type PushConfig struct{}
+type PushLog struct{}

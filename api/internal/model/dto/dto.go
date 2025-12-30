@@ -84,7 +84,7 @@ type ListTransactionRequest struct {
 // CreateTransactionRequest 创建交易请求
 type CreateTransactionRequest struct {
 	EnterpriseId  int64    `json:"enterpriseId"`
-	UnitId        int64    `json:"unitId" binding:"required"`
+	UnitId        int64    `json:"unitId"`
 	UserId        int64    `json:"userId"`
 	Type          string   `json:"type" binding:"required,oneof=income expense"`
 	Category      string   `json:"category" binding:"required"`

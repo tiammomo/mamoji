@@ -14,7 +14,7 @@ import (
 func ListInvestments(ctx context.Context, c *app.RequestContext) {
 	enterpriseId := c.GetInt64("enterpriseId")
 
-	investments, err := service.InvestmentService.List(enterpriseId)
+	investments, err := service.InvestmentServiceInst.List(enterpriseId)
 	if err != nil {
 		c.JSON(200, utils.H{
 			"code":    500,
@@ -33,7 +33,7 @@ func ListInvestments(ctx context.Context, c *app.RequestContext) {
 func GetInvestment(ctx context.Context, c *app.RequestContext) {
 	investmentId, _ := strconv.ParseInt(c.Param("investmentId"), 10, 64)
 
-	investment, err := service.InvestmentService.GetById(investmentId)
+	investment, err := service.InvestmentServiceInst.GetById(investmentId)
 	if err != nil {
 		c.JSON(200, utils.H{
 			"code":    404,
@@ -62,7 +62,7 @@ func CreateInvestment(ctx context.Context, c *app.RequestContext) {
 	enterpriseId := c.GetInt64("enterpriseId")
 	req.EnterpriseId = enterpriseId
 
-	investment, err := service.InvestmentService.Create(enterpriseId, req)
+	investment, err := service.InvestmentServiceInst.Create(enterpriseId, req)
 	if err != nil {
 		c.JSON(200, utils.H{
 			"code":    500,
@@ -91,7 +91,7 @@ func UpdateInvestment(ctx context.Context, c *app.RequestContext) {
 		return
 	}
 
-	investment, err := service.InvestmentService.Update(investmentId, req)
+	investment, err := service.InvestmentServiceInst.Update(investmentId, req)
 	if err != nil {
 		c.JSON(200, utils.H{
 			"code":    500,
@@ -111,7 +111,7 @@ func UpdateInvestment(ctx context.Context, c *app.RequestContext) {
 func DeleteInvestment(ctx context.Context, c *app.RequestContext) {
 	investmentId, _ := strconv.ParseInt(c.Param("investmentId"), 10, 64)
 
-	err := service.InvestmentService.Delete(investmentId)
+	err := service.InvestmentServiceInst.Delete(investmentId)
 	if err != nil {
 		c.JSON(200, utils.H{
 			"code":    500,

@@ -1,0 +1,789 @@
+'use client';
+
+import { useState, useEffect, useMemo } from 'react';
+import { Header } from '@/components/layout';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '@/components/ui/dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Label } from '@/components/ui/label';
+import { useToast } from '@/components/ui/use-toast';
+import {
+  Plus,
+  Search,
+  ArrowUpRight,
+  ArrowDownRight,
+  Filter,
+  Download,
+  Calendar,
+  X,
+  Edit,
+  Trash2,
+} from 'lucide-react';
+import { formatCurrency, formatDate, downloadCSV } from '@/lib/utils';
+import {
+  TRANSACTION_TYPE,
+  INCOME_CATEGORY_LABELS,
+  EXPENSE_CATEGORY_LABELS,
+} from '@/lib/constants';
+import { get, post, put, del } from '@/lib/api';
+
+// 交易类型 - 使用string类型以兼容后端返回的任何值
+type TransactionType = string;
+
+// 交易数据
+interface Transaction {
+  transactionId: number;
+  type: TransactionType;
+  category: string;
+  amount: number;
+  note: string;
+  accountId: number;
+  accountName: string;
+  occurredAt: string;
+  tags: string[];
+  images?: string[];
+  status?: number;
+  createdAt?: string;
+}
+
+// 表单数据
+interface TransactionFormData {
+  type: TransactionType;
+  amount: string;
+  category: string;
+  accountId: string;
+  date: string;
+  note: string;
+}
+
+export default function TransactionsPage() {
+  const { toast } = useToast();
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [accounts, setAccounts] = useState<{ accountId: number; name: string }[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [activeTab, setActiveTab] = useState('all');
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
+  const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
+
+  // 筛选状态
+  const [filter, setFilter] = useState({
+    type: '',
+    category: '',
+    accountId: '',
+    dateRange: '',
+  });
+
+  // 表单状态
+  const [formData, setFormData] = useState<TransactionFormData>({
+    type: 'expense',
+    amount: '',
+    category: '',
+    accountId: '',
+    date: formatDate(new Date(), 'YYYY-MM-DD'),
+    note: '',
+  });
+
+  // 加载数据
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (isInitialLoading) {
+        console.log('[Transactions] 加载超时，强制结束loading状态');
+        setIsInitialLoading(false);
+      }
+    }, 5000); // 5秒超时
+
+    fetchTransactions();
+    fetchAccounts();
+
+    return () => clearTimeout(timer);
+  }, []);
+
+  const fetchTransactions = async () => {
+    try {
+      const response = await get<Transaction[]>('/api/v1/transactions');
+      const transactions = response || [];
+      setTransactions(transactions);
+    } catch (error) {
+      console.error('获取交易记录失败:', error);
+      setTransactions([]);
+      toast({
+        title: '加载失败',
+        description: '无法加载交易记录',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsInitialLoading(false);
+    }
+  };
+
+  const fetchAccounts = async () => {
+    try {
+      const data = await get<{ accountId: number; name: string }[]>('/api/v1/accounts');
+      setAccounts(data || []);
+    } catch (error) {
+      console.error('无法加载账户列表');
+    }
+  };
+
+  const filteredTransactions = useMemo(() => {
+    return transactions.filter((tx) => {
+      const txType = String(tx.type).trim();
+      const tabValue = activeTab.trim();
+
+      const typeMatches = tabValue === 'all' ||
+        (tabValue === 'income' && txType === 'income') ||
+        (tabValue === 'expense' && txType === 'expense');
+
+      const matchesSearch = !searchQuery ||
+        (tx.note?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false) ||
+        (tx.tags?.some((tag) => (tag?.toLowerCase() ?? '').includes(searchQuery.toLowerCase())) ?? false);
+
+      const matchesFilter = (!filter.type || String(tx.type).trim() === filter.type.trim()) &&
+        (!filter.category || tx.category === filter.category) &&
+        (!filter.accountId || tx.accountId.toString() === filter.accountId);
+
+      return typeMatches && matchesSearch && matchesFilter;
+    });
+  }, [transactions, activeTab, searchQuery, filter]);
+
+  const totalIncome = transactions
+    .filter((tx) => tx.type === 'income')
+    .reduce((sum, tx) => sum + tx.amount, 0);
+
+  const totalExpense = transactions
+    .filter((tx) => tx.type === 'expense')
+    .reduce((sum, tx) => sum + tx.amount, 0);
+
+  // 打开新增对话框
+  const handleAddTransaction = () => {
+    setEditingTransaction(null);
+    setFormData({
+      type: 'expense',
+      amount: '',
+      category: '',
+      accountId: '',
+      date: formatDate(new Date(), 'YYYY-MM-DD'),
+      note: '',
+    });
+    setIsDialogOpen(true);
+  };
+
+  // 编辑交易
+  const handleEditClick = (tx: Transaction) => {
+    setEditingTransaction(tx);
+    setFormData({
+      type: tx.type,
+      amount: tx.amount.toString(),
+      category: tx.category,
+      accountId: tx.accountId.toString(),
+      date: formatDate(tx.occurredAt, 'YYYY-MM-DD'),
+      note: tx.note,
+    });
+    setIsDialogOpen(true);
+  };
+
+  // 删除交易
+  const handleDeleteClick = async (transactionId: number) => {
+    if (!confirm('确定要删除这条记录吗？')) return;
+
+    try {
+      await del(`/api/v1/transactions/${transactionId}`);
+      setTransactions((prev) => prev.filter((t) => t.transactionId !== transactionId));
+      toast({
+        title: '删除成功',
+        description: '交易记录已删除',
+      });
+    } catch (error) {
+      console.error('删除失败:', error);
+      toast({
+        title: '删除失败',
+        description: '请稍后重试',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  // 选择交易类型
+  const handleTypeSelect = (type: TransactionType) => {
+    setFormData({ ...formData, type, category: '' });
+  };
+
+  // 提交表单
+  const handleSubmit = async () => {
+    if (!formData.amount || parseFloat(formData.amount) <= 0) {
+      toast({
+        title: '验证失败',
+        description: '请输入有效金额',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (!formData.category) {
+      toast({
+        title: '验证失败',
+        description: '请选择分类',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (!formData.accountId) {
+      toast({
+        title: '验证失败',
+        description: '请选择账户',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const transactionData = {
+        type: formData.type,
+        amount: parseFloat(formData.amount),
+        category: formData.category,
+        accountId: parseInt(formData.accountId),
+        occurredAt: formData.date,
+        note: formData.note,
+      };
+
+      // 获取账户名称
+      const account = accounts.find((a) => a.accountId === parseInt(formData.accountId));
+
+      if (editingTransaction) {
+        // 编辑模式
+        await put<Transaction>(`/api/v1/transactions/${editingTransaction.transactionId}`, transactionData);
+        setTransactions((prev) =>
+          prev.map((t) =>
+            t.transactionId === editingTransaction.transactionId
+              ? { ...t, ...transactionData, accountName: account?.name || t.accountName }
+              : t
+          )
+        );
+        toast({
+          title: '保存成功',
+          description: '交易记录已更新',
+        });
+      } else {
+        // 新增模式
+        const newTransaction = await post<Transaction>('/api/v1/transactions', transactionData);
+        // 确保账户名称正确显示
+        if (account) {
+          newTransaction.accountName = account.name;
+        }
+        setTransactions((prev) => [newTransaction, ...prev]);
+        toast({
+          title: '保存成功',
+          description: '交易记录已添加',
+        });
+      }
+
+      setIsDialogOpen(false);
+    } catch (error) {
+      toast({
+        title: '保存失败',
+        description: '请稍后重试',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // 导出数据
+  const handleExport = () => {
+    const data = filteredTransactions.map((tx) => ({
+      日期: formatDate(tx.occurredAt, 'YYYY-MM-DD'),
+      类型: tx.type === 'income' ? '收入' : '支出',
+      分类: tx.type === 'income'
+        ? INCOME_CATEGORY_LABELS[tx.category as keyof typeof INCOME_CATEGORY_LABELS]
+        : EXPENSE_CATEGORY_LABELS[tx.category as keyof typeof EXPENSE_CATEGORY_LABELS],
+      金额: tx.amount,
+      账户: tx.accountName,
+      备注: tx.note,
+    }));
+
+    const csvContent = downloadCSV(data);
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `交易记录_${formatDate(new Date(), 'YYYY-MM-DD')}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+
+    toast({
+      title: '导出成功',
+      description: `已导出 ${filteredTransactions.length} 条记录`,
+    });
+  };
+
+  // 清空筛选
+  const handleClearFilter = () => {
+    setFilter({ type: '', category: '', accountId: '', dateRange: '' });
+    setIsFilterOpen(false);
+  };
+
+  return (
+    <div className="p-6 space-y-6">
+      <Header
+        title="收支记录"
+        subtitle="管理所有收入和支出"
+      />
+
+      {/* Summary */}
+      <div className="grid gap-4 md:grid-cols-3">
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              总收入
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-success">
+              +{formatCurrency(totalIncome)}
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              总支出
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-destructive">
+              -{formatCurrency(totalExpense)}
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              结余
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {formatCurrency(totalIncome - totalExpense)}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Actions */}
+      <div className="flex items-center justify-between gap-4 flex-wrap">
+        <div className="relative max-w-md flex-1 min-w-[200px]">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input
+            placeholder="搜索账单..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-9"
+          />
+        </div>
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={() => setIsFilterOpen(true)}>
+            <Filter className="w-4 h-4 mr-2" />
+            筛选
+            {(filter.type || filter.category || filter.accountId) && (
+              <Badge variant="secondary" className="ml-2 h-5">
+                已筛选
+              </Badge>
+            )}
+          </Button>
+          <Button variant="outline" size="sm" onClick={handleExport}>
+            <Download className="w-4 h-4 mr-2" />
+            导出
+          </Button>
+          <Button size="sm" onClick={handleAddTransaction}>
+            <Plus className="w-4 h-4 mr-2" />
+            记一笔
+          </Button>
+        </div>
+      </div>
+
+      {/* Tabs */}
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <TabsList>
+          <TabsTrigger value="all">全部</TabsTrigger>
+          <TabsTrigger value="income">收入</TabsTrigger>
+          <TabsTrigger value="expense">支出</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value={activeTab} className="mt-4">
+          <Card>
+            <CardContent className="pt-6">
+              <div className="space-y-4">
+                {isInitialLoading ? (
+                  <div className="text-center py-12">
+                    <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+                    <p className="text-muted-foreground">加载中...</p>
+                  </div>
+                ) : filteredTransactions.length === 0 ? (
+                  <div className="text-center py-12">
+                    <Search className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                    <p className="text-muted-foreground">暂无记录</p>
+                    <Button className="mt-4" onClick={handleAddTransaction}>
+                      <Plus className="w-4 h-4 mr-2" />
+                      添加第一笔记录
+                    </Button>
+                  </div>
+                ) : (
+                  filteredTransactions.map((tx) => (
+                    <div
+                      key={tx.transactionId}
+                      className="flex items-center justify-between p-4 border rounded-lg hover:bg-accent/50 transition-colors"
+                    >
+                      <div className="flex items-center gap-4">
+                        <div
+                          className={`w-12 h-12 rounded-full flex items-center justify-center ${
+                            tx.type === 'income' ? 'bg-success/10' : 'bg-destructive/10'
+                          }`}
+                        >
+                          {tx.type === 'income' ? (
+                            <ArrowUpRight className="w-6 h-6 text-success" />
+                          ) : (
+                            <ArrowDownRight className="w-6 h-6 text-destructive" />
+                          )}
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <p className="font-medium">{tx.note}</p>
+                            <Badge variant="outline" className="text-xs">
+                              {tx.type === 'income'
+                                ? INCOME_CATEGORY_LABELS[tx.category as keyof typeof INCOME_CATEGORY_LABELS]
+                                : EXPENSE_CATEGORY_LABELS[tx.category as keyof typeof EXPENSE_CATEGORY_LABELS]}
+                            </Badge>
+                          </div>
+                          <div className="flex items-center gap-2 mt-1 text-sm text-muted-foreground">
+                            <span>{tx.accountName}</span>
+                            <span>·</span>
+                            <span>{formatDate(tx.occurredAt, 'YYYY-MM-DD')}</span>
+                            {tx.tags && tx.tags.length > 0 && (
+                              <>
+                                <span>·</span>
+                                <span>{tx.tags.join(', ')}</span>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-4">
+                        <span
+                          className={`text-lg font-semibold ${
+                            tx.type === 'income' ? 'text-success' : 'text-destructive'
+                          }`}
+                        >
+                          {tx.type === 'income' ? '+' : '-'}
+                          {formatCurrency(tx.amount)}
+                        </span>
+                        <div className="flex items-center gap-1">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleEditClick(tx)}
+                            title="编辑"
+                          >
+                            <Edit className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleDeleteClick(tx.transactionId)}
+                            title="删除"
+                            className="text-destructive hover:text-destructive"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+
+      {/* Add/Edit Transaction Dialog */}
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>{editingTransaction ? '编辑交易' : '记一笔'}</DialogTitle>
+            <DialogDescription>
+              {editingTransaction ? '修改交易记录信息' : '添加新的收入或支出记录'}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            {/* 类型选择 */}
+            <div className="space-y-2">
+              <Label>类型 *</Label>
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  variant={formData.type === 'income' ? 'default' : 'outline'}
+                  className={`flex-1 ${
+                    formData.type === 'income'
+                      ? 'bg-success hover:bg-success/90'
+                      : 'border-success text-success hover:bg-success/10'
+                  }`}
+                  onClick={() => handleTypeSelect('income')}
+                >
+                  <ArrowUpRight className="w-4 h-4 mr-2" />
+                  收入
+                </Button>
+                <Button
+                  type="button"
+                  variant={formData.type === 'expense' ? 'destructive' : 'outline'}
+                  className={`flex-1 ${
+                    formData.type === 'expense'
+                      ? ''
+                      : 'border-destructive text-destructive hover:bg-destructive/10'
+                  }`}
+                  onClick={() => handleTypeSelect('expense')}
+                >
+                  <ArrowDownRight className="w-4 h-4 mr-2" />
+                  支出
+                </Button>
+              </div>
+            </div>
+
+            {/* 金额 */}
+            <div className="space-y-2">
+              <Label htmlFor="amount">金额 *</Label>
+              <Input
+                id="amount"
+                type="number"
+                placeholder="0.00"
+                value={formData.amount}
+                onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
+              />
+            </div>
+
+            {/* 分类 */}
+            <div className="space-y-2">
+              <Label htmlFor="category">分类 *</Label>
+              <Select
+                value={formData.category}
+                onValueChange={(value) => setFormData({ ...formData, category: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="选择分类" />
+                </SelectTrigger>
+                <SelectContent>
+                  {formData.type === 'income' ? (
+                    // 收入类型：只显示收入分类
+                    Object.entries(INCOME_CATEGORY_LABELS).map(([value, label]) => (
+                      <SelectItem key={value} value={value}>
+                        {label}
+                      </SelectItem>
+                    ))
+                  ) : formData.type === 'expense' ? (
+                    // 支出类型：只显示支出分类
+                    Object.entries(EXPENSE_CATEGORY_LABELS).map(([value, label]) => (
+                      <SelectItem key={value} value={value}>
+                        {label}
+                      </SelectItem>
+                    ))
+                  ) : (
+                    // 默认：显示所有分类
+                    <>
+                      <div className="text-xs font-medium text-muted-foreground px-2 py-1">
+                        收入分类
+                      </div>
+                      {Object.entries(INCOME_CATEGORY_LABELS).map(([value, label]) => (
+                        <SelectItem key={value} value={value}>
+                          {label}
+                        </SelectItem>
+                      ))}
+                      <div className="border-t my-1" />
+                      <div className="text-xs font-medium text-muted-foreground px-2 py-1">
+                        支出分类
+                      </div>
+                      {Object.entries(EXPENSE_CATEGORY_LABELS).map(([value, label]) => (
+                        <SelectItem key={value} value={value}>
+                          {label}
+                        </SelectItem>
+                      ))}
+                    </>
+                  )}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* 账户 */}
+            <div className="space-y-2">
+              <Label htmlFor="account">账户 *</Label>
+              <Select
+                value={formData.accountId}
+                onValueChange={(value) => setFormData({ ...formData, accountId: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="选择账户" />
+                </SelectTrigger>
+                <SelectContent>
+                  {accounts.length > 0 ? (
+                    accounts.map((account) => (
+                      <SelectItem key={account.accountId} value={account.accountId.toString()}>
+                        {account.name}
+                      </SelectItem>
+                    ))
+                  ) : (
+                    <div className="p-2 text-sm text-muted-foreground">暂无可用账户</div>
+                  )}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* 日期 */}
+            <div className="space-y-2">
+              <Label htmlFor="date">日期</Label>
+              <Input
+                id="date"
+                type="date"
+                value={formData.date}
+                onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+              />
+            </div>
+
+            {/* 备注 */}
+            <div className="space-y-2">
+              <Label htmlFor="note">备注</Label>
+              <Input
+                id="note"
+                placeholder="添加备注..."
+                value={formData.note}
+                onChange={(e) => setFormData({ ...formData, note: e.target.value })}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsDialogOpen(false)} disabled={isLoading}>
+              取消
+            </Button>
+            <Button onClick={handleSubmit} disabled={isLoading}>
+              {isLoading ? '保存中...' : '保存'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Filter Dialog */}
+      <Dialog open={isFilterOpen} onOpenChange={setIsFilterOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Filter className="w-4 h-4" />
+              筛选条件
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            {/* 类型筛选 */}
+            <div className="space-y-2">
+              <Label>交易类型</Label>
+              <Select
+                value={filter.type}
+                onValueChange={(value) => setFilter({ ...filter, type: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="全部类型" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">全部类型</SelectItem>
+                  <SelectItem value="income">收入</SelectItem>
+                  <SelectItem value="expense">支出</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* 分类筛选 */}
+            <div className="space-y-2">
+              <Label>分类</Label>
+              <Select
+                value={filter.category}
+                onValueChange={(value) => setFilter({ ...filter, category: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="全部分类" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">全部分类</SelectItem>
+                  <div className="text-xs font-medium text-muted-foreground px-2 py-1">
+                    收入分类
+                  </div>
+                  {Object.entries(INCOME_CATEGORY_LABELS).map(([value, label]) => (
+                    <SelectItem key={value} value={value}>
+                      {label}
+                    </SelectItem>
+                  ))}
+                  <div className="border-t my-1" />
+                  <div className="text-xs font-medium text-muted-foreground px-2 py-1">
+                    支出分类
+                  </div>
+                  {Object.entries(EXPENSE_CATEGORY_LABELS).map(([value, label]) => (
+                    <SelectItem key={value} value={value}>
+                      {label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* 账户筛选 */}
+            <div className="space-y-2">
+              <Label>账户</Label>
+              <Select
+                value={filter.accountId}
+                onValueChange={(value) => setFilter({ ...filter, accountId: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="全部账户" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">全部账户</SelectItem>
+                  {accounts.map((account) => (
+                    <SelectItem key={account.accountId} value={account.accountId.toString()}>
+                      {account.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter className="flex justify-between">
+            <Button variant="ghost" onClick={handleClearFilter}>
+              <X className="w-4 h-4 mr-2" />
+              清空筛选
+            </Button>
+            <Button onClick={() => setIsFilterOpen(false)}>
+              确定
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}

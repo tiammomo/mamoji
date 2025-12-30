@@ -49,6 +49,11 @@ type Config struct {
 
 // Load 加载配置
 func Load() (*Config, error) {
+	return LoadFromPath("config")
+}
+
+// LoadFromPath 从指定路径加载配置
+func LoadFromPath(configPath string) (*Config, error) {
 	v := viper.New()
 
 	// 设置默认值
@@ -72,7 +77,6 @@ func Load() (*Config, error) {
 	v.SetDefault("jwt.expire_time", 24*time.Hour)
 
 	// 从配置文件读取
-	configPath := "config"
 	configName := "config"
 	v.AddConfigPath(configPath)
 	v.SetConfigName(configName)
@@ -96,6 +100,44 @@ func Load() (*Config, error) {
 	return &cfg, nil
 }
 
+// LoadViper 加载 viper 实例（用于测试）
+func LoadViper(configPath string) *viper.Viper {
+	v := viper.New()
+
+	// 设置默认值
+	v.SetDefault("app.name", "mamoji")
+	v.SetDefault("app.host", "0.0.0.0")
+	v.SetDefault("app.port", 8888)
+	v.SetDefault("app.env", "development")
+	v.SetDefault("app.debug", true)
+
+	v.SetDefault("database.host", "localhost")
+	v.SetDefault("database.port", 3306)
+	v.SetDefault("database.max_open_conns", 100)
+	v.SetDefault("database.max_idle_conns", 10)
+	v.SetDefault("database.conn_max_lifetime", time.Hour)
+
+	v.SetDefault("redis.host", "localhost")
+	v.SetDefault("redis.port", 6379)
+	v.SetDefault("redis.db", 0)
+	v.SetDefault("redis.pool_size", 100)
+
+	v.SetDefault("jwt.expire_time", 24*time.Hour)
+
+	// 从配置文件读取
+	v.AddConfigPath(configPath)
+	v.SetConfigName("config")
+	v.SetConfigType("yaml")
+
+	// 环境变量覆盖
+	v.SetEnvPrefix("MAMOJI")
+	v.AutomaticEnv()
+
+	v.ReadInConfig()
+
+	return v
+}
+
 // DSN 获取MySQL DSN
 func (c *Config) DSN() string {
 	return fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?charset=utf8mb4&parseTime=True&loc=Local",
@@ -110,4 +152,20 @@ func (c *Config) DSN() string {
 // Addr 获取Redis地址
 func (c *Config) Addr() string {
 	return fmt.Sprintf("%s:%d", c.Redis.Host, c.Redis.Port)
+}
+
+// JWT_SECRET 全局 JWT 密钥（供其他包使用）
+var JWT_SECRET = "your-super-secret-key-change-in-production-32chars"
+
+// LoadConfig 加载配置并设置全局变量
+func LoadConfig() (*Config, error) {
+	cfg, err := Load()
+	if err != nil {
+		return nil, err
+	}
+	// 设置全局 JWT 密钥
+	if cfg.JWT.SecretKey != "" {
+		JWT_SECRET = cfg.JWT.SecretKey
+	}
+	return cfg, nil
 }

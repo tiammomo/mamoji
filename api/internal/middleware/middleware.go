@@ -10,6 +10,7 @@ import (
 	"github.com/cloudwego/hertz/pkg/common/utils"
 	"github.com/cloudwego/hertz/pkg/protocol/consts"
 	"github.com/golang-jwt/jwt/v5"
+	"mamoji/api/internal/config"
 	"mamoji/api/internal/logger"
 )
 
@@ -64,7 +65,7 @@ func Logger() app.HandlerFunc {
 		log := logger.Get()
 
 		// 记录请求开始
-		log.Infoc("HTTP请求开始",
+		log.InfoMap("HTTP请求开始",
 			map[string]interface{}{
 				"method":     string(c.Request.Method()),
 				"path":       path,
@@ -110,7 +111,7 @@ func Auth() app.HandlerFunc {
 
 		for _, p := range publicPaths {
 			if strings.HasPrefix(path, p) {
-				log.Infoc("Auth: 公开路由，放行",
+				log.InfoMap("Auth: 公开路由，放行",
 					map[string]interface{}{
 						"request_id": requestID,
 						"path":       path,
@@ -146,7 +147,7 @@ func Auth() app.HandlerFunc {
 
 		// 开发模式：支持 mock token（以 mock_ 开头）
 		if strings.HasPrefix(tokenString, "mock_") {
-			log.Infoc("Auth: 开发模式，使用模拟用户",
+			log.InfoMap("Auth: 开发模式，使用模拟用户",
 				map[string]interface{}{
 					"request_id": requestID,
 					"path":       path,
@@ -176,7 +177,7 @@ func Auth() app.HandlerFunc {
 			return
 		}
 
-		log.Infoc("Auth: 认证成功",
+		log.InfoMap("Auth: 认证成功",
 			map[string]interface{}{
 				"request_id":    requestID,
 				"path":          path,
@@ -249,7 +250,7 @@ type JWTClaims struct {
 // ParseToken 解析Token
 func ParseToken(tokenString string) (*JWTClaims, error) {
 	token, err := jwt.ParseWithClaims(tokenString, &JWTClaims{}, func(token *jwt.Token) (interface{}, error) {
-		return []byte("your-secret-key"), nil // 应该从配置读取
+		return []byte(config.JWT_SECRET), nil
 	})
 
 	if err != nil {
@@ -278,5 +279,5 @@ func GenerateToken(userId, enterpriseId int64, username, role string) (string, e
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	return token.SignedString([]byte("your-secret-key"))
+	return token.SignedString([]byte(config.JWT_SECRET))
 }

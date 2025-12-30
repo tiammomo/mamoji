@@ -20,7 +20,7 @@ func ListTransactions(ctx context.Context, c *app.RequestContext) {
 		PageSize:     20,
 	}
 
-	result, err := service.TransactionService.List(enterpriseId, req)
+	result, err := service.TransactionServiceInst.List(enterpriseId, req)
 	if err != nil {
 		c.JSON(200, utils.H{
 			"code":    500,
@@ -39,7 +39,7 @@ func ListTransactions(ctx context.Context, c *app.RequestContext) {
 func GetTransaction(ctx context.Context, c *app.RequestContext) {
 	transactionId, _ := strconv.ParseInt(c.Param("transactionId"), 10, 64)
 
-	transaction, err := service.TransactionService.GetById(transactionId)
+	transaction, err := service.TransactionServiceInst.GetById(transactionId)
 	if err != nil {
 		c.JSON(200, utils.H{
 			"code":    404,
@@ -70,7 +70,7 @@ func CreateTransaction(ctx context.Context, c *app.RequestContext) {
 	req.EnterpriseId = enterpriseId
 	req.UserId = userId
 
-	transaction, err := service.TransactionService.Create(enterpriseId, req)
+	transaction, err := service.TransactionServiceInst.Create(enterpriseId, req)
 	if err != nil {
 		c.JSON(200, utils.H{
 			"code":    500,
@@ -99,7 +99,7 @@ func UpdateTransaction(ctx context.Context, c *app.RequestContext) {
 		return
 	}
 
-	transaction, err := service.TransactionService.Update(transactionId, req)
+	transaction, err := service.TransactionServiceInst.Update(transactionId, req)
 	if err != nil {
 		c.JSON(200, utils.H{
 			"code":    500,
@@ -119,7 +119,7 @@ func UpdateTransaction(ctx context.Context, c *app.RequestContext) {
 func DeleteTransaction(ctx context.Context, c *app.RequestContext) {
 	transactionId, _ := strconv.ParseInt(c.Param("transactionId"), 10, 64)
 
-	err := service.TransactionService.Delete(transactionId)
+	err := service.TransactionServiceInst.Delete(transactionId)
 	if err != nil {
 		c.JSON(200, utils.H{
 			"code":    500,

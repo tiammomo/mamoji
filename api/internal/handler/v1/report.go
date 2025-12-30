@@ -17,7 +17,7 @@ func GetOverviewReport(ctx context.Context, c *app.RequestContext) {
 		EnterpriseId: enterpriseId,
 	}
 
-	report, err := service.ReportService.GetOverview(enterpriseId, req)
+	report, err := service.ReportServiceInst.GetOverview(enterpriseId, req)
 	if err != nil {
 		c.JSON(200, utils.H{
 			"code":    500,
@@ -40,7 +40,7 @@ func GetCategoryReport(ctx context.Context, c *app.RequestContext) {
 		EnterpriseId: enterpriseId,
 	}
 
-	report, err := service.ReportService.GetCategory(enterpriseId, req)
+	report, err := service.ReportServiceInst.GetCategory(enterpriseId, req)
 	if err != nil {
 		c.JSON(200, utils.H{
 			"code":    500,
@@ -63,7 +63,7 @@ func GetTrendReport(ctx context.Context, c *app.RequestContext) {
 		EnterpriseId: enterpriseId,
 	}
 
-	report, err := service.ReportService.GetTrend(enterpriseId, req)
+	report, err := service.ReportServiceInst.GetTrend(enterpriseId, req)
 	if err != nil {
 		c.JSON(200, utils.H{
 			"code":    500,
