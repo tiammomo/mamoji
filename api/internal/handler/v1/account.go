@@ -19,7 +19,7 @@ func ListAccounts(ctx context.Context, c *app.RequestContext) {
 	log := logger.Get()
 
 	// 记录请求开始
-	log.Infoc("ListAccounts 请求开始",
+	log.InfoMap("ListAccounts 请求开始",
 		map[string]interface{}{
 			"method":     "GET",
 			"path":       "/api/v1/accounts",
@@ -38,7 +38,7 @@ func ListAccounts(ctx context.Context, c *app.RequestContext) {
 		log.Debugf("解析unitId: %d", unitId)
 	}
 
-	accounts, err := service.AccountService.List(enterpriseId, unitId)
+	accounts, err := service.AccountServiceInst.List(enterpriseId, unitId)
 	duration := time.Since(startTime)
 
 	if err != nil {
@@ -76,7 +76,7 @@ func GetAccount(ctx context.Context, c *app.RequestContext) {
 	startTime := time.Now()
 	log := logger.Get()
 
-	log.Infoc("GetAccount 请求开始",
+	log.InfoMap("GetAccount 请求开始",
 		map[string]interface{}{
 			"method":     "GET",
 			"path":       "/api/v1/accounts/{accountId}",
@@ -99,7 +99,7 @@ func GetAccount(ctx context.Context, c *app.RequestContext) {
 		return
 	}
 
-	account, err := service.AccountService.GetById(accountId)
+	account, err := service.AccountServiceInst.GetById(accountId)
 	duration := time.Since(startTime)
 
 	if err != nil {
@@ -135,7 +135,7 @@ func CreateAccount(ctx context.Context, c *app.RequestContext) {
 	startTime := time.Now()
 	log := logger.Get()
 
-	log.Infoc("CreateAccount 请求开始",
+	log.InfoMap("CreateAccount 请求开始",
 		map[string]interface{}{
 			"method":     "POST",
 			"path":       "/api/v1/accounts",
@@ -166,7 +166,7 @@ func CreateAccount(ctx context.Context, c *app.RequestContext) {
 	enterpriseId := c.GetInt64("enterpriseId")
 	req.EnterpriseId = enterpriseId
 
-	account, err := service.AccountService.Create(req)
+	account, err := service.AccountServiceInst.Create(req)
 	duration := time.Since(startTime)
 
 	if err != nil {
@@ -205,7 +205,7 @@ func UpdateAccount(ctx context.Context, c *app.RequestContext) {
 	startTime := time.Now()
 	log := logger.Get()
 
-	log.Infoc("UpdateAccount 请求开始",
+	log.InfoMap("UpdateAccount 请求开始",
 		map[string]interface{}{
 			"method":     "PUT",
 			"path":       "/api/v1/accounts/{accountId}",
@@ -249,7 +249,7 @@ func UpdateAccount(ctx context.Context, c *app.RequestContext) {
 		"balance", req.Balance,
 	)
 
-	account, err := service.AccountService.Update(accountId, req)
+	account, err := service.AccountServiceInst.Update(accountId, req)
 	duration := time.Since(startTime)
 
 	if err != nil {
@@ -286,7 +286,7 @@ func DeleteAccount(ctx context.Context, c *app.RequestContext) {
 	startTime := time.Now()
 	log := logger.Get()
 
-	log.Infoc("DeleteAccount 请求开始",
+	log.InfoMap("DeleteAccount 请求开始",
 		map[string]interface{}{
 			"method":     "DELETE",
 			"path":       "/api/v1/accounts/{accountId}",
@@ -309,7 +309,7 @@ func DeleteAccount(ctx context.Context, c *app.RequestContext) {
 		return
 	}
 
-	err = service.AccountService.Delete(accountId)
+	err = service.AccountServiceInst.Delete(accountId)
 	duration := time.Since(startTime)
 
 	if err != nil {
@@ -344,7 +344,7 @@ func ListAccountFlows(ctx context.Context, c *app.RequestContext) {
 	startTime := time.Now()
 	log := logger.Get()
 
-	log.Infoc("ListAccountFlows 请求开始",
+	log.InfoMap("ListAccountFlows 请求开始",
 		map[string]interface{}{
 			"method":     "GET",
 			"path":       "/api/v1/accounts/{accountId}/flows",
@@ -367,7 +367,7 @@ func ListAccountFlows(ctx context.Context, c *app.RequestContext) {
 		return
 	}
 
-	flows, err := service.AccountService.ListFlows(accountId)
+	flows, err := service.AccountServiceInst.ListFlows(accountId)
 	duration := time.Since(startTime)
 
 	if err != nil {
