@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(if not exist:*)",
+      "Bash(npm install zustand)",
+      "Bash(npm install -D tailwindcss postcss autoprefixer)",
+      "Bash(npx tailwindcss init:*)",
+      "Bash(npm install:*)",
+      "Bash(npx tsc:*)",
+      "Bash(timeout:*)",
+      "Bash(npm run dev)",
+      "Bash(powershell -Command:*)",
+      "Bash(git config:*)"
+    ]
+  }
+}

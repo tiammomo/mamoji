@@ -1,0 +1,135 @@
+version: '3.8'
+
+services:
+  # Nginx 反向代理
+  nginx:
+    image: nginx:1.24-alpine
+    container_name: mamoji-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+      - ../web/.next/standalone:/var/www/app:ro
+      - ../web/.next/static:/var/www/static:ro
+    depends_on:
+      - web
+      - api
+    networks:
+      - mamoji-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Next.js Web前端
+  web:
+    build:
+      context: ../web
+      dockerfile: Dockerfile
+    container_name: mamoji-web
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - NEXT_PUBLIC_API_URL=http://api:8888
+    depends_on:
+      - api
+    networks:
+      - mamoji-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3000"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Hertz Go后端
+  api:
+    build:
+      context: ../api
+      dockerfile: Dockerfile
+    container_name: mamoji-api
+    ports:
+      - "8888:8888"
+    environment:
+      - MAMOJI_APP_HOST=0.0.0.0
+      - MAMOJI_APP_PORT=8888
+      - MAMOJI_DATABASE_HOST=mysql
+      - MAMOJI_DATABASE_PORT=3306
+      - MAMOJI_DATABASE_USERNAME=root
+      - MAMOJI_DATABASE_PASSWORD=mamoji123
+      - MAMOJI_DATABASE_NAME=mamoji
+      - MAMOJI_REDIS_HOST=redis
+      - MAMOJI_REDIS_PORT=6379
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - mamoji-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:8888/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # MySQL数据库
+  mysql:
+    image: mysql:8.0
+    container_name: mamoji-mysql
+    ports:
+      - "3306:3306"
+    environment:
+      - MYSQL_ROOT_PASSWORD=mamoji123
+      - MYSQL_DATABASE=mamoji
+      - MYSQL_CHARSET=utf8mb4
+      - MYSQL_COLLATION=utf8mb4_unicode_ci
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - ./mysql/my.cnf:/etc/mysql/conf.d/my.cnf:ro
+      - ./mysql/init:/docker-entrypoint-initdb.d:ro
+    networks:
+      - mamoji-network
+    restart: unless-stopped
+    command: --default-authentication-plugin=mysql_native_password
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-pmamoji123"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis缓存
+  redis:
+    image: redis:7.2-alpine
+    container_name: mamoji-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+      - ./redis/redis.conf:/usr/local/etc/redis/redis.conf:ro
+    command: redis-server /usr/local/etc/redis/redis.conf
+    networks:
+      - mamoji-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+networks:
+  mamoji-network:
+    driver: bridge
+
+volumes:
+  mysql-data:
+    driver: local
+  redis-data:
+    driver: local
