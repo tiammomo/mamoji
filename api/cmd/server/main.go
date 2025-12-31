@@ -87,6 +87,11 @@ func main() {
 		logStd.Printf("Warning: Failed to drop foreign keys: %v", err)
 	}
 
+	// 添加缺失的列（如历史表可能缺少的 budget_id）
+	if err := database.AddMissingColumns(); err != nil {
+		logStd.Printf("Warning: Failed to add missing columns: %v", err)
+	}
+
 	logInstance.InfoMap("数据库初始化完成",
 		map[string]interface{}{
 			"host": cfg.Database.Host,

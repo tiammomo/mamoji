@@ -338,6 +338,7 @@ CREATE TABLE `biz_transaction` (
     `category`         VARCHAR(30)     NOT NULL COMMENT '分类',
     `amount`           DECIMAL(18,2)   NOT NULL COMMENT '金额',
     `account_id`       BIGINT UNSIGNED NOT NULL COMMENT '账户ID',
+    `budget_id`        BIGINT UNSIGNED DEFAULT NULL COMMENT '关联预算ID',
     `occurred_at`      DATETIME        NOT NULL COMMENT '发生时间',
     `tags`             JSON            DEFAULT NULL COMMENT '标签数组',
     `note`             VARCHAR(500)    DEFAULT NULL COMMENT '备注',
@@ -352,7 +353,8 @@ CREATE TABLE `biz_transaction` (
     KEY `idx_user_id` (`user_id`),
     KEY `idx_type_category` (`type`, `category`),
     KEY `idx_occurred_at` (`occurred_at`),
-    KEY `idx_account_id` (`account_id`)
+    KEY `idx_account_id` (`account_id`),
+    KEY `idx_budget_id` (`budget_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='账单表';
 
 -- 外键约束
@@ -628,4 +630,60 @@ CREATE TABLE `biz_push_log` (
 ```
 biz_transaction_2024      -- 2024年账单归档表
 biz_account_flow_2024     -- 2024年流水归档表
+```
+
+---
+
+## 六、数据库迁移说明
+
+### 6.1 版本历史
+
+| 版本号 | 日期 | 变更说明 |
+|--------|------|----------|
+| v1.0.0 | 2024-01 | 初始版本，包含用户、企业、账户、账单等核心表 |
+| v1.1.0 | 2024-12 | 添加预算模块，`biz_transaction` 表增加 `budget_id` 列 |
+
+### 6.2 迁移脚本
+
+#### v1.1.0 迁移脚本
+
+```sql
+-- 添加 budget_id 列到 biz_transaction 表
+ALTER TABLE `biz_transaction`
+ADD COLUMN `budget_id` BIGINT UNSIGNED NULL DEFAULT NULL COMMENT '关联预算ID' AFTER `account_id`;
+
+-- 创建索引
+CREATE INDEX `idx_budget_id` ON `biz_transaction` (`budget_id`);
+```
+
+### 6.3 自动迁移机制
+
+系统在启动时会自动执行数据库迁移：
+
+1. **GORM AutoMigrate**：自动创建表结构和字段
+2. **手动迁移**：对于GORM无法处理的遗留表字段，使用 `AddMissingColumns()` 函数添加
+3. **外键处理**：使用 `DropForeignKeys()` 解决历史数据外键约束问题
+
+### 6.4 手动执行迁移
+
+如需手动执行迁移，可运行：
+
+```bash
+# 编译并运行服务器，迁移将在启动时自动执行
+cd api && go build -o server.exe ./cmd/server && ./server.exe
+```
+
+或直接执行SQL：
+
+```sql
+-- 检查并添加 budget_id 列
+SELECT COUNT(*) FROM information_schema.COLUMNS
+WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'biz_transaction' AND COLUMN_NAME = 'budget_id';
+
+-- 如果不存在则添加
+ALTER TABLE `biz_transaction`
+ADD COLUMN `budget_id` BIGINT UNSIGNED NULL DEFAULT NULL COMMENT '关联预算ID' AFTER `account_id`;
+
+-- 创建索引
+CREATE INDEX `idx_budget_id` ON `biz_transaction` (`budget_id`);
 ```
