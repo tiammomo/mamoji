@@ -41,6 +41,9 @@ func main() {
 		log.Fatalf("Failed to load config: %v", err)
 	}
 
+	// 加载JWT密钥到全局变量
+	config.LoadConfig()
+
 	log.Printf("Config loaded: %+v", cfg.App)
 	log.Printf("Database host: %s", cfg.Database.Host)
 

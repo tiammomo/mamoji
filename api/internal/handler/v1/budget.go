@@ -124,3 +124,22 @@ func DeleteBudget(ctx context.Context, c *app.RequestContext) {
 		"message": "删除成功",
 	})
 }
+
+// GetBudgetDetail 获取预算详情（包含关联的交易记录）
+func GetBudgetDetail(ctx context.Context, c *app.RequestContext) {
+	budgetId, _ := strconv.ParseInt(c.Param("budgetId"), 10, 64)
+
+	detail, err := service.BudgetServiceInst.GetDetailWithTransactions(budgetId)
+	if err != nil {
+		c.JSON(200, utils.H{
+			"code":    404,
+			"message": err.Error(),
+		})
+		return
+	}
+
+	c.JSON(200, utils.H{
+		"code": 0,
+		"data": detail,
+	})
+}
