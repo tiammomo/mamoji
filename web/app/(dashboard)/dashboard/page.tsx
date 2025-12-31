@@ -80,7 +80,7 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="pt-2 px-4 pb-4 space-y-4">
       <Header title="仪表盘" subtitle="欢迎使用小帅记账" />
 
       {/* Stats Grid */}

@@ -7,7 +7,7 @@ import { Building2, Plus } from 'lucide-react';
 
 export default function AssetsPage() {
   return (
-    <div className="p-6 space-y-6">
+    <div className="pt-2 px-4 pb-4 space-y-4">
       <Header
         title="资产管理"
         subtitle="管理您的固定资产和无形资产"

@@ -6,7 +6,7 @@ import { Bell } from 'lucide-react';
 
 export default function NotificationsPage() {
   return (
-    <div className="p-6 space-y-6">
+    <div className="pt-2 px-4 pb-4 space-y-4">
       <Header
         title="消息通知"
         subtitle="查看系统通知和消息"
