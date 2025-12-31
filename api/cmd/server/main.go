@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 	"os"
+	"path/filepath"
 
 	"mamoji/api/internal/config"
 	"mamoji/api/internal/database"
@@ -17,13 +18,31 @@ var logStd = log.New(os.Stdout, "", 0)
 func main() {
 	log.Println("Starting mamoji server...")
 
-	// 加载配置
-	cfg, err := config.LoadFromPath("config")
+	// 获取当前可执行文件所在目录
+	execDir, err := filepath.Abs(filepath.Dir(os.Args[0]))
+	if err != nil {
+		execDir = "."
+	}
+	log.Printf("Executable directory: %s", execDir)
+
+	// 加载配置（支持相对路径和绝对路径）
+	configPath := "config"
+	if _, err := os.Stat(configPath); os.IsNotExist(err) {
+		// 如果当前目录没有config，尝试在可执行文件目录查找
+		altPath := filepath.Join(execDir, "config")
+		if _, err := os.Stat(altPath); err == nil {
+			configPath = altPath
+		}
+	}
+	log.Printf("Loading config from: %s", configPath)
+
+	cfg, err := config.LoadFromPath(configPath)
 	if err != nil {
 		log.Fatalf("Failed to load config: %v", err)
 	}
 
 	log.Printf("Config loaded: %+v", cfg.App)
+	log.Printf("Database host: %s", cfg.Database.Host)
 
 	log.Println("Initializing logger...")
 	// 初始化日志器

@@ -35,7 +35,9 @@
       "Bash(go mod graph:*)",
       "Bash(/tmp/server.exe:*)",
       "Bash(ls:*)",
-      "Bash(ls -la:*)"
+      "Bash(ls -la:*)",
+      "Bash(tasklist:*)",
+      "Bash(d:/projects/shuai/mamoji/api/server.exe)"
     ]
   }
 }

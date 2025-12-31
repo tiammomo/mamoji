@@ -79,8 +79,8 @@ func (s *AccountService) List(enterpriseId, unitId int64) ([]dto.AccountResponse
 
 func (s *AccountService) GetById(accountId int64) (*dto.AccountResponse, error) {
 	var account entity.Account
-	if err := database.DB.Where("account_id = ?", accountId).First(&account).Error; err != nil {
-		return nil, errors.New("账户不存在")
+	if err := database.DB.Where("account_id = ? AND status = 1", accountId).First(&account).Error; err != nil {
+		return nil, errors.New("账户不存在或已被删除")
 	}
 
 	response := &dto.AccountResponse{
@@ -157,8 +157,8 @@ func (s *AccountService) Create(req dto.CreateAccountRequest) (*dto.AccountRespo
 
 func (s *AccountService) Update(accountId int64, req dto.UpdateAccountRequest) (*dto.AccountResponse, error) {
 	var account entity.Account
-	if err := database.DB.Where("account_id = ?", accountId).First(&account).Error; err != nil {
-		return nil, errors.New("账户不存在")
+	if err := database.DB.Where("account_id = ? AND status = 1", accountId).First(&account).Error; err != nil {
+		return nil, errors.New("账户不存在或已被删除")
 	}
 
 	// 更新字段
@@ -397,7 +397,8 @@ func InitAdminUser() error {
 // ===== TransactionService =====
 func (s *TransactionService) List(enterpriseId int64, req dto.ListTransactionRequest) ([]dto.TransactionResponse, error) {
 	var transactions []entity.Transaction
-	query := database.DB.Where("enterprise_id = ?", enterpriseId)
+	// 过滤软删除的数据（status = 1 表示正常状态）
+	query := database.DB.Where("enterprise_id = ? AND status = 1", enterpriseId)
 	if req.UnitId > 0 {
 		query = query.Where("unit_id = ?", req.UnitId)
 	}
@@ -466,8 +467,9 @@ func (s *TransactionService) List(enterpriseId int64, req dto.ListTransactionReq
 
 func (s *TransactionService) GetById(transactionId int64) (*dto.TransactionResponse, error) {
 	var tx entity.Transaction
-	if err := database.DB.Where("transaction_id = ?", transactionId).First(&tx).Error; err != nil {
-		return nil, errors.New("交易记录不存在")
+	// 过滤软删除的数据
+	if err := database.DB.Where("transaction_id = ? AND status = 1", transactionId).First(&tx).Error; err != nil {
+		return nil, errors.New("交易记录不存在或已被删除")
 	}
 
 	var account entity.Account
@@ -813,7 +815,8 @@ func (s *TransactionService) Delete(transactionId int64) error {
 // ===== BudgetService =====
 func (s *BudgetService) List(enterpriseId int64) ([]dto.BudgetResponse, error) {
 	var budgets []entity.Budget
-	if err := database.DB.Where("enterprise_id = ?", enterpriseId).Order("created_at DESC").Find(&budgets).Error; err != nil {
+	// 过滤软删除的数据（status = 'active' 表示正常状态）
+	if err := database.DB.Where("enterprise_id = ? AND status = 'active'", enterpriseId).Order("created_at DESC").Find(&budgets).Error; err != nil {
 		return nil, errors.New("查询预算列表失败")
 	}
 
@@ -845,8 +848,9 @@ func (s *BudgetService) List(enterpriseId int64) ([]dto.BudgetResponse, error) {
 
 func (s *BudgetService) GetById(budgetId int64) (*dto.BudgetResponse, error) {
 	var budget entity.Budget
-	if err := database.DB.First(&budget, budgetId).Error; err != nil {
-		return nil, errors.New("预算不存在")
+	// 过滤软删除的数据
+	if err := database.DB.Where("budget_id = ? AND status = 'active'", budgetId).First(&budget).Error; err != nil {
+		return nil, errors.New("预算不存在或已被删除")
 	}
 	return &dto.BudgetResponse{
 		BudgetId:     budget.BudgetId,
