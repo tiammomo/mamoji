@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"context"
+	"os"
 	"strings"
 	"time"
 
@@ -145,8 +146,8 @@ func Auth() app.HandlerFunc {
 		// 验证Token
 		tokenString := strings.TrimPrefix(auth, "Bearer ")
 
-		// 开发模式：支持 mock token（以 mock_ 开头）
-		if strings.HasPrefix(tokenString, "mock_") {
+		// 开发模式：支持 mock token（以 mock_ 开头），仅在开发环境有效
+		if os.Getenv("MAMOJI_APP_ENV") == "development" && strings.HasPrefix(tokenString, "mock_") {
 			log.InfoMap("Auth: 开发模式，使用模拟用户",
 				map[string]interface{}{
 					"request_id": requestID,

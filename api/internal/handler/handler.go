@@ -72,4 +72,21 @@ func Register(h *server.Hertz) {
 	reportGroup.GET("/overview", v1.GetOverviewReport)
 	reportGroup.GET("/category", v1.GetCategoryReport)
 	reportGroup.GET("/trend", v1.GetTrendReport)
+
+	// 系统设置
+	settingsGroup := v1Group.Group("/settings", middleware.Auth())
+	// 企业信息
+	settingsGroup.GET("/enterprise", v1.GetEnterprise)
+	settingsGroup.PUT("/enterprise", v1.UpdateEnterprise)
+	// 用户管理
+	settingsGroup.GET("/users", v1.ListUsers)
+	settingsGroup.POST("/users", v1.CreateUser)
+	settingsGroup.GET("/users/:userId", v1.GetUser)
+	settingsGroup.PUT("/users/:userId", v1.UpdateUser)
+	settingsGroup.DELETE("/users/:userId", v1.DeleteUser)
+	// 角色管理
+	settingsGroup.GET("/roles", v1.GetRoles)
+	// 偏好设置
+	settingsGroup.GET("/preferences", v1.GetPreferences)
+	settingsGroup.PUT("/preferences", v1.UpdatePreferences)
 }
