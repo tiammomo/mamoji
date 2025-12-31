@@ -42,7 +42,7 @@ export function Sidebar() {
     <TooltipProvider>
       <aside
         className={cn(
-          'flex flex-col h-screen bg-card border-r transition-all duration-300',
+          'flex flex-col h-screen bg-card border-r transition-all duration-300 relative',
           collapsed ? 'w-16' : 'w-64'
         )}
       >
@@ -128,15 +128,22 @@ export function Sidebar() {
           </Link>
         </div>
 
-        {/* Collapse Toggle */}
-        <Button
-          variant="ghost"
-          size="icon"
-          className="absolute -right-3 top-20 w-6 h-6 rounded-full border bg-background"
-          onClick={() => setCollapsed(!collapsed)}
-        >
-          <Menu className="w-4 h-4" />
-        </Button>
+        {/* Collapse/Expand Toggle - placed on the right side of sidebar */}
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="outline"
+              size="icon"
+              className="absolute right-0 top-1/4 -translate-y-1/4 translate-x-1/2 w-6 h-6 rounded-full border-2 bg-background z-10"
+              onClick={() => setCollapsed(!collapsed)}
+            >
+              <Menu className="w-3 h-3" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent side="right">
+            {collapsed ? '展开' : '收起'}
+          </TooltipContent>
+        </Tooltip>
       </aside>
     </TooltipProvider>
   );
