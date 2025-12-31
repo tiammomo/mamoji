@@ -35,6 +35,7 @@ import {
   X,
   Edit,
   Trash2,
+  ChevronDown,
 } from 'lucide-react';
 import { formatCurrency, formatDate, downloadCSV } from '@/lib/utils';
 import {
@@ -43,6 +44,7 @@ import {
   EXPENSE_CATEGORY_LABELS,
 } from '@/lib/constants';
 import { get, post, put, del } from '@/lib/api';
+import { useUser } from '@/stores/auth';
 
 // 交易类型 - 使用string类型以兼容后端返回的任何值
 type TransactionType = string;
@@ -75,20 +77,21 @@ interface TransactionFormData {
   budgetId?: string; // 关联预算ID
 }
 
-// 预算选项数据
+// 预算选项数据（使用与后端一致的字段名）
 interface BudgetOption {
-  budgetId: number;
-  name: string;
-  category: string;
-  totalAmount: number;
-  usedAmount: number;
-  periodStart: string;
-  periodEnd: string;
-  status: string; // 用于过滤活跃预算
+  BudgetId: number;
+  Name: string;
+  Category: string;
+  TotalAmount: number;
+  UsedAmount: number;
+  PeriodStart: string;
+  PeriodEnd: string;
+  Status: string; // 用于过滤活跃预算
 }
 
 export default function TransactionsPage() {
   const { toast } = useToast();
+  const user = useUser();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [accounts, setAccounts] = useState<{ accountId: number; name: string }[]>([]);
   const [budgets, setBudgets] = useState<BudgetOption[]>([]);
@@ -99,6 +102,11 @@ export default function TransactionsPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [isInitialLoading, setIsInitialLoading] = useState(true);
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
+
+  // 调试：打印用户信息
+  useEffect(() => {
+    console.log('[User] 当前用户信息:', JSON.stringify(user, null, 2));
+  }, [user]);
 
   // 筛选状态
   const [filter, setFilter] = useState({
@@ -236,6 +244,10 @@ export default function TransactionsPage() {
     note: '',
   });
 
+  // 预算搜索状态
+  const [budgetSearchQuery, setBudgetSearchQuery] = useState('');
+  const [isBudgetSelectOpen, setIsBudgetSelectOpen] = useState(false);
+
   // 加载数据
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -247,10 +259,10 @@ export default function TransactionsPage() {
 
     fetchTransactions();
     fetchAccounts();
-    fetchBudgets();
+    fetchBudgets(user?.enterpriseId);
 
     return () => clearTimeout(timer);
-  }, []);
+  }, [user?.enterpriseId]);
 
   const fetchTransactions = async () => {
     try {
@@ -280,30 +292,51 @@ export default function TransactionsPage() {
   };
 
   // 获取预算列表（用于关联预算）
-  const fetchBudgets = async () => {
+  const fetchBudgets = async (enterpriseId?: number) => {
     try {
-      const data = await get<BudgetOption[]>('/api/v1/budgets');
+      const url = enterpriseId ? `/api/v1/budgets?unitId=${enterpriseId}` : '/api/v1/budgets';
+      console.log('[Budgets] 请求URL:', url, ', enterpriseId:', enterpriseId);
+      const data = await get<BudgetOption[]>(url);
+      console.log('[Budgets] 原始预算数据:', JSON.stringify(data, null, 2));
       if (data) {
+        console.log('[Budgets] 预算数量:', data.length);
+        console.log('[Budgets] 预算列表:', data.map(b => ({ id: b.BudgetId, name: b.Name, status: b.Status, period: `${b.PeriodStart} ~ ${b.PeriodEnd}` })));
         setBudgets(data);
+      } else {
+        console.log('[Budgets] 返回数据为空');
       }
     } catch (error) {
-      console.error('无法加载预算列表');
+      console.error('[Budgets] 无法加载预算列表:', error);
     }
   };
 
-  // 筛选有效预算（支出类型+在有效期内的活跃预算）
+  // 筛选有效预算（只显示状态为 active 的预算）
   const availableBudgets = useMemo(() => {
     return budgets.filter((budget) => {
       // 只处理支出类型
       if (formData.type !== 'expense') return false;
-      // 排除软删除的预算（status不为active）
-      if (budget.status !== 'active') return false;
-      const now = new Date();
-      const periodStart = new Date(budget.periodStart);
-      const periodEnd = new Date(budget.periodEnd);
-      return now >= periodStart && now <= periodEnd;
+      // 排除软删除的预算（Status不为active）
+      if (budget.Status !== 'active') return false;
+      return true;
     });
   }, [budgets, formData.type]);
+
+  // 检查预算是否在有效期内
+  const isBudgetExpired = (periodEnd: string) => {
+    const now = new Date();
+    const end = new Date(periodEnd + 'T23:59:59');
+    return now > end;
+  };
+
+  // 根据搜索关键词筛选预算
+  const filteredBudgets = useMemo(() => {
+    if (!budgetSearchQuery.trim()) return availableBudgets;
+    const query = budgetSearchQuery.toLowerCase().trim();
+    return availableBudgets.filter((budget) =>
+      budget.Name.toLowerCase().includes(query) ||
+      budget.Category.toLowerCase().includes(query)
+    );
+  }, [availableBudgets, budgetSearchQuery]);
 
   const filteredTransactions = useMemo(() => {
     return transactions.filter((tx) => {
@@ -354,7 +387,10 @@ export default function TransactionsPage() {
       note: '',
       budgetId: undefined,
     });
-    setIsDialogOpen(true);
+    // 重置预算搜索状态
+    setBudgetSearchQuery('');
+    setIsDialogOpen(false);
+    setTimeout(() => setIsDialogOpen(true), 0);
   };
 
   // 编辑交易
@@ -367,7 +403,7 @@ export default function TransactionsPage() {
       accountId: tx.accountId.toString(),
       date: formatDate(tx.occurredAt, 'YYYY-MM-DD'),
       note: tx.note,
-      budgetId: tx.budgetId ? tx.budgetId.toString() : 'none',
+      budgetId: tx.budgetId ? tx.budgetId.toString() : undefined,
     });
     setIsDialogOpen(true);
   };
@@ -437,11 +473,6 @@ export default function TransactionsPage() {
         occurredAt: formData.date,
         note: formData.note,
       };
-
-      // 添加预算关联（仅支出且选择了有效预算时）
-      if (formData.type === 'expense' && formData.budgetId && formData.budgetId !== 'none') {
-        transactionData.budgetId = parseInt(formData.budgetId);
-      }
 
       // 获取账户名称
       const account = accounts.find((a) => a.accountId === parseInt(formData.accountId));
@@ -888,25 +919,128 @@ export default function TransactionsPage() {
             {/* 预算关联（仅支出时显示） */}
             {formData.type === 'expense' && (
               <div className="space-y-2">
-                <Label htmlFor="budget">关联预算</Label>
-                <Select
-                  value={formData.budgetId || 'none'}
-                  onValueChange={(value) => setFormData({ ...formData, budgetId: value === 'none' ? undefined : value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="不关联预算" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">不关联预算</SelectItem>
-                    {availableBudgets.map((budget) => (
-                      <SelectItem key={budget.budgetId} value={budget.budgetId.toString()}>
-                        {budget.name}（剩余 {formatCurrency(budget.totalAmount - budget.usedAmount)}）
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Label>关联预算</Label>
+                <p className="text-xs text-muted-foreground">
+                  系统将根据支出日期和分类自动匹配预算，如需手动指定请选择
+                </p>
+                {/* 自定义可搜索预算选择器 */}
+                <div className="relative">
+                  <button
+                    type="button"
+                    onClick={() => setIsBudgetSelectOpen(!isBudgetSelectOpen)}
+                    className="w-full h-10 px-3 py-2 text-sm border rounded-md bg-background hover:bg-accent hover:border-input transition-colors flex items-center justify-between text-left"
+                  >
+                    <span className={formData.budgetId ? '' : 'text-muted-foreground'}>
+                      {formData.budgetId
+                        ? (() => {
+                            const selected = availableBudgets.find(b => b.BudgetId.toString() === formData.budgetId);
+                            if (!selected) return '自动匹配';
+                            const expired = isBudgetExpired(selected.PeriodEnd);
+                            return (
+                              <span className="flex items-center gap-2">
+                                {selected.Name}
+                                {expired && (
+                                  <span className="text-xs text-destructive bg-destructive/10 px-1.5 py-0.5 rounded">
+                                    已过期
+                                  </span>
+                                )}
+                                <span>（剩余 {formatCurrency(selected.TotalAmount - selected.UsedAmount)}）</span>
+                              </span>
+                            );
+                          })()
+                        : '自动匹配'}
+                    </span>
+                    <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform ${isBudgetSelectOpen ? 'rotate-180' : ''}`} />
+                  </button>
+
+                  {/* 下拉面板 */}
+                  {isBudgetSelectOpen && (
+                    <>
+                      {/* 遮罩层 */}
+                      <div
+                        className="fixed inset-0 z-40"
+                        onClick={() => {
+                          setIsBudgetSelectOpen(false);
+                          setBudgetSearchQuery('');
+                        }}
+                      />
+                      {/* 选择面板 */}
+                      <div className="absolute z-50 w-full mt-1 bg-background border rounded-md shadow-lg">
+                        {/* 搜索框 */}
+                        <div className="p-2 border-b">
+                          <div className="relative">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                            <Input
+                              placeholder="搜索预算名称或分类..."
+                              value={budgetSearchQuery}
+                              onChange={(e) => setBudgetSearchQuery(e.target.value)}
+                              className="pl-9 h-9"
+                              autoFocus
+                            />
+                          </div>
+                        </div>
+                        {/* 预算列表 */}
+                        <div className="max-h-60 overflow-y-auto py-1">
+                          {/* 自动匹配选项 */}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setFormData({ ...formData, budgetId: undefined });
+                              setIsBudgetSelectOpen(false);
+                              setBudgetSearchQuery('');
+                            }}
+                            className={`w-full px-3 py-2 text-sm text-left hover:bg-accent transition-colors ${
+                              !formData.budgetId ? 'bg-accent/50' : ''
+                            }`}
+                          >
+                            <div className="font-medium">自动匹配</div>
+                            <div className="text-xs text-muted-foreground mt-0.5">
+                              根据日期和分类自动匹配预算
+                            </div>
+                          </button>
+                          {/* 预算选项 */}
+                          {filteredBudgets.length > 0 ? (
+                            filteredBudgets.map((budget) => (
+                              <button
+                                key={budget.BudgetId}
+                                type="button"
+                                onClick={() => {
+                                  setFormData({ ...formData, budgetId: budget.BudgetId.toString() });
+                                  setIsBudgetSelectOpen(false);
+                                  setBudgetSearchQuery('');
+                                }}
+                                className={`w-full px-3 py-2 text-sm text-left hover:bg-accent transition-colors ${
+                                  formData.budgetId === budget.BudgetId.toString() ? 'bg-accent/50' : ''
+                                }`}
+                              >
+                                <div className="font-medium flex items-center gap-2">
+                                  {budget.Name}
+                                  {isBudgetExpired(budget.PeriodEnd) && (
+                                    <span className="text-xs text-destructive bg-destructive/10 px-1.5 py-0.5 rounded">
+                                      已过期
+                                    </span>
+                                  )}
+                                </div>
+                                <div className="text-xs text-muted-foreground mt-0.5">
+                                  分类: {budget.Category} · 有效期: {budget.PeriodStart} 至 {budget.PeriodEnd}
+                                  <span className="ml-2 text-success">
+                                    剩余 {formatCurrency(budget.TotalAmount - budget.UsedAmount)}
+                                  </span>
+                                </div>
+                              </button>
+                            ))
+                          ) : (
+                            <div className="px-3 py-4 text-sm text-muted-foreground text-center">
+                              {budgetSearchQuery ? '未找到匹配的预算' : '暂无可用预算'}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </>
+                  )}
+                </div>
                 {availableBudgets.length === 0 && (
-                  <p className="text-xs text-muted-foreground">暂无可用预算</p>
+                  <p className="text-xs text-muted-foreground">未找到可用的预算</p>
                 )}
               </div>
             )}

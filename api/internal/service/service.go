@@ -591,14 +591,38 @@ func (s *TransactionService) Create(enterpriseId int64, req dto.CreateTransactio
 		}
 	}
 
-	// 更新预算已使用金额（仅支出且关联预算时）
-	if req.Type == "expense" && req.BudgetId != nil && *req.BudgetId > 0 {
+	// 更新预算已使用金额（仅支出时自动关联预算）
+	if req.Type == "expense" {
+		// 如果前端已指定BudgetId，直接使用；否则自动查找匹配的预算
+		var budgetId *int64
 		var budget entity.Budget
-		// 只查询active状态的预算，排除软删除的预算
-		if err := database.DB.Where("budget_id = ? AND status = ?", *req.BudgetId, "active").First(&budget).Error; err == nil {
-			// 检查预算是否在有效期内
-			now := time.Now()
-			if now.After(budget.PeriodStart) && now.Before(budget.PeriodEnd.AddDate(0, 0, 1)) {
+
+		if req.BudgetId != nil && *req.BudgetId > 0 {
+			// 使用前端指定的预算
+			budgetId = req.BudgetId
+			database.DB.Where("budget_id = ? AND status = ?", *req.BudgetId, "active").First(&budget)
+		} else {
+			// 自动查找匹配的预算：根据分类和日期范围
+			var matchedBudget entity.Budget
+			err := database.DB.Where(
+				"enterprise_id = ? AND status = ? AND category = ? AND period_start <= ? AND period_end >= ?",
+				enterpriseId, "active", req.Category, occurredAt, occurredAt,
+			).First(&matchedBudget).Error
+
+			if err == nil {
+				budgetId = &matchedBudget.BudgetId
+				budget = matchedBudget
+			}
+		}
+
+		// 更新预算已使用金额
+		if budgetId != nil && budget.BudgetId > 0 {
+			// 检查预算是否在有效期内（使用交易发生时间而非当前时间）
+			if occurredAt.After(budget.PeriodStart) && occurredAt.Before(budget.PeriodEnd.AddDate(0, 0, 1)) {
+				// 更新 transaction 的 BudgetId
+				tx.BudgetId = budgetId
+				database.DB.Model(&tx).Update("budget_id", *budgetId)
+
 				// 检查预算余额是否充足
 				remaining := budget.TotalAmount - budget.UsedAmount
 				if req.Amount <= remaining {

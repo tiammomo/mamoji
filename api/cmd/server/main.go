@@ -15,18 +15,23 @@ import (
 var logStd = log.New(os.Stdout, "", 0)
 
 func main() {
+	log.Println("Starting mamoji server...")
+
 	// 加载配置
-	cfg, err := config.Load()
+	cfg, err := config.LoadFromPath("config")
 	if err != nil {
 		log.Fatalf("Failed to load config: %v", err)
 	}
 
-	// 初始化日志器
-	log := logger.New()
-	log.SetupFromEnv("APP_LOG_")
-	defer log.Close()
+	log.Printf("Config loaded: %+v", cfg.App)
 
-	log.InfoMap("应用程序启动",
+	log.Println("Initializing logger...")
+	// 初始化日志器
+	logInstance := logger.New()
+	log.Println("Logger initialized")
+	logInstance.Infow("Logger initialized successfully")
+
+	logInstance.InfoMap("应用程序启动",
 		map[string]interface{}{
 			"env":  cfg.App.Env,
 			"host": cfg.App.Host,
@@ -63,7 +68,7 @@ func main() {
 		logStd.Printf("Warning: Failed to drop foreign keys: %v", err)
 	}
 
-	log.InfoMap("数据库初始化完成",
+	logInstance.InfoMap("数据库初始化完成",
 		map[string]interface{}{
 			"host": cfg.Database.Host,
 			"port": cfg.Database.Port,
@@ -75,7 +80,7 @@ func main() {
 	if err := service.InitAdminUser(); err != nil {
 		logStd.Printf("Warning: Failed to init admin user: %v", err)
 	} else {
-		log.InfoMap("管理员账户检查完成",
+		logInstance.InfoMap("管理员账户检查完成",
 			map[string]interface{}{},
 		)
 	}

@@ -40,8 +40,8 @@ type LoggerInterface interface {
 	Close()
 }
 
-// Config Logger 配置
-type Config struct {
+// ZapConfig Logger 配置
+type ZapConfig struct {
 	Level      string
 	Format     string
 	OutputPath string
@@ -50,7 +50,7 @@ type Config struct {
 
 // New 创建 Logger
 func New() *Logger {
-	config := Config{
+	config := ZapConfig{
 		Level:      "info",
 		Format:     "json",
 		OutputPath: "logs/app.log",
@@ -61,7 +61,7 @@ func New() *Logger {
 }
 
 // NewWithConfig 使用配置创建 Logger
-func NewWithConfig(config Config) *Logger {
+func NewWithConfig(config ZapConfig) *Logger {
 	var level zapcore.Level
 	switch strings.ToLower(config.Level) {
 	case "debug":
