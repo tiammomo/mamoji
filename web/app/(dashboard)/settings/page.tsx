@@ -7,7 +7,7 @@ import { Settings as SettingsIcon } from 'lucide-react';
 
 export default function SettingsPage() {
   return (
-    <div className="p-6 space-y-6">
+    <div className="pt-2 px-4 pb-4 space-y-4">
       <Header
         title="系统设置"
         subtitle="管理账户和系统偏好设置"

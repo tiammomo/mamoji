@@ -7,7 +7,7 @@ import { BarChart3, Download } from 'lucide-react';
 
 export default function ReportsPage() {
   return (
-    <div className="p-6 space-y-6">
+    <div className="pt-2 px-4 pb-4 space-y-4">
       <Header
         title="报表统计"
         subtitle="查看财务数据分析和报表"
