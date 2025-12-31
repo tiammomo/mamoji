@@ -17,6 +17,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { useUnreadCount, useNotifications, useAuthStore, useUser, useIsAuthenticated } from '@/stores';
 import { formatRelativeTime } from '@/lib/utils';
+import { QuickAddDialog } from '@/components/quick-add-dialog';
 
 interface HeaderProps {
   title?: string;
@@ -31,6 +32,7 @@ export function Header({ title, subtitle }: HeaderProps) {
   const isAuthenticated = useIsAuthenticated();
   const logout = useAuthStore((state) => state.logout);
   const [mounted, setMounted] = useState(false);
+  const [isQuickAddOpen, setIsQuickAddOpen] = useState(false);
 
   // 等待客户端挂载，避免水合作用不匹配
   useEffect(() => {
@@ -76,7 +78,12 @@ export function Header({ title, subtitle }: HeaderProps) {
         </div>
 
         {/* Quick Add */}
-        <Button size="sm" className="gap-1">
+        <Button
+          size="sm"
+          className="gap-1"
+          onClick={() => setIsQuickAddOpen(true)}
+          title="快速记账"
+        >
           <Plus className="w-4 h-4" />
           <span className="hidden sm:inline">快速记账</span>
         </Button>
@@ -180,6 +187,9 @@ export function Header({ title, subtitle }: HeaderProps) {
           </Link>
         )}
       </div>
+
+      {/* 快速记账对话框 */}
+      <QuickAddDialog open={isQuickAddOpen} onOpenChange={setIsQuickAddOpen} />
     </header>
   );
 }

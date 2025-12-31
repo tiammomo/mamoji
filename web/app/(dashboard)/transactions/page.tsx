@@ -452,92 +452,190 @@ export default function TransactionsPage() {
     }
   };
 
-  // 提交表单
-  const handleSubmit = async () => {
-    if (!formData.amount || parseFloat(formData.amount) <= 0) {
+  // ========== 数据验证逻辑 ==========
+  /**
+   * 验证表单数据的有效性
+   * @returns 验证通过返回 true，否则返回 false
+   */
+  const validateForm = (): boolean => {
+    // 验证金额：必填且大于0
+    if (!formData.amount || formData.amount.trim() === '') {
       toast({
         title: '验证失败',
-        description: '请输入有效金额',
+        description: '请输入金额',
         variant: 'destructive',
       });
-      return;
+      return false;
     }
 
-    if (!formData.category) {
+    const amountValue = parseFloat(formData.amount);
+    if (isNaN(amountValue) || amountValue <= 0) {
+      toast({
+        title: '验证失败',
+        description: '请输入有效的金额（大于0）',
+        variant: 'destructive',
+      });
+      return false;
+    }
+
+    // 验证金额上限（防止输入错误）
+    if (amountValue > 99999999) {
+      toast({
+        title: '金额过大',
+        description: '金额不能超过 99,999,999',
+        variant: 'destructive',
+      });
+      return false;
+    }
+
+    // 验证分类：必填
+    if (!formData.category || formData.category.trim() === '') {
       toast({
         title: '验证失败',
         description: '请选择分类',
         variant: 'destructive',
       });
-      return;
+      return false;
     }
 
-    if (!formData.accountId) {
+    // 验证账户：必填
+    if (!formData.accountId || formData.accountId.trim() === '') {
       toast({
         title: '验证失败',
         description: '请选择账户',
         variant: 'destructive',
       });
+      return false;
+    }
+
+    // 验证日期：必填且有效
+    if (!formData.date || formData.date.trim() === '') {
+      toast({
+        title: '验证失败',
+        description: '请选择日期',
+        variant: 'destructive',
+      });
+      return false;
+    }
+
+    // 验证日期不能是未来日期（可选限制）
+    const selectedDate = new Date(formData.date);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    if (selectedDate > today) {
+      toast({
+        title: '日期无效',
+        description: '不能选择未来的日期',
+        variant: 'destructive',
+      });
+      return false;
+    }
+
+    return true;
+  };
+
+  // ========== 保存功能 ==========
+  /**
+   * 提交表单数据到服务器
+   * 包含完整的错误处理和用户反馈
+   */
+  const handleSubmit = async () => {
+    // 执行数据验证
+    if (!validateForm()) {
       return;
     }
 
     setIsLoading(true);
+
     try {
+      // 构建提交数据
+      const amountValue = parseFloat(formData.amount);
       const transactionData: Record<string, unknown> = {
         type: formData.type,
-        amount: parseFloat(formData.amount),
+        amount: amountValue,
         category: formData.category,
         accountId: parseInt(formData.accountId),
         occurredAt: formData.date,
-        note: formData.note,
+        note: formData.note.trim() || undefined, // 空字符串转为 undefined
       };
 
-      // 添加预算ID（不关联预算时不发送，自动匹配时也不发送）
-      if (formData.budgetId && formData.budgetId !== '') {
+      // 处理预算关联（仅当选择了预算时才发送）
+      if (formData.budgetId && formData.budgetId.trim() !== '') {
         transactionData.budgetId = parseInt(formData.budgetId);
       }
 
-      // 获取账户名称
+      // 获取账户信息用于显示
       const account = accounts.find((a) => a.accountId === parseInt(formData.accountId));
+      const categoryLabel = formData.type === 'income'
+        ? INCOME_CATEGORY_LABELS[formData.category as keyof typeof INCOME_CATEGORY_LABELS]
+        : EXPENSE_CATEGORY_LABELS[formData.category as keyof typeof EXPENSE_CATEGORY_LABELS];
+
+      let savedTransaction: Transaction;
 
       if (editingTransaction) {
-        // 编辑模式
+        // ========== 编辑模式 ==========
         await put<Transaction>(`/api/v1/transactions/${editingTransaction.transactionId}`, transactionData);
+
+        // 更新本地状态
         setTransactions((prev) =>
           prev.map((t) =>
             t.transactionId === editingTransaction.transactionId
-              ? { ...t, ...transactionData, accountName: account?.name || t.accountName }
+              ? {
+                  ...t,
+                  ...transactionData,
+                  accountName: account?.name || t.accountName,
+                }
               : t
           )
         );
+
+        savedTransaction = {
+          ...editingTransaction,
+          ...transactionData,
+          accountName: account?.name || editingTransaction.accountName,
+        };
+
         toast({
           title: '保存成功',
-          description: '交易记录已更新',
+          description: `已将 "${editingTransaction.note || categoryLabel}" 更新为 ${formData.type === 'income' ? '+' : '-'}${formatCurrency(amountValue)}`,
         });
       } else {
-        // 新增模式
-        const newTransaction = await post<Transaction>('/api/v1/transactions', transactionData);
+        // ========== 新增模式 ==========
+        savedTransaction = await post<Transaction>('/api/v1/transactions', transactionData);
+
         // 确保账户名称正确显示
         if (account) {
-          newTransaction.accountName = account.name;
+          savedTransaction.accountName = account.name;
         }
-        setTransactions((prev) => [newTransaction, ...prev]);
+
+        // 更新交易列表（添加到列表开头）
+        setTransactions((prev) => [savedTransaction, ...prev]);
+
         // 刷新预算列表以更新已使用金额
         fetchBudgets();
+
         toast({
           title: '保存成功',
-          description: '交易记录已添加',
+          description: `已添加 ${formData.type === 'income' ? '收入' : '支出'} "${savedTransaction.note || categoryLabel}" ${formData.type === 'income' ? '+' : '-'}${formatCurrency(amountValue)}`,
         });
       }
 
+      // 关闭对话框
       setIsDialogOpen(false);
-    } catch (error) {
+    } catch (error: unknown) {
+      // ========== 错误处理 ==========
+      console.error('保存交易记录失败:', error);
+
+      // 获取更详细的错误信息
+      const errorMessage = error instanceof Error ? error.message : '请稍后重试';
+
       toast({
         title: '保存失败',
-        description: '请稍后重试',
+        description: errorMessage,
         variant: 'destructive',
       });
     } finally {
+      // 无论成功或失败，都关闭加载状态
       setIsLoading(false);
     }
   };
