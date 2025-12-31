@@ -44,7 +44,10 @@
       "Bash(powershell:*)",
       "Bash(TOKEN=\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbnRlcnByaXNlSWQiOjIsImV4cCI6MTc2NzI0Nzc1NCwiaWF0IjoxNzY3MTYxMzU0LCJqdGkiOiIxOTlkNjQyOS1kOTYwLTRjZmEtYWQxYy1jMjg3NzYxYjEyNGIiLCJ1c2VySWQiOjIyLCJ1c2VybmFtZSI6InRlc3R1c2VyIn0.33APK2rMD6JD7wN6I2JysGTuOCGyqcd1f4Cifrb4gig\")",
       "Bash(TOKEN=\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbnRlcnByaXNlSWQiOjIsImV4cCI6MTc2NzI0Nzg5OSwiaWF0IjoxNzY3MTYxNDk5LCJqdGkiOiJmNTJhODYyZS01N2RmLTQxNmQtYjE2NS0wNmVmNGNhNGRjMzYiLCJ1c2VySWQiOjIyLCJ1c2VybmFtZSI6InRlc3R1c2VyIn0.NWKINVSLuNElGf-OH27T4nqa3XbNhLlzNnXNAFtDBhk\")",
-      "Bash(net:*)"
+      "Bash(net:*)",
+      "Bash(python3:*)",
+      "Bash(pkill -9 -f \"server\")",
+      "Bash(pkill:*)"
     ]
   }
 }
