@@ -36,6 +36,7 @@ func Register(h *server.Hertz) {
 	// 账户管理
 	accountGroup := v1Group.Group("/accounts", middleware.Auth())
 	accountGroup.GET("", v1.ListAccounts)
+	accountGroup.GET("/summary", v1.GetAccountSummary)
 	accountGroup.POST("", v1.CreateAccount)
 	accountGroup.GET("/:accountId", v1.GetAccount)
 	accountGroup.PUT("/:accountId", v1.UpdateAccount)

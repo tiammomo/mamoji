@@ -160,7 +160,8 @@ func CreateAccount(ctx context.Context, c *app.RequestContext) {
 		"request_id", string(requestID),
 		"account_name", req.Name,
 		"account_type", req.Type,
-		"balance", req.Balance,
+		"available_balance", req.AvailableBalance,
+		"invested_amount", req.InvestedAmount,
 	)
 
 	enterpriseId := c.GetInt64("enterpriseId")
@@ -246,7 +247,8 @@ func UpdateAccount(ctx context.Context, c *app.RequestContext) {
 		"request_id", string(requestID),
 		"account_id", accountId,
 		"account_name", req.Name,
-		"balance", req.Balance,
+		"available_balance", req.AvailableBalance,
+		"invested_amount", req.InvestedAmount,
 	)
 
 	account, err := service.AccountServiceInst.Update(accountId, req)
@@ -394,5 +396,53 @@ func ListAccountFlows(ctx context.Context, c *app.RequestContext) {
 	c.JSON(200, utils.H{
 		"code": 0,
 		"data": flows,
+	})
+}
+
+// GetAccountSummary 获取账户汇总信息（包含环比数据）
+func GetAccountSummary(ctx context.Context, c *app.RequestContext) {
+	requestID := c.GetHeader("X-Request-ID")
+	startTime := time.Now()
+	log := logger.Get()
+
+	log.InfoMap("GetAccountSummary 请求开始",
+		map[string]interface{}{
+			"method":     "GET",
+			"path":       "/api/v1/accounts/summary",
+			"request_id": string(requestID),
+			"enterprise": c.GetInt64("enterpriseId"),
+		},
+	)
+
+	enterpriseId := c.GetInt64("enterpriseId")
+
+	summary, err := service.AccountServiceInst.GetSummary(enterpriseId)
+	duration := time.Since(startTime)
+
+	if err != nil {
+		log.Errorw("GetAccountSummary 请求失败",
+			err,
+			"request_id", string(requestID),
+			"enterprise_id", enterpriseId,
+			"duration_ms", duration.Milliseconds(),
+		)
+		c.JSON(200, utils.H{
+			"code":    500,
+			"message": err.Error(),
+		})
+		return
+	}
+
+	log.Infow("GetAccountSummary 请求成功",
+		"request_id", string(requestID),
+		"enterprise_id", enterpriseId,
+		"total_balance", summary.TotalBalance,
+		"has_history", summary.HasHistory,
+		"duration_ms", duration.Milliseconds(),
+	)
+
+	c.JSON(200, utils.H{
+		"code": 0,
+		"data": summary,
 	})
 }
