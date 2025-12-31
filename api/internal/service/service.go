@@ -62,16 +62,17 @@ func (s *AccountService) List(enterpriseId, unitId int64) ([]dto.AccountResponse
 	response := make([]dto.AccountResponse, 0, len(accounts))
 	for _, acc := range accounts {
 		response = append(response, dto.AccountResponse{
-			AccountId:    acc.AccountId,
-			EnterpriseId: acc.EnterpriseId,
-			UnitId:       acc.UnitId,
-			Type:         acc.Type,
-			Name:         acc.Name,
-			AccountNo:    acc.AccountNo,
-			BankCardType: acc.BankCardType,
-			Balance:      acc.Balance,
-			Status:       acc.Status,
-			CreatedAt:    acc.CreatedAt.Format("2006-01-02 15:04:05"),
+			AccountId:        acc.AccountId,
+			EnterpriseId:     acc.EnterpriseId,
+			UnitId:           acc.UnitId,
+			Type:             acc.Type,
+			Name:             acc.Name,
+			AccountNo:        acc.AccountNo,
+			BankCardType:     acc.BankCardType,
+			AvailableBalance: acc.AvailableBalance,
+			InvestedAmount:   acc.InvestedAmount,
+			Status:           acc.Status,
+			CreatedAt:        acc.CreatedAt.Format("2006-01-02 15:04:05"),
 		})
 	}
 	return response, nil
@@ -84,16 +85,17 @@ func (s *AccountService) GetById(accountId int64) (*dto.AccountResponse, error) 
 	}
 
 	response := &dto.AccountResponse{
-		AccountId:    account.AccountId,
-		EnterpriseId: account.EnterpriseId,
-		UnitId:       account.UnitId,
-		Type:         account.Type,
-		Name:         account.Name,
-		AccountNo:    account.AccountNo,
-		BankCardType: account.BankCardType,
-		Balance:      account.Balance,
-		Status:       account.Status,
-		CreatedAt:    account.CreatedAt.Format("2006-01-02 15:04:05"),
+		AccountId:        account.AccountId,
+		EnterpriseId:     account.EnterpriseId,
+		UnitId:           account.UnitId,
+		Type:             account.Type,
+		Name:             account.Name,
+		AccountNo:        account.AccountNo,
+		BankCardType:     account.BankCardType,
+		AvailableBalance: account.AvailableBalance,
+		InvestedAmount:   account.InvestedAmount,
+		Status:           account.Status,
+		CreatedAt:        account.CreatedAt.Format("2006-01-02 15:04:05"),
 	}
 	return response, nil
 }
@@ -125,14 +127,15 @@ func (s *AccountService) Create(req dto.CreateAccountRequest) (*dto.AccountRespo
 	}
 
 	account := &entity.Account{
-		EnterpriseId: req.EnterpriseId,
-		UnitId:       unitId,
-		Type:         req.Type,
-		Name:         req.Name,
-		AccountNo:    req.AccountNo,
-		BankCardType: req.BankCardType,
-		Balance:      req.Balance,
-		Status:       1,
+		EnterpriseId:     req.EnterpriseId,
+		UnitId:           unitId,
+		Type:             req.Type,
+		Name:             req.Name,
+		AccountNo:        req.AccountNo,
+		BankCardType:     req.BankCardType,
+		AvailableBalance: req.AvailableBalance,
+		InvestedAmount:   req.InvestedAmount,
+		Status:           1,
 	}
 
 	if err := database.DB.Create(account).Error; err != nil {
@@ -140,16 +143,17 @@ func (s *AccountService) Create(req dto.CreateAccountRequest) (*dto.AccountRespo
 	}
 
 	response := &dto.AccountResponse{
-		AccountId:    account.AccountId,
-		EnterpriseId: account.EnterpriseId,
-		UnitId:       account.UnitId,
-		Type:         account.Type,
-		Name:         account.Name,
-		AccountNo:    account.AccountNo,
-		BankCardType: account.BankCardType,
-		Balance:      account.Balance,
-		Status:       account.Status,
-		CreatedAt:    account.CreatedAt.Format("2006-01-02 15:04:05"),
+		AccountId:        account.AccountId,
+		EnterpriseId:     account.EnterpriseId,
+		UnitId:           account.UnitId,
+		Type:             account.Type,
+		Name:             account.Name,
+		AccountNo:        account.AccountNo,
+		BankCardType:     account.BankCardType,
+		AvailableBalance: account.AvailableBalance,
+		InvestedAmount:   account.InvestedAmount,
+		Status:           account.Status,
+		CreatedAt:        account.CreatedAt.Format("2006-01-02 15:04:05"),
 	}
 
 	return response, nil
@@ -172,8 +176,11 @@ func (s *AccountService) Update(accountId int64, req dto.UpdateAccountRequest) (
 	if req.BankCardType != "" {
 		updates["bank_card_type"] = req.BankCardType
 	}
-	if req.Balance != account.Balance {
-		updates["balance"] = req.Balance
+	if req.AvailableBalance >= 0 {
+		updates["available_balance"] = req.AvailableBalance
+	}
+	if req.InvestedAmount >= 0 {
+		updates["invested_amount"] = req.InvestedAmount
 	}
 
 	if len(updates) > 0 {
@@ -186,16 +193,17 @@ func (s *AccountService) Update(accountId int64, req dto.UpdateAccountRequest) (
 	}
 
 	response := &dto.AccountResponse{
-		AccountId:    account.AccountId,
-		EnterpriseId: account.EnterpriseId,
-		UnitId:       account.UnitId,
-		Type:         account.Type,
-		Name:         account.Name,
-		AccountNo:    account.AccountNo,
-		BankCardType: account.BankCardType,
-		Balance:      account.Balance,
-		Status:       account.Status,
-		CreatedAt:    account.CreatedAt.Format("2006-01-02 15:04:05"),
+		AccountId:        account.AccountId,
+		EnterpriseId:     account.EnterpriseId,
+		UnitId:           account.UnitId,
+		Type:             account.Type,
+		Name:             account.Name,
+		AccountNo:        account.AccountNo,
+		BankCardType:     account.BankCardType,
+		AvailableBalance: account.AvailableBalance,
+		InvestedAmount:   account.InvestedAmount,
+		Status:           account.Status,
+		CreatedAt:        account.CreatedAt.Format("2006-01-02 15:04:05"),
 	}
 	return response, nil
 }
@@ -216,6 +224,101 @@ func (s *AccountService) Delete(accountId int64) error {
 
 func (s *AccountService) ListFlows(accountId int64) ([]interface{}, error) {
 	return nil, nil
+}
+
+// GetSummary 获取账户汇总信息（包含上月数据用于环比计算）
+func (s *AccountService) GetSummary(enterpriseId int64) (*dto.AccountSummaryResponse, error) {
+	// 获取本月账户数据
+	var accounts []entity.Account
+	if err := database.DB.Where("enterprise_id = ? AND status = 1", enterpriseId).Find(&accounts).Error; err != nil {
+		return nil, errors.New("查询账户失败")
+	}
+
+	// 计算本月汇总
+	var totalAvailable, totalInvested float64
+	for _, acc := range accounts {
+		totalAvailable += acc.AvailableBalance
+		totalInvested += acc.InvestedAmount
+	}
+	totalBalance := totalAvailable + totalInvested
+
+	// 计算上月时间范围
+	now := time.Now()
+	currentYear := now.Year()
+	currentMonth := int(now.Month())
+
+	lastMonth := currentMonth - 1
+	lastYear := currentYear
+	if lastMonth == 0 {
+		lastMonth = 12
+		lastYear = currentYear - 1
+	}
+
+	lastMonthStart := time.Date(lastYear, time.Month(lastMonth), 1, 0, 0, 0, 0, time.Local)
+	lastMonthEnd := time.Date(lastYear, time.Month(lastMonth+1), 0, 23, 59, 59, 999999999, time.Local)
+
+	// 计算上月交易对账户余额的影响
+	// 上月账户余额 = 本月账户余额 - 上月收入 + 上月支出
+	var lastMonthIncome, lastMonthExpense float64
+
+	// 查询上月收入
+	database.DB.Model(&entity.Transaction{}).
+		Where("enterprise_id = ? AND status = 1 AND occurred_at >= ? AND occurred_at <= ?",
+			enterpriseId, lastMonthStart, lastMonthEnd).
+		Where("type = ?", "income").
+		Where("account_id > 0").
+		Select("COALESCE(SUM(amount), 0)").
+		Scan(&lastMonthIncome)
+
+	// 查询上月支出
+	database.DB.Model(&entity.Transaction{}).
+		Where("enterprise_id = ? AND status = 1 AND occurred_at >= ? AND occurred_at <= ?",
+			enterpriseId, lastMonthStart, lastMonthEnd).
+		Where("type = ?", "expense").
+		Where("account_id > 0").
+		Select("COALESCE(SUM(amount), 0)").
+		Scan(&lastMonthExpense)
+
+	// 计算上月余额（简化计算：假设所有账户上月都存在）
+	// 这里的计算是：上月余额 = 本月余额 - 上月收入 + 上月支出
+	// 因为收入会增加余额，支出会减少余额
+	lastMonthBalance := totalBalance - lastMonthIncome + lastMonthExpense
+	lastMonthAvailable := totalAvailable - lastMonthIncome + lastMonthExpense
+	lastMonthInvested := totalInvested // 投资金额变化不在交易中体现
+
+	// 判断是否有历史数据（通过检查上月是否有交易记录）
+	var txCount int64
+	database.DB.Model(&entity.Transaction{}).
+		Where("enterprise_id = ? AND status = 1 AND occurred_at >= ? AND occurred_at <= ?",
+			enterpriseId, lastMonthStart, lastMonthEnd).
+		Count(&txCount)
+	hasHistory := txCount > 0
+
+	// 计算环比变化率
+	var balanceMoM, availableMoM, investedMoM float64
+	if lastMonthBalance > 0 {
+		balanceMoM = ((totalBalance - lastMonthBalance) / lastMonthBalance) * 100
+	}
+	if lastMonthAvailable > 0 {
+		availableMoM = ((totalAvailable - lastMonthAvailable) / lastMonthAvailable) * 100
+	}
+	if lastMonthInvested > 0 {
+		investedMoM = ((totalInvested - lastMonthInvested) / lastMonthInvested) * 100
+	}
+
+	return &dto.AccountSummaryResponse{
+		TotalBalance:       totalBalance,
+		TotalAvailable:     totalAvailable,
+		TotalInvested:      totalInvested,
+		AccountCount:       len(accounts),
+		LastMonthBalance:   lastMonthBalance,
+		LastMonthAvailable: lastMonthAvailable,
+		LastMonthInvested:  lastMonthInvested,
+		BalanceMoM:         balanceMoM,
+		AvailableMoM:       availableMoM,
+		InvestedMoM:        investedMoM,
+		HasHistory:         hasHistory,
+	}, nil
 }
 
 // ===== AuthService =====
@@ -581,7 +684,7 @@ func (s *TransactionService) Create(enterpriseId int64, req dto.CreateTransactio
 		return nil, errors.New("创建交易记录失败")
 	}
 
-	// 更新账户余额
+	// 更新账户可用余额
 	if tx.AccountId > 0 {
 		var account entity.Account
 		if err := database.DB.Where("account_id = ?", tx.AccountId).First(&account).Error; err == nil {
@@ -589,7 +692,8 @@ func (s *TransactionService) Create(enterpriseId int64, req dto.CreateTransactio
 			if req.Type == "expense" {
 				balanceChange = -req.Amount
 			}
-			database.DB.Model(&account).Update("balance", account.Balance+balanceChange)
+			newBalance := account.AvailableBalance + balanceChange
+			database.DB.Model(&account).Update("available_balance", newBalance)
 		}
 	}
 
@@ -737,16 +841,16 @@ func (s *TransactionService) Update(transactionId int64, req dto.UpdateTransacti
 		database.DB.Where("transaction_id = ?", transactionId).First(&tx)
 	}
 
-	// 如果金额或类型或账户发生变化，需要调整账户余额
+	// 如果金额或类型或账户发生变化，需要调整账户可用余额
 	if req.Amount > 0 && (req.Amount != oldAmount || req.Type != "" || req.AccountId > 0) {
 		// 恢复旧账户的旧金额影响
 		if oldAccountId > 0 {
 			var oldAccount entity.Account
 			if database.DB.Where("account_id = ?", oldAccountId).First(&oldAccount).Error == nil {
 				if oldType == "expense" {
-					database.DB.Model(&oldAccount).Update("balance", oldAccount.Balance+oldAmount)
+					database.DB.Model(&oldAccount).Update("available_balance", oldAccount.AvailableBalance+oldAmount)
 				} else if oldType == "income" {
-					database.DB.Model(&oldAccount).Update("balance", oldAccount.Balance-oldAmount)
+					database.DB.Model(&oldAccount).Update("available_balance", oldAccount.AvailableBalance-oldAmount)
 				}
 			}
 		}
@@ -766,9 +870,9 @@ func (s *TransactionService) Update(transactionId int64, req dto.UpdateTransacti
 			var newAccount entity.Account
 			if database.DB.Where("account_id = ?", newAccountId).First(&newAccount).Error == nil {
 				if newType == "expense" {
-					database.DB.Model(&newAccount).Update("balance", newAccount.Balance-newAmount)
+					database.DB.Model(&newAccount).Update("available_balance", newAccount.AvailableBalance-newAmount)
 				} else if newType == "income" {
-					database.DB.Model(&newAccount).Update("balance", newAccount.Balance+newAmount)
+					database.DB.Model(&newAccount).Update("available_balance", newAccount.AvailableBalance+newAmount)
 				}
 			}
 		}
@@ -861,18 +965,18 @@ func (s *TransactionService) Delete(transactionId int64) error {
 		return errors.New("交易记录不存在")
 	}
 
-	// 更新账户余额（反向操作）
+	// 更新账户可用余额（反向操作）
 	if tx.AccountId > 0 && tx.Type == "expense" {
-		// 支出删除时，恢复账户余额
+		// 支出删除时，恢复账户可用余额
 		var account entity.Account
 		if err := database.DB.Where("account_id = ?", tx.AccountId).First(&account).Error; err == nil {
-			database.DB.Model(&account).Update("balance", account.Balance+tx.Amount)
+			database.DB.Model(&account).Update("available_balance", account.AvailableBalance+tx.Amount)
 		}
 	} else if tx.AccountId > 0 && tx.Type == "income" {
-		// 收入删除时，扣减账户余额
+		// 收入删除时，扣减账户可用余额
 		var account entity.Account
 		if err := database.DB.Where("account_id = ?", tx.AccountId).First(&account).Error; err == nil {
-			database.DB.Model(&account).Update("balance", account.Balance-tx.Amount)
+			database.DB.Model(&account).Update("available_balance", account.AvailableBalance-tx.Amount)
 		}
 	}
 

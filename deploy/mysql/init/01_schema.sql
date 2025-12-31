@@ -125,7 +125,8 @@ CREATE TABLE IF NOT EXISTS `biz_account` (
     `name`             VARCHAR(50)     NOT NULL COMMENT '账户名称',
     `account_no`       VARCHAR(50)     DEFAULT NULL COMMENT '账号(银行卡后四位)',
     `bank_card_type`   VARCHAR(20)     DEFAULT NULL COMMENT '银行卡类型: type1-一类卡 type2-二类卡',
-    `balance`          DECIMAL(18,2)   NOT NULL DEFAULT 0.00 COMMENT '当前余额',
+    `available_balance` DECIMAL(18,2)  NOT NULL DEFAULT 0.00 COMMENT '可支配金额',
+    `invested_amount`  DECIMAL(18,2)   NOT NULL DEFAULT 0.00 COMMENT '投资中金额',
     `status`           TINYINT         NOT NULL DEFAULT 1 COMMENT '状态: 0-停用 1-正常',
     `created_at`       DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     `updated_at`       DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
@@ -390,11 +391,11 @@ INSERT INTO `biz_accounting_unit` (`enterprise_id`, `parent_unit_id`, `name`, `t
 (1, 5, '基金投资', 'investment', 2, 1);
 
 -- 插入示例账户
-INSERT INTO `biz_account` (`enterprise_id`, `unit_id`, `type`, `name`, `balance`, `status`) VALUES
-(1, 1, 'wechat', '微信钱包', 12580.50, 1),
-(1, 1, 'alipay', '支付宝', 35880.00, 1),
-(1, 1, 'bank', '工商银行(1234)', 128888.88, 1),
-(1, 1, 'credit_card', '招商银行信用卡', -5200.00, 1);
+INSERT INTO `biz_account` (`enterprise_id`, `unit_id`, `type`, `name`, `available_balance`, `invested_amount`, `status`) VALUES
+(1, 1, 'wechat', '微信钱包', 12580.50, 0, 1),
+(1, 1, 'alipay', '支付宝', 35880.00, 0, 1),
+(1, 1, 'bank', '工商银行(1234)', 88888.88, 40000.00, 1),
+(1, 1, 'credit_card', '招商银行信用卡', -5200.00, 0, 1);
 
 -- 插入示例预算
 INSERT INTO `biz_budget` (`enterprise_id`, `unit_id`, `name`, `type`, `category`, `total_amount`, `period_start`, `period_end`, `status`) VALUES

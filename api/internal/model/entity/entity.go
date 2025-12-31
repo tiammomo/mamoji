@@ -103,17 +103,18 @@ func (UnitPermission) TableName() string {
 
 // Account 账户表
 type Account struct {
-	AccountId    int64     `gorm:"primaryKey;autoIncrement" json:"accountId"`
-	EnterpriseId int64     `gorm:"not null;index" json:"enterpriseId"`
-	UnitId       int64     `gorm:"not null;index" json:"unitId"`
-	Type         string    `gorm:"size:20;not null" json:"type"`
-	Name         string    `gorm:"size:50;not null" json:"name"`
-	AccountNo    string    `gorm:"size:50" json:"accountNo"`
-	BankCardType string    `gorm:"size:20" json:"bankCardType"`
-	Balance      float64   `gorm:"type:decimal(18,2);not null;default:0" json:"balance"`
-	Status       int       `gorm:"default:1" json:"status"`
-	CreatedAt    time.Time `gorm:"autoCreateTime" json:"createdAt"`
-	UpdatedAt    time.Time `gorm:"autoUpdateTime" json:"updatedAt"`
+	AccountId        int64     `gorm:"primaryKey;autoIncrement" json:"accountId"`
+	EnterpriseId     int64     `gorm:"not null;index" json:"enterpriseId"`
+	UnitId           int64     `gorm:"not null;index" json:"unitId"`
+	Type             string    `gorm:"size:20;not null" json:"type"`
+	Name             string    `gorm:"size:50;not null" json:"name"`
+	AccountNo        string    `gorm:"size:50" json:"accountNo"`
+	BankCardType     string    `gorm:"size:20" json:"bankCardType"`
+	AvailableBalance float64   `gorm:"type:decimal(18,2);not null;default:0" json:"availableBalance"`
+	InvestedAmount   float64   `gorm:"type:decimal(18,2);not null;default:0" json:"investedAmount"`
+	Status           int       `gorm:"default:1" json:"status"`
+	CreatedAt        time.Time `gorm:"autoCreateTime" json:"createdAt"`
+	UpdatedAt        time.Time `gorm:"autoUpdateTime" json:"updatedAt"`
 }
 
 func (Account) TableName() string {

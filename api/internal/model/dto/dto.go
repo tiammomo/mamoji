@@ -37,36 +37,39 @@ type UserInfo struct {
 
 // CreateAccountRequest 创建账户请求
 type CreateAccountRequest struct {
-	EnterpriseId int64   `json:"enterpriseId"`
-	UnitId       int64   `json:"unitId"`
-	Type         string  `json:"type" binding:"required"`
-	Name         string  `json:"name" binding:"required,min=1,max=50"`
-	AccountNo    string  `json:"accountNo,omitempty"`
-	BankCardType string  `json:"bankCardType,omitempty"`
-	Balance      float64 `json:"balance"`
+	EnterpriseId     int64   `json:"enterpriseId"`
+	UnitId           int64   `json:"unitId"`
+	Type             string  `json:"type" binding:"required"`
+	Name             string  `json:"name" binding:"required,min=1,max=50"`
+	AccountNo        string  `json:"accountNo,omitempty"`
+	BankCardType     string  `json:"bankCardType,omitempty"`
+	AvailableBalance float64 `json:"availableBalance"`
+	InvestedAmount   float64 `json:"investedAmount"`
 }
 
 // UpdateAccountRequest 更新账户请求
 type UpdateAccountRequest struct {
-	Name         string  `json:"name,omitempty"`
-	AccountNo    string  `json:"accountNo,omitempty"`
-	BankCardType string  `json:"bankCardType,omitempty"`
-	Balance      float64 `json:"balance"`
-	Status       int     `json:"status,omitempty"`
+	Name             string  `json:"name,omitempty"`
+	AccountNo        string  `json:"accountNo,omitempty"`
+	BankCardType     string  `json:"bankCardType,omitempty"`
+	AvailableBalance float64 `json:"availableBalance"`
+	InvestedAmount   float64 `json:"investedAmount"`
+	Status           int     `json:"status,omitempty"`
 }
 
 // AccountResponse 账户响应
 type AccountResponse struct {
-	AccountId    int64   `json:"accountId"`
-	EnterpriseId int64   `json:"enterpriseId"`
-	UnitId       int64   `json:"unitId"`
-	Type         string  `json:"type"`
-	Name         string  `json:"name"`
-	AccountNo    string  `json:"accountNo,omitempty"`
-	BankCardType string  `json:"bankCardType,omitempty"`
-	Balance      float64 `json:"balance"`
-	Status       int     `json:"status"`
-	CreatedAt    string  `json:"createdAt"`
+	AccountId        int64   `json:"accountId"`
+	EnterpriseId     int64   `json:"enterpriseId"`
+	UnitId           int64   `json:"unitId"`
+	Type             string  `json:"type"`
+	Name             string  `json:"name"`
+	AccountNo        string  `json:"accountNo,omitempty"`
+	BankCardType     string  `json:"bankCardType,omitempty"`
+	AvailableBalance float64 `json:"availableBalance"`
+	InvestedAmount   float64 `json:"investedAmount"`
+	Status           int     `json:"status"`
+	CreatedAt        string  `json:"createdAt"`
 }
 
 // ListTransactionRequest 列表查询请求
@@ -369,4 +372,23 @@ type TrendReportResponse struct {
 	Period   string      `json:"period"`
 	Incomes  []TrendItem `json:"incomes"`
 	Expenses []TrendItem `json:"expenses"`
+}
+
+// AccountSummaryResponse 账户汇总响应（包含环比数据）
+type AccountSummaryResponse struct {
+	// 本月数据
+	TotalBalance   float64 `json:"totalBalance"`
+	TotalAvailable float64 `json:"totalAvailable"`
+	TotalInvested  float64 `json:"totalInvested"`
+	AccountCount   int     `json:"accountCount"`
+	// 上月数据
+	LastMonthBalance   float64 `json:"lastMonthBalance"`
+	LastMonthAvailable float64 `json:"lastMonthAvailable"`
+	LastMonthInvested  float64 `json:"lastMonthInvested"`
+	// 环比变化率 (%)
+	BalanceMoM   float64 `json:"balanceMoM"`
+	AvailableMoM float64 `json:"availableMoM"`
+	InvestedMoM  float64 `json:"investedMoM"`
+	// 是否有历史数据
+	HasHistory bool `json:"hasHistory"`
 }

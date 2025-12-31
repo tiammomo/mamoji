@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { Header } from '@/components/layout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -34,6 +34,8 @@ import {
   MoreVertical,
   Edit,
   Trash2,
+  TrendingUp,
+  TrendingDown,
 } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
 import { ACCOUNT_TYPE, ACCOUNT_TYPE_LABELS, type AccountType } from '@/lib/constants';
@@ -44,17 +46,34 @@ interface Account {
   accountId: number;
   type: AccountType;
   name: string;
-  balance: number;
+  availableBalance: number; // 可支配金额
+  investedAmount: number;   // 投资中金额
   status: number;
   bankCardType?: string;
   creditLimit?: number;
+}
+
+// 账户汇总响应（包含环比数据）
+interface AccountSummary {
+  totalBalance: number;
+  totalAvailable: number;
+  totalInvested: number;
+  accountCount: number;
+  lastMonthBalance: number;
+  lastMonthAvailable: number;
+  lastMonthInvested: number;
+  balanceMoM: number;
+  availableMoM: number;
+  investedMoM: number;
+  hasHistory: boolean;
 }
 
 // 账户表单数据
 interface AccountFormData {
   name: string;
   type: AccountType;
-  balance: string;
+  availableBalance: string;
+  investedAmount: string;
   note: string;
 }
 
@@ -79,6 +98,7 @@ export default function AccountsPage() {
   const router = useRouter();
   const { toast } = useToast();
   const [accounts, setAccounts] = useState<Account[]>([]);
+  const [summary, setSummary] = useState<AccountSummary | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingAccount, setEditingAccount] = useState<Account | null>(null);
@@ -91,13 +111,15 @@ export default function AccountsPage() {
   const [formData, setFormData] = useState<AccountFormData>({
     name: '',
     type: 'cash',
-    balance: '0',
+    availableBalance: '0',
+    investedAmount: '0',
     note: '',
   });
 
-  // 加载账户列表
+  // 加载账户列表和汇总数据
   useEffect(() => {
     fetchAccounts();
+    fetchSummary();
   }, []);
 
   const fetchAccounts = async () => {
@@ -115,18 +137,55 @@ export default function AccountsPage() {
     }
   };
 
+  // 获取账户汇总数据（包含环比上月数据）
+  const fetchSummary = async () => {
+    try {
+      const data = await get<AccountSummary>('/api/v1/accounts/summary');
+      setSummary(data);
+    } catch (error) {
+      console.error('获取账户汇总失败:', error);
+      // 汇总数据失败不影响主流程
+    }
+  };
+
   const filteredAccounts = accounts.filter(
     (acc) =>
       acc.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       ACCOUNT_TYPE_LABELS[acc.type].includes(searchQuery)
   );
 
-  const totalBalance = accounts.reduce((sum, acc) => sum + acc.balance, 0);
+  // 使用汇总数据计算总金额（优先使用汇总数据，否则从账户列表计算）
+  const totalBalance = summary?.totalBalance ?? accounts.reduce((sum, acc) => sum + acc.availableBalance + acc.investedAmount, 0);
+  const totalAvailable = summary?.totalAvailable ?? accounts.reduce((sum, acc) => sum + acc.availableBalance, 0);
+  const totalInvested = summary?.totalInvested ?? accounts.reduce((sum, acc) => sum + acc.investedAmount, 0);
+
+  // 从汇总数据获取环比信息
+  const hasLastMonthData = summary?.hasHistory ?? false;
+
+  // 计算环比增长率（使用后端返回的数据）
+  // 始终显示环比指标，如果没有历史数据则显示 "--"
+  const totalBalanceMoM = useMemo(() => ({
+    value: summary?.balanceMoM ?? 0,
+    isPositive: (summary?.balanceMoM ?? 0) >= 0,
+    hasData: hasLastMonthData,
+  }), [summary?.balanceMoM, hasLastMonthData]);
+
+  const totalAvailableMoM = useMemo(() => ({
+    value: summary?.availableMoM ?? 0,
+    isPositive: (summary?.availableMoM ?? 0) >= 0,
+    hasData: hasLastMonthData,
+  }), [summary?.availableMoM, hasLastMonthData]);
+
+  const totalInvestedMoM = useMemo(() => ({
+    value: summary?.investedMoM ?? 0,
+    isPositive: (summary?.investedMoM ?? 0) >= 0,
+    hasData: hasLastMonthData,
+  }), [summary?.investedMoM, hasLastMonthData]);
 
   // 打开新增对话框
   const handleAddAccount = () => {
     setEditingAccount(null);
-    setFormData({ name: '', type: 'cash', balance: '0', note: '' });
+    setFormData({ name: '', type: 'cash', availableBalance: '0', investedAmount: '0', note: '' });
     setIsDialogOpen(true);
   };
 
@@ -136,7 +195,8 @@ export default function AccountsPage() {
     setFormData({
       name: account.name,
       type: account.type,
-      balance: account.balance.toString(),
+      availableBalance: account.availableBalance.toString(),
+      investedAmount: account.investedAmount.toString(),
       note: '',
     });
     setIsDialogOpen(true);
@@ -190,7 +250,8 @@ export default function AccountsPage() {
       const accountData = {
         name: formData.name,
         type: formData.type,
-        balance: parseFloat(formData.balance) || 0,
+        availableBalance: parseFloat(formData.availableBalance) || 0,
+        investedAmount: parseFloat(formData.investedAmount) || 0,
       };
 
       if (editingAccount) {
@@ -236,29 +297,109 @@ export default function AccountsPage() {
         subtitle="管理您的所有账户资产"
       />
 
-      {/* Summary Card */}
-      <Card>
-        <CardContent className="flex items-center justify-between py-6">
-          <div>
-            <p className="text-sm text-muted-foreground">账户总余额</p>
-            <p className="text-3xl font-bold">{formatCurrency(totalBalance)}</p>
-          </div>
-          <Button onClick={handleAddAccount}>
-            <Plus className="w-4 h-4 mr-2" />
-            新增账户
-          </Button>
-        </CardContent>
-      </Card>
+      {/* Summary Cards */}
+      <div className="grid gap-4 md:grid-cols-3">
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              账户总余额
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{formatCurrency(totalBalance)}</div>
+            <div className="flex items-center gap-1 mt-1">
+              {totalBalanceMoM.hasData ? (
+                <>
+                  {totalBalanceMoM.isPositive ? (
+                    <TrendingUp className="w-3 h-3 text-success" />
+                  ) : (
+                    <TrendingDown className="w-3 h-3 text-destructive" />
+                  )}
+                  <span className={`text-xs ${totalBalanceMoM.isPositive ? 'text-success' : 'text-destructive'}`}>
+                    {totalBalanceMoM.isPositive ? '+' : ''}{totalBalanceMoM.value.toFixed(1)}%
+                  </span>
+                </>
+              ) : (
+                <span className="text-xs text-muted-foreground">--</span>
+              )}
+              <span className="text-xs text-muted-foreground">环比上月</span>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              可支配金额
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-success">{formatCurrency(totalAvailable)}</div>
+            <div className="flex items-center gap-1 mt-1">
+              {totalAvailableMoM.hasData ? (
+                <>
+                  {totalAvailableMoM.isPositive ? (
+                    <TrendingUp className="w-3 h-3 text-success" />
+                  ) : (
+                    <TrendingDown className="w-3 h-3 text-destructive" />
+                  )}
+                  <span className={`text-xs ${totalAvailableMoM.isPositive ? 'text-success' : 'text-destructive'}`}>
+                    {totalAvailableMoM.isPositive ? '+' : ''}{totalAvailableMoM.value.toFixed(1)}%
+                  </span>
+                </>
+              ) : (
+                <span className="text-xs text-muted-foreground">--</span>
+              )}
+              <span className="text-xs text-muted-foreground">环比上月</span>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              投资中金额
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-primary">{formatCurrency(totalInvested)}</div>
+            <div className="flex items-center gap-1 mt-1">
+              {totalInvestedMoM.hasData ? (
+                <>
+                  {totalInvestedMoM.isPositive ? (
+                    <TrendingUp className="w-3 h-3 text-primary" />
+                  ) : (
+                    <TrendingDown className="w-3 h-3 text-muted-foreground" />
+                  )}
+                  <span className={`text-xs ${totalInvestedMoM.isPositive ? 'text-primary' : 'text-muted-foreground'}`}>
+                    {totalInvestedMoM.isPositive ? '+' : ''}{totalInvestedMoM.value.toFixed(1)}%
+                  </span>
+                </>
+              ) : (
+                <span className="text-xs text-muted-foreground">--</span>
+              )}
+              <span className="text-xs text-muted-foreground">环比上月</span>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
 
-      {/* Search */}
-      <div className="relative max-w-md">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-        <Input
-          placeholder="搜索账户..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="pl-9"
-        />
+      {/* Search and Add Button Row */}
+      <div className="flex items-center justify-between gap-4">
+        {/* Search */}
+        <div className="relative flex-1 max-w-md">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input
+            placeholder="搜索账户..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-9"
+          />
+        </div>
+
+        {/* Add Button */}
+        <Button onClick={handleAddAccount}>
+          <Plus className="w-4 h-4 mr-2" />
+          新增账户
+        </Button>
       </div>
 
       {/* Account List */}
@@ -276,27 +417,41 @@ export default function AccountsPage() {
                   <CardDescription>{ACCOUNT_TYPE_LABELS[account.type]}</CardDescription>
                 </div>
               </div>
-              <Button variant="ghost" size="icon">
-                <MoreVertical className="w-4 h-4" />
-              </Button>
+              <Badge variant={account.status === 1 ? 'default' : 'secondary'}>
+                {account.status === 1 ? '正常' : '停用'}
+              </Badge>
             </CardHeader>
             <CardContent>
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-2xl font-bold">
-                    <span className={account.balance < 0 ? 'text-destructive' : ''}>
-                      {formatCurrency(account.balance)}
-                    </span>
-                  </p>
-                  {account.type === 'credit_card' && account.creditLimit && (
-                    <p className="text-xs text-muted-foreground">
-                      额度: {formatCurrency(account.creditLimit)}
-                    </p>
-                  )}
+              <div className="space-y-3">
+                {/* 总金额 */}
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-muted-foreground">总金额</span>
+                  <span className="text-lg font-bold">
+                    {formatCurrency(account.availableBalance + account.investedAmount)}
+                  </span>
                 </div>
-                <Badge variant={account.status === 1 ? 'default' : 'secondary'}>
-                  {account.status === 1 ? '正常' : '停用'}
-                </Badge>
+                {/* 可支配金额 */}
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-muted-foreground">可支配</span>
+                  <span className="text-sm font-medium text-success">
+                    {formatCurrency(account.availableBalance)}
+                  </span>
+                </div>
+                {/* 投资中金额 */}
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-muted-foreground">投资中</span>
+                  <span className="text-sm font-medium text-primary">
+                    {formatCurrency(account.investedAmount)}
+                  </span>
+                </div>
+                {account.type === 'credit_card' && account.creditLimit && (
+                  <div className="flex items-center justify-between pt-2 border-t">
+                    <span className="text-xs text-muted-foreground">信用额度</span>
+                    <span className="text-xs text-muted-foreground">
+                      {formatCurrency(account.creditLimit)}
+                    </span>
+                  </div>
+                )}
               </div>
 
               <div className="flex gap-2 mt-4">
@@ -384,13 +539,23 @@ export default function AccountsPage() {
               </Select>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="balance">当前余额</Label>
+              <Label htmlFor="availableBalance">可支配金额</Label>
               <Input
-                id="balance"
+                id="availableBalance"
                 type="number"
                 placeholder="0.00"
-                value={formData.balance}
-                onChange={(e) => setFormData({ ...formData, balance: e.target.value })}
+                value={formData.availableBalance}
+                onChange={(e) => setFormData({ ...formData, availableBalance: e.target.value })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="investedAmount">投资中金额</Label>
+              <Input
+                id="investedAmount"
+                type="number"
+                placeholder="0.00"
+                value={formData.investedAmount}
+                onChange={(e) => setFormData({ ...formData, investedAmount: e.target.value })}
               />
             </div>
             <div className="space-y-2">
