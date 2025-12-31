@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Header } from '@/components/layout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -36,6 +36,8 @@ import {
   Edit,
   Trash2,
   ChevronDown,
+  TrendingUp,
+  TrendingDown,
 } from 'lucide-react';
 import { formatCurrency, formatDate, downloadCSV } from '@/lib/utils';
 import {
@@ -383,6 +385,68 @@ export default function TransactionsPage() {
       .filter((tx) => tx.type === 'expense' && isTransactionInRange(tx))
       .reduce((sum, tx) => sum + tx.amount, 0);
   }, [transactions, dateRange]);
+
+  // ========== 上月统计数据（用于环比计算） ==========
+  // 计算上月的时间范围
+  const lastMonthRange = useMemo(() => {
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    const currentMonth = now.getMonth(); // 0-11
+
+    // 上月
+    let lastYear = currentYear;
+    let lastMonth = currentMonth - 1;
+    if (lastMonth < 0) {
+      lastMonth = 11;
+      lastYear--;
+    }
+
+    const start = new Date(lastYear, lastMonth, 1);
+    const end = new Date(lastYear, lastMonth + 1, 0); // 上月最后一天
+
+    return {
+      start: start.toISOString().split('T')[0],
+      end: end.toISOString().split('T')[0],
+    };
+  }, []);
+
+  // 检查交易是否在指定时间范围内
+  const isTransactionInLastMonthRange = useCallback((tx: Transaction) => {
+    const txDate = new Date(tx.occurredAt);
+    const start = new Date(lastMonthRange.start);
+    const end = new Date(lastMonthRange.end);
+    // 设置时间为当天0点
+    txDate.setHours(0, 0, 0, 0);
+    start.setHours(0, 0, 0, 0);
+    end.setHours(23, 59, 59, 999);
+    return txDate >= start && txDate <= end;
+  }, [lastMonthRange]);
+
+  // 上月收入和支出
+  const lastMonthIncome = useMemo(() => {
+    return transactions
+      .filter((tx) => tx.type === 'income' && isTransactionInLastMonthRange(tx))
+      .reduce((sum, tx) => sum + tx.amount, 0);
+  }, [transactions, isTransactionInLastMonthRange]);
+
+  const lastMonthExpense = useMemo(() => {
+    return transactions
+      .filter((tx) => tx.type === 'expense' && isTransactionInLastMonthRange(tx))
+      .reduce((sum, tx) => sum + tx.amount, 0);
+  }, [transactions, isTransactionInLastMonthRange]);
+
+  // 计算环比增长率 (本月 - 上月) / 上月 * 100
+  const calculateMoMChange = (current: number, last: number): { value: number; isPositive: boolean } => {
+    if (last === 0) {
+      // 上月为0，本月有收入则视为大幅增长
+      return { value: current > 0 ? 100 : 0, isPositive: current >= 0 };
+    }
+    const change = ((current - last) / last) * 100;
+    return { value: Math.abs(change), isPositive: change >= 0 };
+  };
+
+  const incomeMoM = useMemo(() => calculateMoMChange(totalIncome, lastMonthIncome), [totalIncome, lastMonthIncome]);
+  const expenseMoM = useMemo(() => calculateMoMChange(totalExpense, lastMonthExpense), [totalExpense, lastMonthExpense]);
 
   // 打开新增对话框
   const handleAddTransaction = () => {
@@ -734,6 +798,17 @@ export default function TransactionsPage() {
             <div className="text-2xl font-bold text-success">
               +{formatCurrency(totalIncome)}
             </div>
+            <div className="flex items-center gap-1 mt-1">
+              {incomeMoM.isPositive ? (
+                <TrendingUp className="w-3 h-3 text-success" />
+              ) : (
+                <TrendingDown className="w-3 h-3 text-destructive" />
+              )}
+              <span className={`text-xs ${incomeMoM.isPositive ? 'text-success' : 'text-destructive'}`}>
+                {incomeMoM.isPositive ? '+' : ''}{incomeMoM.value.toFixed(1)}%
+              </span>
+              <span className="text-xs text-muted-foreground">环比上月</span>
+            </div>
           </CardContent>
         </Card>
         <Card>
@@ -746,6 +821,17 @@ export default function TransactionsPage() {
             <div className="text-2xl font-bold text-destructive">
               -{formatCurrency(totalExpense)}
             </div>
+            <div className="flex items-center gap-1 mt-1">
+              {expenseMoM.isPositive ? (
+                <TrendingUp className="w-3 h-3 text-destructive" />
+              ) : (
+                <TrendingDown className="w-3 h-3 text-success" />
+              )}
+              <span className={`text-xs ${expenseMoM.isPositive ? 'text-destructive' : 'text-success'}`}>
+                {expenseMoM.isPositive ? '+' : ''}{expenseMoM.value.toFixed(1)}%
+              </span>
+              <span className="text-xs text-muted-foreground">环比上月</span>
+            </div>
           </CardContent>
         </Card>
         <Card>
@@ -757,6 +843,9 @@ export default function TransactionsPage() {
           <CardContent>
             <div className="text-2xl font-bold">
               {formatCurrency(totalIncome - totalExpense)}
+            </div>
+            <div className="text-xs text-muted-foreground mt-1">
+              上月 {formatCurrency(lastMonthIncome - lastMonthExpense)}
             </div>
           </CardContent>
         </Card>
