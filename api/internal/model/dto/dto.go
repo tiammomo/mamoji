@@ -199,6 +199,14 @@ type BudgetResponse struct {
 	CreatedAt    string  `json:"createdAt"`
 }
 
+// BudgetDetailResponse 预算详情响应（包含关联的交易记录）
+type BudgetDetailResponse struct {
+	BudgetResponse
+	Transactions     []TransactionResponse `json:"transactions"`
+	TransactionCount int                   `json:"transactionCount"`
+	RemainingAmount  float64               `json:"remainingAmount"`
+}
+
 // ListInvestmentRequest 投资列表查询请求
 type ListInvestmentRequest struct {
 	EnterpriseId int64  `json:"enterpriseId"`
