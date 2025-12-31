@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Header } from '@/components/layout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -35,6 +35,8 @@ import {
   ChevronRight,
   ChevronLeft,
   Eye,
+  TrendingUp,
+  TrendingDown,
 } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
 import { useUser } from '@/stores/auth';
@@ -302,6 +304,61 @@ export default function BudgetsPage() {
   // 超支数量：已使用金额超过总预算金额
   const exceededCount = budgetsInRange.filter((b) => b.usedAmount > b.totalAmount).length;
 
+  // ========== 上月统计数据（用于环比计算） ==========
+  // 计算上月的时间范围
+  const lastMonthRange = useMemo(() => {
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    const currentMonth = now.getMonth(); // 0-11
+
+    // 上月
+    let lastYear = currentYear;
+    let lastMonth = currentMonth - 1;
+    if (lastMonth < 0) {
+      lastMonth = 11;
+      lastYear--;
+    }
+
+    const start = new Date(lastYear, lastMonth, 1);
+    const end = new Date(lastYear, lastMonth + 1, 0); // 上月最后一天
+
+    return {
+      start: start.toISOString().split('T')[0],
+      end: end.toISOString().split('T')[0],
+    };
+  }, []);
+
+  // 检查预算是否在指定时间范围内
+  const isBudgetInLastMonthRange = useCallback((budget: Budget) => {
+    const budgetStart = new Date(budget.periodStart);
+    const budgetEnd = new Date(budget.periodEnd);
+    const filterStart = new Date(lastMonthRange.start);
+    const filterEnd = new Date(lastMonthRange.end);
+    return budgetStart <= filterEnd && budgetEnd >= filterStart;
+  }, [lastMonthRange]);
+
+  // 上月统计数据
+  const lastMonthBudgetsInRange = useMemo(() => {
+    return budgets.filter((b) => isBudgetInLastMonthRange(b));
+  }, [budgets, isBudgetInLastMonthRange]);
+
+  const lastMonthTotalBudget = lastMonthBudgetsInRange.reduce((sum, b) => sum + b.totalAmount, 0);
+  const lastMonthTotalUsed = lastMonthBudgetsInRange.reduce((sum, b) => sum + b.usedAmount, 0);
+  const lastMonthExceededCount = lastMonthBudgetsInRange.filter((b) => b.usedAmount > b.totalAmount).length;
+
+  // 计算环比增长率 (本月 - 上月) / 上月 * 100
+  const calculateMoMChange = (current: number, last: number): { value: number; isPositive: boolean } => {
+    if (last === 0) {
+      return { value: current > 0 ? 100 : 0, isPositive: current >= 0 };
+    }
+    const change = ((current - last) / last) * 100;
+    return { value: Math.abs(change), isPositive: change >= 0 };
+  };
+
+  const budgetMoM = useMemo(() => calculateMoMChange(totalBudget, lastMonthTotalBudget), [totalBudget, lastMonthTotalBudget]);
+  const usedMoM = useMemo(() => calculateMoMChange(totalUsed, lastMonthTotalUsed), [totalUsed, lastMonthTotalUsed]);
+  const exceededMoM = useMemo(() => calculateMoMChange(exceededCount, lastMonthExceededCount), [exceededCount, lastMonthExceededCount]);
+
   const handleEdit = (budget: Budget) => {
     setEditingBudget(budget);
     setIsEditDialogOpen(true);
@@ -463,6 +520,17 @@ export default function BudgetsPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{formatCurrency(totalBudget)}</div>
+            <div className="flex items-center gap-1 mt-1">
+              {budgetMoM.isPositive ? (
+                <TrendingUp className="w-3 h-3 text-success" />
+              ) : (
+                <TrendingDown className="w-3 h-3 text-destructive" />
+              )}
+              <span className={`text-xs ${budgetMoM.isPositive ? 'text-success' : 'text-destructive'}`}>
+                {budgetMoM.isPositive ? '+' : ''}{budgetMoM.value.toFixed(1)}%
+              </span>
+              <span className="text-xs text-muted-foreground">环比上月</span>
+            </div>
           </CardContent>
         </Card>
         <Card>
@@ -473,6 +541,17 @@ export default function BudgetsPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{formatCurrency(totalUsed)}</div>
+            <div className="flex items-center gap-1 mt-1">
+              {usedMoM.isPositive ? (
+                <TrendingUp className="w-3 h-3 text-destructive" />
+              ) : (
+                <TrendingDown className="w-3 h-3 text-success" />
+              )}
+              <span className={`text-xs ${usedMoM.isPositive ? 'text-destructive' : 'text-success'}`}>
+                {usedMoM.isPositive ? '+' : ''}{usedMoM.value.toFixed(1)}%
+              </span>
+              <span className="text-xs text-muted-foreground">环比上月</span>
+            </div>
           </CardContent>
         </Card>
         <Card>
@@ -483,6 +562,17 @@ export default function BudgetsPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-destructive">{exceededCount}</div>
+            <div className="flex items-center gap-1 mt-1">
+              {exceededMoM.isPositive ? (
+                <TrendingUp className="w-3 h-3 text-destructive" />
+              ) : (
+                <TrendingDown className="w-3 h-3 text-success" />
+              )}
+              <span className={`text-xs ${exceededMoM.isPositive ? 'text-destructive' : 'text-success'}`}>
+                {exceededMoM.isPositive ? '+' : ''}{exceededMoM.value.toFixed(1)}%
+              </span>
+              <span className="text-xs text-muted-foreground">环比上月</span>
+            </div>
           </CardContent>
         </Card>
       </div>
