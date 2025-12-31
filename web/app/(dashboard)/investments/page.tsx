@@ -119,7 +119,7 @@ export default function InvestmentsPage() {
   };
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="pt-2 px-4 pb-4 space-y-4">
       <Header title="理财收益" subtitle="管理投资组合和收益" />
 
       {/* Summary */}
