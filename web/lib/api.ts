@@ -1,4 +1,5 @@
 import axios, { AxiosError, AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
+import { useRouter } from 'next/navigation';
 import { TOKEN_KEY } from './constants';
 
 // API响应基础结构
@@ -18,6 +19,54 @@ export interface PaginatedResponse<T> {
   totalPages: number;
 }
 
+// JWT Token 解码
+interface JWTPayload {
+  exp: number;
+  iat: number;
+  userId: number;
+  enterpriseId: number;
+  username: string;
+  role: string;
+}
+
+// 检查Token是否过期
+export const isTokenExpired = (token: string): boolean => {
+  try {
+    const base64Url = token.split('.')[1];
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    const jsonPayload = decodeURIComponent(
+      atob(base64)
+        .split('')
+        .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+        .join('')
+    );
+    const payload: JWTPayload = JSON.parse(jsonPayload);
+    const now = Math.floor(Date.now() / 1000);
+    return payload.exp < now;
+  } catch {
+    return true; // 解析失败视为过期
+  }
+};
+
+// 获取Token剩余有效时间（秒）
+export const getTokenRemainingTime = (token: string): number => {
+  try {
+    const base64Url = token.split('.')[1];
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    const jsonPayload = decodeURIComponent(
+      atob(base64)
+        .split('')
+        .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+        .join('')
+    );
+    const payload: JWTPayload = JSON.parse(jsonPayload);
+    const now = Math.floor(Date.now() / 1000);
+    return Math.max(0, payload.exp - now);
+  } catch {
+    return 0;
+  }
+};
+
 // 创建Axios实例
 const createApiClient = (): AxiosInstance => {
   const client = axios.create({
@@ -33,6 +82,19 @@ const createApiClient = (): AxiosInstance => {
     (config) => {
       const token = typeof window !== 'undefined' ? localStorage.getItem(TOKEN_KEY) : null;
       if (token) {
+        // 检查Token是否过期
+        if (isTokenExpired(token)) {
+          // Token已过期，触发清理
+          if (typeof window !== 'undefined') {
+            localStorage.removeItem(TOKEN_KEY);
+            localStorage.removeItem('mamoji_user_info');
+            // 跳转到登录页
+            if (typeof window !== 'undefined' && !window.location.pathname.includes('/login')) {
+              window.location.href = '/login?expired=1';
+            }
+          }
+          return Promise.reject(new ApiError(401, '登录已过期，请重新登录'));
+        }
         config.headers.Authorization = `Bearer ${token}`;
       }
       return config;
@@ -53,11 +115,24 @@ const createApiClient = (): AxiosInstance => {
     },
     (error: AxiosError<ApiResponse>) => {
       if (error.response) {
+        const status = error.response.status;
         const { code, message } = error.response.data || {};
-        return Promise.reject(new ApiError(code || error.response.status, message || '请求失败', error.response));
+
+        // 401未授权 - 清除Token并跳转登录
+        if (status === 401 || code === 401) {
+          if (typeof window !== 'undefined') {
+            localStorage.removeItem(TOKEN_KEY);
+            localStorage.removeItem('mamoji_user_info');
+            if (!window.location.pathname.includes('/login')) {
+              window.location.href = '/login?reason=unauthorized';
+            }
+          }
+        }
+
+        return Promise.reject(new ApiError(code || status, message || '请求失败', error.response));
       }
       if (error.request) {
-        return Promise.reject(new ApiError(500, '网络连接异常', error.request));
+        return Promise.reject(new ApiError(500, '网络连接异常，请检查网络', error.request));
       }
       return Promise.reject(new ApiError(500, '请求配置错误', error.config));
     }

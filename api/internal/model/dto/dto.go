@@ -395,3 +395,106 @@ type AccountSummaryResponse struct {
 	// 是否有历史数据
 	HasHistory bool `json:"hasHistory"`
 }
+
+// ==================== 系统设置相关 DTO ====================
+
+// EnterpriseSettings 企业信息设置
+type EnterpriseSettings struct {
+	EnterpriseId   int64  `json:"enterpriseId"`
+	EnterpriseName string `json:"enterpriseName"`
+	ContactPerson  string `json:"contactPerson"`
+	ContactPhone   string `json:"contactPhone,omitempty"`
+	ContactEmail   string `json:"contactEmail,omitempty"`
+	Address        string `json:"address,omitempty"`
+	Logo           string `json:"logo,omitempty"`
+	CreatedAt      string `json:"createdAt"`
+}
+
+// UpdateEnterpriseRequest 更新企业信息请求
+type UpdateEnterpriseRequest struct {
+	EnterpriseName string `json:"enterpriseName" binding:"required,min=2,max=100"`
+	ContactPerson  string `json:"contactPerson" binding:"required,min=2,max=50"`
+	ContactPhone   string `json:"contactPhone,omitempty"`
+	ContactEmail   string `json:"contactEmail,omitempty" binding:"omitempty,email"`
+	Address        string `json:"address,omitempty"`
+	Logo           string `json:"logo,omitempty"`
+}
+
+// SystemUser 系统用户
+type SystemUser struct {
+	UserId       int64  `json:"userId"`
+	Username     string `json:"username"`
+	Phone        string `json:"phone,omitempty"`
+	Email        string `json:"email,omitempty"`
+	Avatar       string `json:"avatar,omitempty"`
+	EnterpriseId int64  `json:"enterpriseId"`
+	Role         string `json:"role"`
+	Status       int    `json:"status"`
+	CreatedAt    string `json:"createdAt"`
+	LastLoginAt  string `json:"lastLoginAt,omitempty"`
+}
+
+// CreateUserRequest 创建用户请求
+type CreateUserRequest struct {
+	Username     string `json:"username" binding:"required,min=3,max=50"`
+	Password     string `json:"password" binding:"required,min=6"`
+	Phone        string `json:"phone,omitempty"`
+	Email        string `json:"email,omitempty" binding:"omitempty,email"`
+	Role         string `json:"role" binding:"required,oneof=super_admin finance_admin normal readonly"`
+	EnterpriseId int64  `json:"enterpriseId"`
+}
+
+// UpdateUserRequest 更新用户请求
+type UpdateUserRequest struct {
+	Username string `json:"username,omitempty" binding:"omitempty,min=3,max=50"`
+	Phone    string `json:"phone,omitempty"`
+	Email    string `json:"email,omitempty" binding:"omitempty,email"`
+	Role     string `json:"role,omitempty" binding:"omitempty,oneof=super_admin finance_admin normal readonly"`
+	Status   int    `json:"status,omitempty" binding:"omitempty,oneof=0 1"`
+}
+
+// UpdateUserPasswordRequest 更新用户密码请求
+type UpdateUserPasswordRequest struct {
+	OldPassword string `json:"oldPassword" binding:"required"`
+	NewPassword string `json:"newPassword" binding:"required,min=6"`
+}
+
+// RoleInfo 角色信息
+type RoleInfo struct {
+	Role        string   `json:"role"`
+	RoleName    string   `json:"roleName"`
+	Description string   `json:"description"`
+	Permissions []string `json:"permissions"`
+	UserCount   int      `json:"userCount"`
+}
+
+// SystemPreferences 系统偏好设置
+type SystemPreferences struct {
+	EnterpriseId      int64   `json:"enterpriseId"`
+	Currency          string  `json:"currency"`
+	Timezone          string  `json:"timezone"`
+	DateFormat        string  `json:"dateFormat"`
+	MonthStart        int     `json:"monthStart"`
+	ExpenseCategory   string  `json:"expenseCategory,omitempty"`
+	IncomeCategory    string  `json:"incomeCategory,omitempty"`
+	AutoBackup        bool    `json:"autoBackup"`
+	BackupFrequency   string  `json:"backupFrequency,omitempty"`
+	TransactionLimit  float64 `json:"transactionLimit"`
+	RequireApproval   bool    `json:"requireApproval"`
+	ApprovalThreshold float64 `json:"approvalThreshold,omitempty"`
+}
+
+// UpdatePreferencesRequest 更新偏好设置请求
+type UpdatePreferencesRequest struct {
+	Currency          string  `json:"currency,omitempty"`
+	Timezone          string  `json:"timezone,omitempty"`
+	DateFormat        string  `json:"dateFormat,omitempty"`
+	MonthStart        int     `json:"monthStart,omitempty" binding:"omitempty,oneof=1 15"`
+	ExpenseCategory   string  `json:"expenseCategory,omitempty"`
+	IncomeCategory    string  `json:"incomeCategory,omitempty"`
+	AutoBackup        bool    `json:"autoBackup"`
+	BackupFrequency   string  `json:"backupFrequency,omitempty" binding:"omitempty,oneof=daily weekly monthly"`
+	TransactionLimit  float64 `json:"transactionLimit,omitempty"`
+	RequireApproval   bool    `json:"requireApproval"`
+	ApprovalThreshold float64 `json:"approvalThreshold,omitempty"`
+}
