@@ -2,6 +2,7 @@ package database
 
 import (
 	"fmt"
+	"log"
 	"time"
 
 	"gorm.io/driver/mysql"
@@ -102,4 +103,64 @@ func DropForeignKeys() error {
 	// GORM 的外键约束通常通过 AtIndex 实现，不会自动创建数据库外键
 
 	return nil
+}
+
+// AddMissingColumns 添加缺失的列（处理GORM无法自动添加的列）
+func AddMissingColumns() error {
+	if DB == nil {
+		return fmt.Errorf("database not initialized")
+	}
+
+	// 检查并添加 biz_transaction 表的 budget_id 列
+	// 该列在添加预算功能时需要，但历史表可能缺少此列
+	var columnExists bool
+	if err := DB.Raw("SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'biz_transaction' AND COLUMN_NAME = 'budget_id'").Scan(&columnExists).Error; err != nil {
+		return fmt.Errorf("failed to check budget_id column: %w", err)
+	}
+
+	if !columnExists {
+		// 添加 budget_id 列
+		if err := DB.Exec("ALTER TABLE `biz_transaction` ADD COLUMN `budget_id` BIGINT UNSIGNED NULL DEFAULT NULL COMMENT '关联预算ID' AFTER `account_id`").Error; err != nil {
+			// 如果列已存在（并发情况下），忽略错误
+			if !isDuplicateColumnError(err) {
+				return fmt.Errorf("failed to add budget_id column: %w", err)
+			}
+		} else {
+			log.Println("Added budget_id column to biz_transaction table")
+		}
+
+		// 添加索引
+		if err := DB.Exec("CREATE INDEX `idx_budget_id` ON `biz_transaction` (`budget_id`)").Error; err != nil {
+			if !isDuplicateIndexError(err) {
+				log.Printf("Warning: failed to create index on budget_id: %v", err)
+			}
+		}
+	}
+
+	return nil
+}
+
+// isDuplicateColumnError 检查是否为列已存在的错误
+func isDuplicateColumnError(err error) bool {
+	return containsString(err.Error(), "Duplicate column")
+}
+
+// isDuplicateIndexError 检查是否为索引已存在的错误
+func isDuplicateIndexError(err error) bool {
+	errStr := err.Error()
+	return containsString(errStr, "Duplicate key name") || containsString(errStr, "already exists")
+}
+
+// containsString 检查字符串是否包含子串
+func containsString(s, substr string) bool {
+	return len(s) >= len(substr) && (s == substr || len(s) > 0 && containsSubstring(s, substr))
+}
+
+func containsSubstring(s, substr string) bool {
+	for i := 0; i <= len(s)-len(substr); i++ {
+		if s[i:i+len(substr)] == substr {
+			return true
+		}
+	}
+	return false
 }

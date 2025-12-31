@@ -383,6 +383,7 @@ export default function TransactionsPage() {
   // 打开新增对话框
   const handleAddTransaction = () => {
     setEditingTransaction(null);
+    // 默认选择"不关联预算"
     setFormData({
       type: 'expense',
       amount: '',
@@ -390,7 +391,7 @@ export default function TransactionsPage() {
       accountId: '',
       date: formatDate(new Date(), 'YYYY-MM-DD'),
       note: '',
-      budgetId: undefined, // 默认自动匹配
+      budgetId: '', // 默认不关联预算
     });
     // 重置预算搜索状态
     setBudgetSearchQuery('');
@@ -436,7 +437,13 @@ export default function TransactionsPage() {
 
   // 选择交易类型
   const handleTypeSelect = (type: TransactionType) => {
-    setFormData({ ...formData, type, category: '' });
+    if (type === 'expense') {
+      // 切换到支出时，默认不关联预算
+      setFormData({ ...formData, type, category: '', budgetId: '' });
+    } else {
+      // 切换到收入时，清除预算选择
+      setFormData({ ...formData, type, category: '', budgetId: undefined });
+    }
   };
 
   // 提交表单
@@ -931,7 +938,7 @@ export default function TransactionsPage() {
               <div className="space-y-2">
                 <Label>关联预算</Label>
                 <p className="text-xs text-muted-foreground">
-                  系统将根据支出日期和分类自动匹配预算，如需手动指定请选择
+                  请选择该笔支出对应的预算项目，如无需关联预算可选择"不关联预算"
                 </p>
                 {/* 自定义可搜索预算选择器 */}
                 <div className="relative">
@@ -940,28 +947,29 @@ export default function TransactionsPage() {
                     onClick={() => setIsBudgetSelectOpen(!isBudgetSelectOpen)}
                     className="w-full h-10 px-3 py-2 text-sm border rounded-md bg-background hover:bg-accent hover:border-input transition-colors flex items-center justify-between text-left"
                   >
-                    <span className={formData.budgetId ? '' : 'text-muted-foreground'}>
-                      {/* 显示当前选择的预算状态 */}
-                      {formData.budgetId === ''
-                        ? '不关联预算'
-                        : formData.budgetId
-                        ? (() => {
-                            const selected = availableBudgets.find(b => b.budgetId.toString() === formData.budgetId);
-                            if (!selected) return '自动匹配';
-                            const expired = isBudgetExpired(selected.periodEnd);
-                            return (
-                              <span className="flex items-center gap-2">
-                                {selected.name}
-                                {expired && (
-                                  <span className="text-xs text-destructive bg-destructive/10 px-1.5 py-0.5 rounded">
-                                    已过期
-                                  </span>
-                                )}
-                                <span>（剩余 {formatCurrency(selected.totalAmount - selected.usedAmount)}）</span>
-                              </span>
-                            );
-                          })()
-                        : '自动匹配'}
+                    <span className={formData.budgetId !== undefined && formData.budgetId !== '' ? '' : 'text-muted-foreground'}>
+                      {formData.budgetId === '' ? (
+                        '不关联预算'
+                      ) : formData.budgetId ? (
+                        (() => {
+                          const selected = availableBudgets.find(b => b.budgetId.toString() === formData.budgetId);
+                          if (!selected) return '请选择预算';
+                          const expired = isBudgetExpired(selected.periodEnd);
+                          return (
+                            <span className="flex items-center gap-2">
+                              {selected.name}
+                              {expired && (
+                                <span className="text-xs text-destructive bg-destructive/10 px-1.5 py-0.5 rounded">
+                                  已过期
+                                </span>
+                              )}
+                              <span>（剩余 {formatCurrency(selected.totalAmount - selected.usedAmount)}）</span>
+                            </span>
+                          );
+                        })()
+                      ) : (
+                        '请选择预算'
+                      )}
                     </span>
                     <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform ${isBudgetSelectOpen ? 'rotate-180' : ''}`} />
                   </button>
@@ -1009,33 +1017,15 @@ export default function TransactionsPage() {
                                   formData.budgetId === '' ? 'bg-accent/50' : ''
                                 }`}
                               >
-                                <div className="font-medium text-muted-foreground">不关联预算</div>
+                                <div className="font-medium">不关联预算</div>
                                 <div className="text-xs text-muted-foreground mt-0.5">
                                   不将此项支出关联到任何预算
-                                </div>
-                              </button>
-
-                              {/* 自动匹配选项 */}
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setFormData({ ...formData, budgetId: undefined });
-                                  setIsBudgetSelectOpen(false);
-                                  setBudgetSearchQuery('');
-                                }}
-                                className={`w-full px-3 py-2 text-sm text-left hover:bg-accent transition-colors ${
-                                  formData.budgetId === undefined ? 'bg-accent/50' : ''
-                                }`}
-                              >
-                                <div className="font-medium">自动匹配</div>
-                                <div className="text-xs text-muted-foreground mt-0.5">
-                                  根据日期和分类自动匹配预算
                                 </div>
                               </button>
                             </>
                           )}
 
-                          {/* 搜索时有内容：隐藏固定选项，只显示搜索结果 */}
+                          {/* 搜索时有内容：显示搜索结果 */}
                           {budgetSearchQuery.trim() && (
                             <div className="px-3 py-2 text-xs text-muted-foreground">
                               搜索结果
@@ -1078,7 +1068,7 @@ export default function TransactionsPage() {
                               {budgetSearchQuery.trim()
                                 ? '未找到匹配的预算'
                                 : availableBudgets.length === 0
-                                  ? '暂无可用预算'
+                                  ? '暂无可用预算，请先创建预算'
                                   : ''}
                             </div>
                           )}

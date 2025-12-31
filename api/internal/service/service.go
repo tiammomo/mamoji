@@ -754,6 +754,58 @@ func (s *TransactionService) Update(transactionId int64, req dto.UpdateTransacti
 		}
 	}
 
+	// 处理预算关联变更
+	// 场景一：从"不关联预算"改为"关联具体预算"：将金额加到新预算
+	// 场景二：从"关联具体预算"改为"不关联预算"：将金额从旧预算中减掉（加回预算）
+	oldBudgetId := tx.BudgetId
+	newBudgetId := req.BudgetId
+
+	// 检查预算ID是否发生变化
+	oldHasBudget := oldBudgetId != nil && *oldBudgetId > 0
+	newHasBudget := newBudgetId != nil && *newBudgetId > 0
+
+	if oldHasBudget && !newHasBudget {
+		// 场景二：从有预算改为无预算，将金额加回旧预算
+		var oldBudget entity.Budget
+		if database.DB.Where("budget_id = ?", *oldBudgetId).First(&oldBudget).Error == nil {
+			newUsedAmount := oldBudget.UsedAmount - tx.Amount
+			if newUsedAmount < 0 {
+				newUsedAmount = 0
+			}
+			database.DB.Model(&oldBudget).Update("used_amount", newUsedAmount)
+		}
+	} else if !oldHasBudget && newHasBudget {
+		// 场景一：从无预算改为有预算，将金额加到新预算
+		var newBudget entity.Budget
+		if database.DB.Where("budget_id = ?", *newBudgetId).First(&newBudget).Error == nil {
+			database.DB.Model(&newBudget).Update("used_amount", newBudget.UsedAmount+req.Amount)
+		}
+	}
+
+	// 更新预算已使用金额（仅支出时处理预算金额变化）
+	if oldType == "expense" || req.Type == "expense" {
+		// 如果金额发生变化，需要调整预算（已在上面的预算关联变更中处理了预算ID变更的情况）
+		// 这里处理金额变化但预算不变的情况
+		if req.Amount > 0 && req.Amount != oldAmount && oldHasBudget && newHasBudget && *oldBudgetId == *newBudgetId {
+			// 预算不变，只调整金额差额
+			var budget entity.Budget
+			if database.DB.Where("budget_id = ?", *oldBudgetId).First(&budget).Error == nil {
+				amountDiff := req.Amount - oldAmount
+				newUsedAmount := budget.UsedAmount + amountDiff
+				if newUsedAmount < 0 {
+					newUsedAmount = 0
+				}
+				database.DB.Model(&budget).Update("used_amount", newUsedAmount)
+			}
+		} else if req.Amount > 0 && req.Amount != oldAmount && oldHasBudget && !newHasBudget {
+			// 从有预算改为无预算，且金额变化：先加回旧预算的旧金额，再（不添加到新预算，因为新预算为空）
+			// 上面已经处理了"从有预算改为无预算"的情况，这里不需要额外处理
+		} else if req.Amount > 0 && req.Amount != oldAmount && !oldHasBudget && newHasBudget {
+			// 从无预算改为有预算，且金额变化：添加新预算的新金额
+			// 上面已经处理了"从无预算改为有预算"的情况，这里不需要额外处理
+		}
+	}
+
 	// 获取账户名称
 	var account entity.Account
 	accountName := ""
@@ -801,6 +853,19 @@ func (s *TransactionService) Delete(transactionId int64) error {
 		var account entity.Account
 		if err := database.DB.Where("account_id = ?", tx.AccountId).First(&account).Error; err == nil {
 			database.DB.Model(&account).Update("balance", account.Balance-tx.Amount)
+		}
+	}
+
+	// 更新预算已使用金额（仅支出且有关联预算时）
+	if tx.Type == "expense" && tx.BudgetId != nil && *tx.BudgetId > 0 {
+		var budget entity.Budget
+		if err := database.DB.Where("budget_id = ?", *tx.BudgetId).First(&budget).Error; err == nil {
+			// 将已使用的金额加回预算
+			newUsedAmount := budget.UsedAmount - tx.Amount
+			if newUsedAmount < 0 {
+				newUsedAmount = 0
+			}
+			database.DB.Model(&budget).Update("used_amount", newUsedAmount)
 		}
 	}
 
