@@ -149,6 +149,9 @@ type ListBudgetRequest struct {
 	EnterpriseId int64  `json:"enterpriseId"`
 	UnitId       int64  `json:"unitId,omitempty"`
 	Status       string `json:"status,omitempty"`
+	// 时间范围筛选（用于筛选预算的 period_start 和 period_end）
+	StartDate string `json:"startDate,omitempty"`
+	EndDate   string `json:"endDate,omitempty"`
 }
 
 // CreateBudgetRequest 创建预算请求

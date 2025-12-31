@@ -14,7 +14,15 @@ import (
 func ListBudgets(ctx context.Context, c *app.RequestContext) {
 	enterpriseId := c.GetInt64("enterpriseId")
 
-	budgets, err := service.BudgetServiceInst.List(enterpriseId)
+	// 获取时间范围参数
+	startDate := c.Query("startDate")
+	endDate := c.Query("endDate")
+
+	budgets, err := service.BudgetServiceInst.List(dto.ListBudgetRequest{
+		EnterpriseId: enterpriseId,
+		StartDate:    startDate,
+		EndDate:      endDate,
+	})
 	if err != nil {
 		c.JSON(200, utils.H{
 			"code":    500,

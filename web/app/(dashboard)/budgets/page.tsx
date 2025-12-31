@@ -262,10 +262,13 @@ export default function BudgetsPage() {
   // 获取预算列表
   const fetchBudgets = async () => {
     try {
-      // 后端从 JWT Token 中获取 enterpriseId，无需传参
-      const data = await get<Budget[]>('/api/v1/budgets');
+      // 传递时间范围参数给后端进行筛选
+      const params = new URLSearchParams();
+      params.append('startDate', dateRange.start);
+      params.append('endDate', dateRange.end);
+
+      const data = await get<Budget[]>(`/api/v1/budgets?${params.toString()}`);
       console.log('[Budgets] 原始返回数据:', JSON.stringify(data, null, 2));
-      // 后端已过滤 status='active'，直接使用返回的数据
       setBudgets(data || []);
       console.log('[Budgets] 预算数量:', data?.length);
       if (data && data.length > 0) {
@@ -280,7 +283,7 @@ export default function BudgetsPage() {
 
   useEffect(() => {
     fetchBudgets();
-  }, [user?.enterpriseId]);
+  }, [user?.enterpriseId, dateRange.start, dateRange.end]);
 
   // 检查预算周期是否与选择的时间范围重叠
   const isBudgetInRange = (budget: Budget) => {

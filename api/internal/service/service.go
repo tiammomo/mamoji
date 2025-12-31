@@ -1008,10 +1008,28 @@ func (s *TransactionService) Delete(transactionId int64) error {
 }
 
 // ===== BudgetService =====
-func (s *BudgetService) List(enterpriseId int64) ([]dto.BudgetResponse, error) {
+func (s *BudgetService) List(req dto.ListBudgetRequest) ([]dto.BudgetResponse, error) {
 	var budgets []entity.Budget
-	// 过滤软删除的数据（status = 'active' 表示正常状态）
-	if err := database.DB.Where("enterprise_id = ? AND status = 'active'", enterpriseId).Order("created_at DESC").Find(&budgets).Error; err != nil {
+
+	// 构建查询条件
+	db := database.DB.Where("enterprise_id = ? AND status = 'active'", req.EnterpriseId)
+
+	// 如果指定了时间范围，只返回与该时间范围有交集的预算
+	// 即：预算的 period_start <= endDate 且预算的 period_end >= startDate
+	// 使用 DATE 函数直接比较日期，避免时区问题
+	if req.StartDate != "" || req.EndDate != "" {
+		// 如果有有效的时间范围，添加筛选条件
+		// 使用 DATE() 函数直接比较日期字符串
+		if req.StartDate != "" {
+			db = db.Where("DATE(period_end) >= ?", req.StartDate)
+		}
+		if req.EndDate != "" {
+			db = db.Where("DATE(period_start) <= ?", req.EndDate)
+		}
+	}
+
+	// 执行查询
+	if err := db.Order("created_at DESC").Find(&budgets).Error; err != nil {
 		return nil, errors.New("查询预算列表失败")
 	}
 
