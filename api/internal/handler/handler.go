@@ -31,6 +31,7 @@ func Register(h *server.Hertz) {
 	authGroup := v1Group.Group("/auth")
 	authGroup.POST("/login", v1.Login)
 	authGroup.POST("/register", v1.Register)
+	authGroup.GET("/profile", middleware.Auth(), v1.GetProfile)
 
 	// 账户管理
 	accountGroup := v1Group.Group("/accounts", middleware.Auth())
@@ -53,6 +54,7 @@ func Register(h *server.Hertz) {
 	budgetGroup.GET("", v1.ListBudgets)
 	budgetGroup.POST("", v1.CreateBudget)
 	budgetGroup.GET("/:budgetId", v1.GetBudget)
+	budgetGroup.GET("/:budgetId/detail", v1.GetBudgetDetail)
 	budgetGroup.PUT("/:budgetId", v1.UpdateBudget)
 	budgetGroup.DELETE("/:budgetId", v1.DeleteBudget)
 

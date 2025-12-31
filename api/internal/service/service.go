@@ -598,14 +598,21 @@ func (s *TransactionService) Create(enterpriseId int64, req dto.CreateTransactio
 		// 如果前端已指定BudgetId，直接使用；否则自动查找匹配的预算
 		var budgetId *int64
 		var budget entity.Budget
+		var budgetMatched bool
 
 		if req.BudgetId != nil && *req.BudgetId > 0 {
 			// 使用前端指定的预算
 			budgetId = req.BudgetId
-			database.DB.Where("budget_id = ? AND status = ?", *req.BudgetId, "active").First(&budget)
+			if err := database.DB.Where("budget_id = ? AND status = ?", *req.BudgetId, "active").First(&budget).Error; err != nil {
+				fmt.Printf("[预算关联] 未找到指定预算 budgetId=%d: %v\n", *req.BudgetId, err)
+			} else {
+				budgetMatched = true
+				fmt.Printf("[预算关联] 使用指定预算 budgetId=%d, name=%s, usedAmount=%.2f\n", budget.BudgetId, budget.Name, budget.UsedAmount)
+			}
 		} else {
 			// 自动查找匹配的预算：根据分类和日期范围
 			var matchedBudget entity.Budget
+			fmt.Printf("[预算关联] 自动匹配: enterpriseId=%d, category=%s, occurredAt=%v\n", enterpriseId, req.Category, occurredAt)
 			err := database.DB.Where(
 				"enterprise_id = ? AND status = ? AND category = ? AND period_start <= ? AND period_end >= ?",
 				enterpriseId, "active", req.Category, occurredAt, occurredAt,
@@ -614,23 +621,36 @@ func (s *TransactionService) Create(enterpriseId int64, req dto.CreateTransactio
 			if err == nil {
 				budgetId = &matchedBudget.BudgetId
 				budget = matchedBudget
+				budgetMatched = true
+				fmt.Printf("[预算关联] 自动匹配成功 budgetId=%d, name=%s, period=%v~%v, usedAmount=%.2f\n",
+					budget.BudgetId, budget.Name, budget.PeriodStart, budget.PeriodEnd, budget.UsedAmount)
+			} else {
+				fmt.Printf("[预算关联] 自动匹配失败: %v\n", err)
 			}
 		}
 
 		// 更新预算已使用金额
-		if budgetId != nil && budget.BudgetId > 0 {
-			// 检查预算是否在有效期内（使用交易发生时间而非当前时间）
-			if occurredAt.After(budget.PeriodStart) && occurredAt.Before(budget.PeriodEnd.AddDate(0, 0, 1)) {
+		if budgetMatched && budgetId != nil && budget.BudgetId > 0 {
+			// 检查预算是否在有效期内（使用交易发生时间）
+			// occurredAt 应该介于 periodStart 和 periodEnd 之间（包含边界）
+			if (occurredAt.After(budget.PeriodStart) || occurredAt.Equal(budget.PeriodStart)) &&
+				occurredAt.Before(budget.PeriodEnd.AddDate(0, 0, 1)) {
 				// 更新 transaction 的 BudgetId
 				tx.BudgetId = budgetId
 				database.DB.Model(&tx).Update("budget_id", *budgetId)
 
-				// 检查预算余额是否充足
-				remaining := budget.TotalAmount - budget.UsedAmount
-				if req.Amount <= remaining {
-					database.DB.Model(&budget).Update("used_amount", budget.UsedAmount+req.Amount)
+				// 更新预算已使用金额 - 使用直接 SQL 确保更新
+				newUsedAmount := budget.UsedAmount + req.Amount
+				result := database.DB.Exec("UPDATE biz_budget SET used_amount = ? WHERE budget_id = ?", newUsedAmount, budget.BudgetId)
+				if result.Error != nil {
+					fmt.Printf("[预算关联] 更新预算失败: %v\n", result.Error)
+				} else {
+					fmt.Printf("[预算关联] 预算更新完成: budgetId=%d, newUsedAmount=%.2f, affectedRows=%d\n",
+						budget.BudgetId, newUsedAmount, result.RowsAffected)
 				}
-				// 如果预算不足，也允许支出，只是不会更新预算
+			} else {
+				fmt.Printf("[预算关联] 交易时间不在预算期内: occurredAt=%v, periodStart=%v, periodEnd=%v\n",
+					occurredAt, budget.PeriodStart, budget.PeriodEnd)
 			}
 		}
 	}
@@ -860,12 +880,18 @@ func (s *TransactionService) Delete(transactionId int64) error {
 	if tx.Type == "expense" && tx.BudgetId != nil && *tx.BudgetId > 0 {
 		var budget entity.Budget
 		if err := database.DB.Where("budget_id = ?", *tx.BudgetId).First(&budget).Error; err == nil {
-			// 将已使用的金额加回预算
+			// 将已使用的金额加回预算 - 使用直接 SQL 确保更新
 			newUsedAmount := budget.UsedAmount - tx.Amount
 			if newUsedAmount < 0 {
 				newUsedAmount = 0
 			}
-			database.DB.Model(&budget).Update("used_amount", newUsedAmount)
+			result := database.DB.Exec("UPDATE biz_budget SET used_amount = ? WHERE budget_id = ?", newUsedAmount, budget.BudgetId)
+			if result.Error != nil {
+				fmt.Printf("[预算关联] 删除交易时更新预算失败: %v\n", result.Error)
+			} else {
+				fmt.Printf("[预算关联] 删除交易更新预算: budgetId=%d, newUsedAmount=%.2f, affectedRows=%d\n",
+					budget.BudgetId, newUsedAmount, result.RowsAffected)
+			}
 		}
 	}
 
@@ -887,6 +913,20 @@ func (s *BudgetService) List(enterpriseId int64) ([]dto.BudgetResponse, error) {
 
 	result := make([]dto.BudgetResponse, 0, len(budgets))
 	for _, b := range budgets {
+		// 根据关联的交易记录计算实际使用的金额（兼容旧数据）
+		var transactions []entity.Transaction
+		var actualUsedAmount float64
+		database.DB.Where("budget_id = ? AND deleted_at IS NULL", b.BudgetId).Find(&transactions)
+		for _, tx := range transactions {
+			actualUsedAmount += tx.Amount
+		}
+		// 如果实际使用金额与数据库中的不一致，更新数据库
+		if actualUsedAmount != b.UsedAmount {
+			fmt.Printf("[预算列表] 修正 usedAmount: %.2f -> %.2f (budgetId=%d)\n", b.UsedAmount, actualUsedAmount, b.BudgetId)
+			database.DB.Exec("UPDATE biz_budget SET used_amount = ? WHERE budget_id = ?", actualUsedAmount, b.BudgetId)
+			b.UsedAmount = actualUsedAmount
+		}
+
 		// 计算使用百分比
 		var usagePercent float64
 		if b.TotalAmount > 0 {
@@ -1086,6 +1126,99 @@ func (s *BudgetService) Delete(budgetId int64) error {
 	}
 
 	return nil
+}
+
+// GetDetailWithTransactions 获取预算详情及关联的交易记录
+func (s *BudgetService) GetDetailWithTransactions(budgetId int64) (*dto.BudgetDetailResponse, error) {
+	var budget entity.Budget
+	// 获取预算信息
+	if err := database.DB.Where("budget_id = ? AND status = 'active'", budgetId).First(&budget).Error; err != nil {
+		return nil, errors.New("预算不存在或已被删除")
+	}
+
+	// 获取关联的交易记录（只查询支出类型的交易）
+	var transactions []entity.Transaction
+	if err := database.DB.Where("budget_id = ? AND type = 'expense' AND status = 1", budgetId).
+		Order("occurred_at DESC").
+		Find(&transactions).Error; err != nil {
+		return nil, errors.New("查询关联交易记录失败")
+	}
+
+	// 根据关联的交易记录计算实际使用的金额（兼容旧数据）
+	var actualUsedAmount float64
+	for _, tx := range transactions {
+		actualUsedAmount += tx.Amount
+	}
+
+	// 如果实际使用金额与数据库中的不一致，更新数据库
+	if actualUsedAmount != budget.UsedAmount {
+		fmt.Printf("[预算详情] 修正 usedAmount: %.2f -> %.2f (budgetId=%d)\n", budget.UsedAmount, actualUsedAmount, budget.BudgetId)
+		database.DB.Exec("UPDATE biz_budget SET used_amount = ? WHERE budget_id = ?", actualUsedAmount, budget.BudgetId)
+		budget.UsedAmount = actualUsedAmount
+	}
+
+	// 计算使用百分比
+	var usagePercent float64
+	if budget.TotalAmount > 0 {
+		usagePercent = (budget.UsedAmount / budget.TotalAmount) * 100
+	}
+
+	// 构建交易响应
+	transactionResponses := make([]dto.TransactionResponse, 0, len(transactions))
+	for _, tx := range transactions {
+		// 获取账户名称
+		var account entity.Account
+		accountName := ""
+		if tx.AccountId > 0 {
+			database.DB.Where("account_id = ?", tx.AccountId).First(&account)
+			accountName = account.Name
+		}
+
+		transactionResponses = append(transactionResponses, dto.TransactionResponse{
+			TransactionId: tx.TransactionId,
+			EnterpriseId:  tx.EnterpriseId,
+			UnitId:        tx.UnitId,
+			UserId:        tx.UserId,
+			Type:          tx.Type,
+			Category:      tx.Category,
+			Amount:        tx.Amount,
+			AccountId:     tx.AccountId,
+			AccountName:   accountName,
+			BudgetId:      tx.BudgetId,
+			OccurredAt:    tx.OccurredAt.Format("2006-01-02 15:04:05"),
+			Tags:          parseJSONArray(tx.Tags),
+			Note:          tx.Note,
+			Images:        parseJSONArray(tx.Images),
+			Status:        tx.Status,
+			CreatedAt:     tx.CreatedAt.Format("2006-01-02 15:04:05"),
+		})
+	}
+
+	remainingAmount := budget.TotalAmount - budget.UsedAmount
+	if remainingAmount < 0 {
+		remainingAmount = 0
+	}
+
+	return &dto.BudgetDetailResponse{
+		BudgetResponse: dto.BudgetResponse{
+			BudgetId:     budget.BudgetId,
+			EnterpriseId: budget.EnterpriseId,
+			UnitId:       budget.UnitId,
+			Name:         budget.Name,
+			Type:         budget.Type,
+			Category:     budget.Category,
+			TotalAmount:  budget.TotalAmount,
+			UsedAmount:   budget.UsedAmount,
+			PeriodStart:  budget.PeriodStart.Format("2006-01-02"),
+			PeriodEnd:    budget.PeriodEnd.Format("2006-01-02"),
+			Status:       budget.Status,
+			UsagePercent: usagePercent,
+			CreatedAt:    budget.CreatedAt.Format("2006-01-02 15:04:05"),
+		},
+		Transactions:     transactionResponses,
+		TransactionCount: len(transactions),
+		RemainingAmount:  remainingAmount,
+	}, nil
 }
 
 // ===== InvestmentService =====

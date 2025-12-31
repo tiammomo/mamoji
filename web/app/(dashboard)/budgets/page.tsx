@@ -27,26 +27,21 @@ import {
 import {
   Plus,
   AlertTriangle,
-  CheckCircle2,
-  Clock,
   FileText,
   Edit,
   Trash2,
   Loader2,
   Calendar,
-  ChevronLeft,
   ChevronRight,
+  ChevronLeft,
+  Eye,
 } from 'lucide-react';
-import { formatCurrency, formatPercent } from '@/lib/utils';
+import { formatCurrency } from '@/lib/utils';
 import { useUser } from '@/stores/auth';
 import { get, post, put, del } from '@/lib/api';
-import { TOKEN_KEY } from '@/lib/constants';
+import { BudgetDetailDialog } from '@/components/budget-detail-dialog';
 import {
-  BUDGET_TYPE,
   BUDGET_TYPE_LABELS,
-  BUDGET_STATUS,
-  BUDGET_STATUS_LABELS,
-  EXPENSE_CATEGORY,
   EXPENSE_CATEGORY_LABELS,
 } from '@/lib/constants';
 
@@ -63,17 +58,29 @@ interface Budget {
   enterpriseId?: number;
 }
 
-const getStatusIcon = (status: string) => {
-  switch (status) {
-    case 'active':
-      return <CheckCircle2 className="w-4 h-4 text-success" />;
-    case 'exceeded':
-      return <AlertTriangle className="w-4 h-4 text-destructive" />;
-    case 'draft':
-      return <Clock className="w-4 h-4 text-warning" />;
-    default:
-      return null;
+// 根据时间范围计算预算状态
+type BudgetTimeStatus = 'ended' | 'in_progress' | 'not_started';
+
+const getBudgetTimeStatus = (budget: Budget): BudgetTimeStatus => {
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const budgetStart = new Date(budget.periodStart);
+  const budgetEnd = new Date(budget.periodEnd);
+
+  if (budgetEnd < today) {
+    return 'ended'; // 已结束：预算周期已过
   }
+  if (budgetStart > today) {
+    return 'not_started'; // 未开始：预算周期尚未开始
+  }
+  return 'in_progress'; // 进行中：预算周期包含今天
+};
+
+// 预算时间状态标签
+const BUDGET_TIME_STATUS_LABELS: Record<BudgetTimeStatus, string> = {
+  ended: '已结束',
+  in_progress: '进行中',
+  not_started: '未开始',
 };
 
 export default function BudgetsPage() {
@@ -85,6 +92,10 @@ export default function BudgetsPage() {
   const [editingBudget, setEditingBudget] = useState<Budget | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isInitialLoading, setIsInitialLoading] = useState(true);
+
+  // 详情弹窗状态
+  const [detailDialogOpen, setDetailDialogOpen] = useState(false);
+  const [selectedBudgetId, setSelectedBudgetId] = useState<number | null>(null);
 
   // ========== 时间筛选功能 ==========
   // 获取北京时间（Asia/Shanghai）
@@ -248,15 +259,16 @@ export default function BudgetsPage() {
 
   // 获取预算列表
   const fetchBudgets = async () => {
-    if (!user?.enterpriseId) {
-      setIsInitialLoading(false);
-      return;
-    }
     try {
-      const data = await get<Budget[]>(`/api/v1/budgets?unitId=${user.enterpriseId}`);
-      // 过滤掉已删除的预算（status=ended）
-      const activeBudgets = (data || []).filter(b => b.status !== 'ended');
-      setBudgets(activeBudgets);
+      // 后端从 JWT Token 中获取 enterpriseId，无需传参
+      const data = await get<Budget[]>('/api/v1/budgets');
+      console.log('[Budgets] 原始返回数据:', JSON.stringify(data, null, 2));
+      // 后端已过滤 status='active'，直接使用返回的数据
+      setBudgets(data || []);
+      console.log('[Budgets] 预算数量:', data?.length);
+      if (data && data.length > 0) {
+        console.log('[Budgets] 第一个预算:', JSON.stringify(data[0], null, 2));
+      }
     } catch (error) {
       console.error('获取预算列表失败:', error);
     } finally {
@@ -279,18 +291,26 @@ export default function BudgetsPage() {
 
   const filteredBudgets = budgets.filter((budget) => {
     if (activeTab === 'all') return true;
-    return budget.status === activeTab;
+    const timeStatus = getBudgetTimeStatus(budget);
+    return timeStatus === activeTab;
   });
 
   // 根据时间范围筛选预算（只统计与时间范围重叠的预算）
-  const budgetsInRange = budgets.filter((b) => isBudgetInRange(b) && b.status === 'active');
+  const budgetsInRange = budgets.filter((b) => isBudgetInRange(b));
   const totalBudget = budgetsInRange.reduce((sum, b) => sum + b.totalAmount, 0);
   const totalUsed = budgetsInRange.reduce((sum, b) => sum + b.usedAmount, 0);
-  const exceededCount = budgets.filter((b) => isBudgetInRange(b) && b.status === 'exceeded').length;
+  // 超支数量：已使用金额超过总预算金额
+  const exceededCount = budgetsInRange.filter((b) => b.usedAmount > b.totalAmount).length;
 
   const handleEdit = (budget: Budget) => {
     setEditingBudget(budget);
     setIsEditDialogOpen(true);
+  };
+
+  // 查看预算详情
+  const handleViewDetail = (budgetId: number) => {
+    setSelectedBudgetId(budgetId);
+    setDetailDialogOpen(true);
   };
 
   const handleDelete = async (budgetId: number) => {
@@ -472,9 +492,9 @@ export default function BudgetsPage() {
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList>
             <TabsTrigger value="all">全部</TabsTrigger>
-            <TabsTrigger value="active">生效中</TabsTrigger>
-            <TabsTrigger value="draft">草稿</TabsTrigger>
-            <TabsTrigger value="exceeded">已超支</TabsTrigger>
+            <TabsTrigger value="ended">已结束</TabsTrigger>
+            <TabsTrigger value="in_progress">进行中</TabsTrigger>
+            <TabsTrigger value="not_started">未开始</TabsTrigger>
           </TabsList>
         </Tabs>
         <Button onClick={() => {
@@ -507,22 +527,26 @@ export default function BudgetsPage() {
           </div>
         ) : (
           filteredBudgets.map((budget) => {
+            console.log(`[Budgets] 渲染预算: ${budget.name}, totalAmount=${budget.totalAmount}, usedAmount=${budget.usedAmount}`);
             const percent = (budget.usedAmount / budget.totalAmount) * 100;
-            const isExceeded = budget.status === 'exceeded';
+            // 超支判断：已使用金额超过总预算
+            const isExceeded = budget.usedAmount > budget.totalAmount;
+
+            // 计算预算时间状态
+            const timeStatus = getBudgetTimeStatus(budget);
 
             return (
-              <Card key={budget.budgetId}>
+              <Card key={budget.budgetId} className="transition-all hover:shadow-md">
                 <CardContent className="pt-6">
                   <div className="flex items-start justify-between">
                     <div className="space-y-1">
                       <div className="flex items-center gap-2">
                         <FileText className="w-4 h-4 text-muted-foreground" />
                         <span className="font-semibold">{budget.name}</span>
-                        {getStatusIcon(budget.status)}
                         <Badge
-                          variant={isExceeded ? 'destructive' : 'default'}
+                          variant={timeStatus === 'ended' ? 'destructive' : timeStatus === 'in_progress' ? 'success' : 'secondary'}
                         >
-                          {BUDGET_STATUS_LABELS[budget.status as keyof typeof BUDGET_STATUS_LABELS]}
+                          {BUDGET_TIME_STATUS_LABELS[timeStatus]}
                         </Badge>
                         <Badge variant="outline">
                           {BUDGET_TYPE_LABELS[budget.type as keyof typeof BUDGET_TYPE_LABELS]}
@@ -534,6 +558,14 @@ export default function BudgetsPage() {
                       </p>
                     </div>
                     <div className="flex items-center gap-2">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleViewDetail(budget.budgetId)}
+                        title="查看详情"
+                      >
+                        <Eye className="w-4 h-4" />
+                      </Button>
                       <Button
                         variant="ghost"
                         size="icon"
@@ -786,6 +818,14 @@ export default function BudgetsPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* 预算详情弹窗 */}
+      <BudgetDetailDialog
+        budgetId={selectedBudgetId}
+        open={detailDialogOpen}
+        onOpenChange={setDetailDialogOpen}
+        onBudgetUpdate={fetchBudgets}
+      />
     </div>
   );
 }

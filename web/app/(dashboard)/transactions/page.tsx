@@ -259,7 +259,7 @@ export default function TransactionsPage() {
 
     fetchTransactions();
     fetchAccounts();
-    fetchBudgets(user?.enterpriseId);
+    fetchBudgets();
 
     return () => clearTimeout(timer);
   }, [user?.enterpriseId]);
@@ -268,6 +268,10 @@ export default function TransactionsPage() {
     try {
       const response = await get<Transaction[]>('/api/v1/transactions');
       const transactions = response || [];
+      console.log('[Transactions] 收支记录:', JSON.stringify(transactions, null, 2));
+      // 检查是否有关联预算
+      const transactionsWithBudget = transactions.filter(t => t.budgetId);
+      console.log('[Transactions] 有关联预算的交易:', JSON.stringify(transactionsWithBudget, null, 2));
       setTransactions(transactions);
     } catch (error) {
       console.error('获取交易记录失败:', error);
@@ -292,11 +296,11 @@ export default function TransactionsPage() {
   };
 
   // 获取预算列表（用于关联预算）
-  const fetchBudgets = async (enterpriseId?: number) => {
+  const fetchBudgets = async () => {
     try {
-      const url = enterpriseId ? `/api/v1/budgets?unitId=${enterpriseId}` : '/api/v1/budgets';
-      console.log('[Budgets] 请求URL:', url, ', enterpriseId:', enterpriseId);
-      const data = await get<BudgetOption[]>(url);
+      // 后端从 JWT Token 中获取 enterpriseId，无需传参
+      console.log('[Budgets] 请求预算列表...');
+      const data = await get<BudgetOption[]>('/api/v1/budgets');
       console.log('[Budgets] 原始预算数据:', JSON.stringify(data, null, 2));
       if (data) {
         console.log('[Budgets] 预算数量:', data.length);
@@ -421,6 +425,8 @@ export default function TransactionsPage() {
     try {
       await del(`/api/v1/transactions/${transactionId}`);
       setTransactions((prev) => prev.filter((t) => t.transactionId !== transactionId));
+      // 刷新预算列表（如果删除的交易有关联预算）
+      fetchBudgets();
       toast({
         title: '删除成功',
         description: '交易记录已删除',
@@ -516,6 +522,8 @@ export default function TransactionsPage() {
           newTransaction.accountName = account.name;
         }
         setTransactions((prev) => [newTransaction, ...prev]);
+        // 刷新预算列表以更新已使用金额
+        fetchBudgets();
         toast({
           title: '保存成功',
           description: '交易记录已添加',
@@ -740,6 +748,16 @@ export default function TransactionsPage() {
                                 ? INCOME_CATEGORY_LABELS[tx.category as keyof typeof INCOME_CATEGORY_LABELS]
                                 : EXPENSE_CATEGORY_LABELS[tx.category as keyof typeof EXPENSE_CATEGORY_LABELS]}
                             </Badge>
+                            {/* 预算关联信息 */}
+                            {tx.budgetId ? (
+                              <Badge variant="secondary" className="text-xs">
+                                {budgets.find(b => b.budgetId === tx.budgetId)?.name || '未知预算'}
+                              </Badge>
+                            ) : (
+                              <Badge variant="outline" className="text-xs text-muted-foreground">
+                                不涉及预算管理
+                              </Badge>
+                            )}
                           </div>
                           <div className="flex items-center gap-2 mt-1 text-sm text-muted-foreground">
                             <span>{tx.accountName}</span>
