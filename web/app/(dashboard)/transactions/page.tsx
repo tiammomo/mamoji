@@ -79,14 +79,14 @@ interface TransactionFormData {
 
 // 预算选项数据（使用与后端一致的字段名）
 interface BudgetOption {
-  BudgetId: number;
-  Name: string;
-  Category: string;
-  TotalAmount: number;
-  UsedAmount: number;
-  PeriodStart: string;
-  PeriodEnd: string;
-  Status: string; // 用于过滤活跃预算
+  budgetId: number;
+  name: string;
+  category: string;
+  totalAmount: number;
+  usedAmount: number;
+  periodStart: string;
+  periodEnd: string;
+  status: string; // 用于过滤活跃预算
 }
 
 export default function TransactionsPage() {
@@ -300,7 +300,7 @@ export default function TransactionsPage() {
       console.log('[Budgets] 原始预算数据:', JSON.stringify(data, null, 2));
       if (data) {
         console.log('[Budgets] 预算数量:', data.length);
-        console.log('[Budgets] 预算列表:', data.map(b => ({ id: b.BudgetId, name: b.Name, status: b.Status, period: `${b.PeriodStart} ~ ${b.PeriodEnd}` })));
+        console.log('[Budgets] 预算列表:', data.map(b => ({ id: b.budgetId, name: b.name, status: b.status, period: `${b.periodStart} ~ ${b.periodEnd}` })));
         setBudgets(data);
       } else {
         console.log('[Budgets] 返回数据为空');
@@ -315,8 +315,8 @@ export default function TransactionsPage() {
     return budgets.filter((budget) => {
       // 只处理支出类型
       if (formData.type !== 'expense') return false;
-      // 排除软删除的预算（Status不为active）
-      if (budget.Status !== 'active') return false;
+      // 排除软删除的预算（status不为active）
+      if (budget.status !== 'active') return false;
       return true;
     });
   }, [budgets, formData.type]);
@@ -330,13 +330,18 @@ export default function TransactionsPage() {
 
   // 根据搜索关键词筛选预算
   const filteredBudgets = useMemo(() => {
-    if (!budgetSearchQuery.trim()) return availableBudgets;
     const query = budgetSearchQuery.toLowerCase().trim();
+    if (!query) return availableBudgets;
     return availableBudgets.filter((budget) =>
-      budget.Name.toLowerCase().includes(query) ||
-      budget.Category.toLowerCase().includes(query)
+      budget.name.toLowerCase().includes(query) ||
+      budget.category.toLowerCase().includes(query)
     );
   }, [availableBudgets, budgetSearchQuery]);
+
+  // 搜索结果最多显示10条
+  const searchedBudgets = useMemo(() => {
+    return filteredBudgets.slice(0, 10);
+  }, [filteredBudgets]);
 
   const filteredTransactions = useMemo(() => {
     return transactions.filter((tx) => {
@@ -385,7 +390,7 @@ export default function TransactionsPage() {
       accountId: '',
       date: formatDate(new Date(), 'YYYY-MM-DD'),
       note: '',
-      budgetId: undefined,
+      budgetId: undefined, // 默认自动匹配
     });
     // 重置预算搜索状态
     setBudgetSearchQuery('');
@@ -473,6 +478,11 @@ export default function TransactionsPage() {
         occurredAt: formData.date,
         note: formData.note,
       };
+
+      // 添加预算ID（不关联预算时不发送，自动匹配时也不发送）
+      if (formData.budgetId && formData.budgetId !== '') {
+        transactionData.budgetId = parseInt(formData.budgetId);
+      }
 
       // 获取账户名称
       const account = accounts.find((a) => a.accountId === parseInt(formData.accountId));
@@ -931,20 +941,23 @@ export default function TransactionsPage() {
                     className="w-full h-10 px-3 py-2 text-sm border rounded-md bg-background hover:bg-accent hover:border-input transition-colors flex items-center justify-between text-left"
                   >
                     <span className={formData.budgetId ? '' : 'text-muted-foreground'}>
-                      {formData.budgetId
+                      {/* 显示当前选择的预算状态 */}
+                      {formData.budgetId === ''
+                        ? '不关联预算'
+                        : formData.budgetId
                         ? (() => {
-                            const selected = availableBudgets.find(b => b.BudgetId.toString() === formData.budgetId);
+                            const selected = availableBudgets.find(b => b.budgetId.toString() === formData.budgetId);
                             if (!selected) return '自动匹配';
-                            const expired = isBudgetExpired(selected.PeriodEnd);
+                            const expired = isBudgetExpired(selected.periodEnd);
                             return (
                               <span className="flex items-center gap-2">
-                                {selected.Name}
+                                {selected.name}
                                 {expired && (
                                   <span className="text-xs text-destructive bg-destructive/10 px-1.5 py-0.5 rounded">
                                     已过期
                                   </span>
                                 )}
-                                <span>（剩余 {formatCurrency(selected.TotalAmount - selected.UsedAmount)}）</span>
+                                <span>（剩余 {formatCurrency(selected.totalAmount - selected.usedAmount)}）</span>
                               </span>
                             );
                           })()
@@ -981,57 +994,92 @@ export default function TransactionsPage() {
                         </div>
                         {/* 预算列表 */}
                         <div className="max-h-60 overflow-y-auto py-1">
-                          {/* 自动匹配选项 */}
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setFormData({ ...formData, budgetId: undefined });
-                              setIsBudgetSelectOpen(false);
-                              setBudgetSearchQuery('');
-                            }}
-                            className={`w-full px-3 py-2 text-sm text-left hover:bg-accent transition-colors ${
-                              !formData.budgetId ? 'bg-accent/50' : ''
-                            }`}
-                          >
-                            <div className="font-medium">自动匹配</div>
-                            <div className="text-xs text-muted-foreground mt-0.5">
-                              根据日期和分类自动匹配预算
-                            </div>
-                          </button>
-                          {/* 预算选项 */}
-                          {filteredBudgets.length > 0 ? (
-                            filteredBudgets.map((budget) => (
+                          {/* 搜索框为空时：显示所有选项 */}
+                          {!budgetSearchQuery.trim() && (
+                            <>
+                              {/* 不关联预算选项 */}
                               <button
-                                key={budget.BudgetId}
                                 type="button"
                                 onClick={() => {
-                                  setFormData({ ...formData, budgetId: budget.BudgetId.toString() });
+                                  setFormData({ ...formData, budgetId: '' });
                                   setIsBudgetSelectOpen(false);
                                   setBudgetSearchQuery('');
                                 }}
                                 className={`w-full px-3 py-2 text-sm text-left hover:bg-accent transition-colors ${
-                                  formData.budgetId === budget.BudgetId.toString() ? 'bg-accent/50' : ''
+                                  formData.budgetId === '' ? 'bg-accent/50' : ''
+                                }`}
+                              >
+                                <div className="font-medium text-muted-foreground">不关联预算</div>
+                                <div className="text-xs text-muted-foreground mt-0.5">
+                                  不将此项支出关联到任何预算
+                                </div>
+                              </button>
+
+                              {/* 自动匹配选项 */}
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setFormData({ ...formData, budgetId: undefined });
+                                  setIsBudgetSelectOpen(false);
+                                  setBudgetSearchQuery('');
+                                }}
+                                className={`w-full px-3 py-2 text-sm text-left hover:bg-accent transition-colors ${
+                                  formData.budgetId === undefined ? 'bg-accent/50' : ''
+                                }`}
+                              >
+                                <div className="font-medium">自动匹配</div>
+                                <div className="text-xs text-muted-foreground mt-0.5">
+                                  根据日期和分类自动匹配预算
+                                </div>
+                              </button>
+                            </>
+                          )}
+
+                          {/* 搜索时有内容：隐藏固定选项，只显示搜索结果 */}
+                          {budgetSearchQuery.trim() && (
+                            <div className="px-3 py-2 text-xs text-muted-foreground">
+                              搜索结果
+                            </div>
+                          )}
+
+                          {/* 预算选项（搜索时限制最多10条） */}
+                          {searchedBudgets.length > 0 ? (
+                            searchedBudgets.map((budget) => (
+                              <button
+                                key={budget.budgetId}
+                                type="button"
+                                onClick={() => {
+                                  setFormData({ ...formData, budgetId: budget.budgetId.toString() });
+                                  setIsBudgetSelectOpen(false);
+                                  setBudgetSearchQuery('');
+                                }}
+                                className={`w-full px-3 py-2 text-sm text-left hover:bg-accent transition-colors ${
+                                  formData.budgetId === budget.budgetId.toString() ? 'bg-accent/50' : ''
                                 }`}
                               >
                                 <div className="font-medium flex items-center gap-2">
-                                  {budget.Name}
-                                  {isBudgetExpired(budget.PeriodEnd) && (
+                                  {budget.name}
+                                  {isBudgetExpired(budget.periodEnd) && (
                                     <span className="text-xs text-destructive bg-destructive/10 px-1.5 py-0.5 rounded">
                                       已过期
                                     </span>
                                   )}
                                 </div>
                                 <div className="text-xs text-muted-foreground mt-0.5">
-                                  分类: {budget.Category} · 有效期: {budget.PeriodStart} 至 {budget.PeriodEnd}
+                                  分类: {budget.category} · 有效期: {budget.periodStart} 至 {budget.periodEnd}
                                   <span className="ml-2 text-success">
-                                    剩余 {formatCurrency(budget.TotalAmount - budget.UsedAmount)}
+                                    剩余 {formatCurrency(budget.totalAmount - budget.usedAmount)}
                                   </span>
                                 </div>
                               </button>
                             ))
                           ) : (
                             <div className="px-3 py-4 text-sm text-muted-foreground text-center">
-                              {budgetSearchQuery ? '未找到匹配的预算' : '暂无可用预算'}
+                              {budgetSearchQuery.trim()
+                                ? '未找到匹配的预算'
+                                : availableBudgets.length === 0
+                                  ? '暂无可用预算'
+                                  : ''}
                             </div>
                           )}
                         </div>
@@ -1039,9 +1087,6 @@ export default function TransactionsPage() {
                     </>
                   )}
                 </div>
-                {availableBudgets.length === 0 && (
-                  <p className="text-xs text-muted-foreground">未找到可用的预算</p>
-                )}
               </div>
             )}
 
