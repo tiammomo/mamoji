@@ -23,7 +23,6 @@ import { useToast } from '@/components/ui/use-toast';
 import { ArrowUpRight, ArrowDownRight, Search } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
 import {
-  TRANSACTION_TYPE,
   INCOME_CATEGORY_LABELS,
   EXPENSE_CATEGORY_LABELS,
 } from '@/lib/constants';
@@ -48,8 +47,7 @@ interface BudgetOption {
 }
 
 interface QuickAddDialogProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
+  open?: boolean;
   onSuccess?: () => void;
 }
 
@@ -63,8 +61,9 @@ interface FormData {
   budgetId: string;
 }
 
-export function QuickAddDialog({ open, onOpenChange, onSuccess }: QuickAddDialogProps) {
+export function QuickAddDialog({ onSuccess }: QuickAddDialogProps) {
   const { toast } = useToast();
+  const [open, setOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [budgets, setBudgets] = useState<BudgetOption[]>([]);
@@ -99,6 +98,22 @@ export function QuickAddDialog({ open, onOpenChange, onSuccess }: QuickAddDialog
     }
   }, [open]);
 
+  // 打开对话框的回调（供外部使用）
+  useEffect(() => {
+    // 组件挂载时设置全局打开函数
+    if (typeof window !== 'undefined') {
+      (window as unknown as { __quickAddOpen__?: () => void }).__quickAddOpen__ = () => setOpen(true);
+    }
+    return () => {
+      if (typeof window !== 'undefined') {
+        const win = window as unknown as { __quickAddOpen__?: () => void };
+        if (win.__quickAddOpen__) {
+          delete win.__quickAddOpen__;
+        }
+      }
+    };
+  }, []);
+
   const fetchAccounts = async () => {
     try {
       const data = await get<Account[]>('/api/v1/accounts');
@@ -122,11 +137,9 @@ export function QuickAddDialog({ open, onOpenChange, onSuccess }: QuickAddDialog
   };
 
   // 筛选有效预算
-  const availableBudgets = budgets.filter((budget) => {
-    if (formData.type !== 'expense') return false;
-    if (budget.status !== 'active') return false;
-    return true;
-  });
+  const availableBudgets = budgets.filter((budget) =>
+    formData.type === 'expense' && budget.status === 'active'
+  );
 
   // 检查预算是否过期
   const isBudgetExpired = (periodEnd: string) => {
@@ -187,7 +200,7 @@ export function QuickAddDialog({ open, onOpenChange, onSuccess }: QuickAddDialog
         description: `${formData.type === 'income' ? '收入' : '支出'}已添加`,
       });
 
-      onOpenChange(false);
+      setOpen(false);
       onSuccess?.();
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : '请稍后重试';
@@ -207,7 +220,7 @@ export function QuickAddDialog({ open, onOpenChange, onSuccess }: QuickAddDialog
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={setOpen}>
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle>快速记账</DialogTitle>
@@ -433,7 +446,7 @@ export function QuickAddDialog({ open, onOpenChange, onSuccess }: QuickAddDialog
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isLoading}>
+          <Button variant="outline" onClick={() => setOpen(false)} disabled={isLoading}>
             取消
           </Button>
           <Button onClick={handleSubmit} disabled={isLoading}>

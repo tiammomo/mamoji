@@ -47,7 +47,8 @@
       "Bash(net:*)",
       "Bash(python3:*)",
       "Bash(pkill -9 -f \"server\")",
-      "Bash(pkill:*)"
+      "Bash(pkill:*)",
+      "Bash(npm run build)"
     ]
   }
 }

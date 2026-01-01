@@ -35,41 +35,69 @@ type UserInfo struct {
 	Role           string `json:"role,omitempty"`
 }
 
-// CreateAccountRequest 创建账户请求
+// CreateAccountRequest 创建资产账户请求
 type CreateAccountRequest struct {
-	EnterpriseId     int64   `json:"enterpriseId"`
-	UnitId           int64   `json:"unitId"`
-	Type             string  `json:"type" binding:"required"`
-	Name             string  `json:"name" binding:"required,min=1,max=50"`
-	AccountNo        string  `json:"accountNo,omitempty"`
-	BankCardType     string  `json:"bankCardType,omitempty"`
-	AvailableBalance float64 `json:"availableBalance"`
-	InvestedAmount   float64 `json:"investedAmount"`
+	EnterpriseId       int64   `json:"enterpriseId"`
+	UnitId             int64   `json:"unitId"`
+	AssetCategory      string  `json:"assetCategory" binding:"required,oneof=fund credit topup investment debt"`
+	SubType            string  `json:"subType" binding:"required"`
+	Name               string  `json:"name" binding:"required,min=1,max=50"`
+	Currency           string  `json:"currency"`
+	AccountNo          string  `json:"accountNo,omitempty"`
+	BankName           string  `json:"bankName,omitempty"` // 银行卡类型必填 / 发卡银行（银行信用卡）
+	BankCardType       string  `json:"bankCardType,omitempty"`
+	CreditLimit        float64 `json:"creditLimit"`        // 总额度（信用卡）
+	OutstandingBalance float64 `json:"outstandingBalance"` // 总欠款（信用卡）
+	BillingDate        int     `json:"billingDate"`        // 出账日期（1-28）
+	RepaymentDate      int     `json:"repaymentDate"`      // 还款日期（1-28）
+	AvailableBalance   float64 `json:"availableBalance"`
+	InvestedAmount     float64 `json:"investedAmount"`
+	TotalValue         float64 `json:"totalValue"`
+	IncludeInTotal     int     `json:"includeInTotal"` // 是否计入总资产: 1(是), 0(否)
 }
 
-// UpdateAccountRequest 更新账户请求
+// UpdateAccountRequest 更新资产账户请求
 type UpdateAccountRequest struct {
-	Name             string  `json:"name,omitempty"`
-	AccountNo        string  `json:"accountNo,omitempty"`
-	BankCardType     string  `json:"bankCardType,omitempty"`
-	AvailableBalance float64 `json:"availableBalance"`
-	InvestedAmount   float64 `json:"investedAmount"`
-	Status           int     `json:"status,omitempty"`
+	AssetCategory      string  `json:"assetCategory,omitempty"`
+	SubType            string  `json:"subType,omitempty"`
+	Name               string  `json:"name,omitempty"`
+	Currency           string  `json:"currency,omitempty"`
+	AccountNo          string  `json:"accountNo,omitempty"`
+	BankName           string  `json:"bankName,omitempty"`
+	BankCardType       string  `json:"bankCardType,omitempty"`
+	CreditLimit        float64 `json:"creditLimit,omitempty"`
+	OutstandingBalance float64 `json:"outstandingBalance,omitempty"` // 总欠款（信用卡）
+	BillingDate        int     `json:"billingDate,omitempty"`        // 出账日期（1-28）
+	RepaymentDate      int     `json:"repaymentDate,omitempty"`      // 还款日期（1-28）
+	AvailableBalance   float64 `json:"availableBalance,omitempty"`
+	InvestedAmount     float64 `json:"investedAmount,omitempty"`
+	TotalValue         float64 `json:"totalValue,omitempty"`
+	IncludeInTotal     int     `json:"includeInTotal,omitempty"`
+	Status             int     `json:"status,omitempty"`
 }
 
-// AccountResponse 账户响应
+// AccountResponse 资产账户响应
 type AccountResponse struct {
-	AccountId        int64   `json:"accountId"`
-	EnterpriseId     int64   `json:"enterpriseId"`
-	UnitId           int64   `json:"unitId"`
-	Type             string  `json:"type"`
-	Name             string  `json:"name"`
-	AccountNo        string  `json:"accountNo,omitempty"`
-	BankCardType     string  `json:"bankCardType,omitempty"`
-	AvailableBalance float64 `json:"availableBalance"`
-	InvestedAmount   float64 `json:"investedAmount"`
-	Status           int     `json:"status"`
-	CreatedAt        string  `json:"createdAt"`
+	AccountId          int64   `json:"accountId"`
+	EnterpriseId       int64   `json:"enterpriseId"`
+	UnitId             int64   `json:"unitId"`
+	AssetCategory      string  `json:"assetCategory"`
+	SubType            string  `json:"subType"`
+	Name               string  `json:"name"`
+	Currency           string  `json:"currency"`
+	AccountNo          string  `json:"accountNo,omitempty"`
+	BankName           string  `json:"bankName,omitempty"`
+	BankCardType       string  `json:"bankCardType,omitempty"`
+	CreditLimit        float64 `json:"creditLimit,omitempty"`
+	OutstandingBalance float64 `json:"outstandingBalance,omitempty"` // 总欠款（信用卡）
+	BillingDate        int     `json:"billingDate,omitempty"`        // 出账日期（1-28）
+	RepaymentDate      int     `json:"repaymentDate,omitempty"`      // 还款日期（1-28）
+	AvailableBalance   float64 `json:"availableBalance"`
+	InvestedAmount     float64 `json:"investedAmount"`
+	TotalValue         float64 `json:"totalValue"`
+	IncludeInTotal     int     `json:"includeInTotal"`
+	Status             int     `json:"status"`
+	CreatedAt          string  `json:"createdAt"`
 }
 
 // ListTransactionRequest 列表查询请求

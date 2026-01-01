@@ -2,11 +2,11 @@
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Header } from '@/components/layout';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Dialog,
   DialogContent,
@@ -32,8 +32,6 @@ import {
   Trash2,
   Loader2,
   Calendar,
-  ChevronRight,
-  ChevronLeft,
   Eye,
   TrendingUp,
   TrendingDown,
@@ -95,17 +93,10 @@ export default function BudgetsPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [isInitialLoading, setIsInitialLoading] = useState(true);
 
-  // 详情弹窗状态
-  const [detailDialogOpen, setDetailDialogOpen] = useState(false);
-  const [selectedBudgetId, setSelectedBudgetId] = useState<number | null>(null);
-
   // ========== 时间筛选功能 ==========
   // 获取北京时间（Asia/Shanghai）
   const getBeijingDate = () => {
-    // 通过添加时区偏移获取北京时间
-    const now = new Date();
-    const beijingTime = new Date(now.getTime() + 8 * 60 * 60 * 1000);
-    return beijingTime;
+    return new Date(new Date().getTime() + 8 * 60 * 60 * 1000);
   };
 
   // 格式化日期为 YYYY-MM-DD
@@ -206,22 +197,11 @@ export default function BudgetsPage() {
 
   // ========== 时间筛选功能结束 ==========
 
-  // 获取当日日期（北京时间），格式化为 YYYY-MM-DD
-  const getTodayDate = () => {
-    const now = new Date();
-    // 获取北京时间偏移（UTC+8）
-    const beijingTime = new Date(now.getTime() + 8 * 60 * 60 * 1000);
-    return beijingTime.toISOString().split('T')[0];
-  };
-
   // 根据预算类型获取默认周期（北京时间）
   const getDefaultPeriod = (type: string): { periodStart: string; periodEnd: string } => {
     const now = new Date();
     const year = now.getFullYear();
     const month = now.getMonth();
-
-    // 获取北京时间偏移
-    const beijingOffset = 8 * 60 * 60 * 1000;
 
     switch (type) {
       case 'monthly':
@@ -369,8 +349,9 @@ export default function BudgetsPage() {
 
   // 查看预算详情
   const handleViewDetail = (budgetId: number) => {
-    setSelectedBudgetId(budgetId);
-    setDetailDialogOpen(true);
+    if (typeof window !== 'undefined' && (window as unknown as { __budgetDetailOpen__?: (id: number) => void }).__budgetDetailOpen__) {
+      (window as unknown as { __budgetDetailOpen__: (id: number) => void }).__budgetDetailOpen__(budgetId);
+    }
   };
 
   const handleDelete = async (budgetId: number) => {
@@ -913,12 +894,7 @@ export default function BudgetsPage() {
       </Dialog>
 
       {/* 预算详情弹窗 */}
-      <BudgetDetailDialog
-        budgetId={selectedBudgetId}
-        open={detailDialogOpen}
-        onOpenChange={setDetailDialogOpen}
-        onBudgetUpdate={fetchBudgets}
-      />
+      <BudgetDetailDialog onBudgetUpdate={fetchBudgets} />
     </div>
   );
 }

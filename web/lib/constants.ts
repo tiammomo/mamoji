@@ -1,5 +1,188 @@
 /**
- * 账户类型
+ * 资产大类分类
+ * fund - 资金账户
+ * credit - 信用卡账户
+ * topup - 充值账户
+ * investment - 投资理财账户
+ * debt - 债务
+ */
+export const ASSET_CATEGORY = {
+  FUND: 'fund',         // 资金账户
+  CREDIT: 'credit',     // 信用卡账户
+  TOPUP: 'topup',       // 充值账户
+  INVESTMENT: 'investment', // 投资理财账户
+  DEBT: 'debt',         // 债务
+} as const;
+
+export type AssetCategory = typeof ASSET_CATEGORY[keyof typeof ASSET_CATEGORY];
+
+export const ASSET_CATEGORY_LABELS: Record<AssetCategory, string> = {
+  [ASSET_CATEGORY.FUND]: '资金账户',
+  [ASSET_CATEGORY.CREDIT]: '信用卡',
+  [ASSET_CATEGORY.TOPUP]: '充值账户',
+  [ASSET_CATEGORY.INVESTMENT]: '投资理财',
+  [ASSET_CATEGORY.DEBT]: '债务',
+};
+
+/**
+ * 资产子类型 - 资金账户
+ */
+export const FUND_SUB_TYPE = {
+  CASH: 'cash',           // 现金
+  WECHAT: 'wechat',       // 微信
+  ALIPAY: 'alipay',       // 支付宝
+  BANK: 'bank',           // 银行卡
+  HOUSING_FUND: 'housing_fund', // 公积金
+  MEDICAL_FUND: 'medical_fund', // 医保
+  OTHER: 'other',         // 其他
+} as const;
+
+export type FundSubType = typeof FUND_SUB_TYPE[keyof typeof FUND_SUB_TYPE];
+
+export const FUND_SUB_TYPE_LABELS: Record<FundSubType, string> = {
+  [FUND_SUB_TYPE.CASH]: '现金',
+  [FUND_SUB_TYPE.WECHAT]: '微信钱包',
+  [FUND_SUB_TYPE.ALIPAY]: '支付宝',
+  [FUND_SUB_TYPE.BANK]: '银行卡',
+  [FUND_SUB_TYPE.HOUSING_FUND]: '公积金',
+  [FUND_SUB_TYPE.MEDICAL_FUND]: '医保',
+  [FUND_SUB_TYPE.OTHER]: '其他',
+};
+
+/**
+ * 资产子类型 - 信用卡账户
+ */
+export const CREDIT_SUB_TYPE = {
+  BANK_CARD: 'bank_card',   // 银行信用卡
+  HUABEI: 'huabei',         // 花呗
+  OTHER: 'other',           // 其他
+} as const;
+
+export type CreditSubType = typeof CREDIT_SUB_TYPE[keyof typeof CREDIT_SUB_TYPE];
+
+export const CREDIT_SUB_TYPE_LABELS: Record<CreditSubType, string> = {
+  [CREDIT_SUB_TYPE.BANK_CARD]: '银行信用卡',
+  [CREDIT_SUB_TYPE.HUABEI]: '花呗',
+  [CREDIT_SUB_TYPE.OTHER]: '其他',
+};
+
+/**
+ * 银行列表
+ */
+export const BANK_LIST = [
+  { value: 'icbc', label: '中国工商银行' },
+  { value: 'abc', label: '中国农业银行' },
+  { value: 'boc', label: '中国银行' },
+  { value: 'ccb', label: '中国建设银行' },
+  { value: 'cmb', label: '招商银行' },
+  { value: 'psbc', label: '中国邮政储蓄银行' },
+  { value: 'citic', label: '中信银行' },
+  { value: 'cib', label: '兴业银行' },
+  { value: 'cmbc', label: '民生银行' },
+  { value: 'spdb', label: '浦发银行' },
+  { value: 'gdb', label: '广发银行' },
+  { value: 'pab', label: '平安银行' },
+  { value: 'bofc', label: '中国光大银行' },
+  { value: 'hxb', label: '华夏银行' },
+  { value: 'bob', label: '北京银行' },
+  { value: 'shbank', label: '上海银行' },
+  { value: 'other', label: '其他银行' },
+] as const;
+
+export type BankCode = typeof BANK_LIST[number]['value'];
+
+/**
+ * 资产子类型 - 充值账户
+ */
+export const TOPUP_SUB_TYPE = {
+  MEAL_CARD: 'meal_card',     // 饭卡
+  DEPOSIT: 'deposit',         // 押金
+  BUS_CARD: 'bus_card',       // 公交卡
+  MEMBER_CARD: 'member_card', // 会员卡
+  GAS_CARD: 'gas_card',       // 加油卡
+  PHONE_CARD: 'phone_card',   // 话费
+  OTHER: 'other',             // 其他
+} as const;
+
+export type TopupSubType = typeof TOPUP_SUB_TYPE[keyof typeof TOPUP_SUB_TYPE];
+
+export const TOPUP_SUB_TYPE_LABELS: Record<TopupSubType, string> = {
+  [TOPUP_SUB_TYPE.MEAL_CARD]: '饭卡',
+  [TOPUP_SUB_TYPE.DEPOSIT]: '押金',
+  [TOPUP_SUB_TYPE.BUS_CARD]: '公交卡',
+  [TOPUP_SUB_TYPE.MEMBER_CARD]: '会员卡',
+  [TOPUP_SUB_TYPE.GAS_CARD]: '加油卡',
+  [TOPUP_SUB_TYPE.PHONE_CARD]: '话费',
+  [TOPUP_SUB_TYPE.OTHER]: '其他',
+};
+
+/**
+ * 资产子类型 - 投资理财账户
+ */
+export const INVESTMENT_SUB_TYPE = {
+  STOCK: 'stock',           // 股票
+  FUND: 'fund',             // 基金
+  GOLD: 'gold',             // 黄金
+  FOREX: 'forex',           // 外汇
+  FUTURES: 'futures',       // 期货
+  BOND: 'bond',             // 债券
+  REGULAR: 'regular',       // 固定收益
+  CRYPTO: 'crypto',         // 加密货币
+  OTHER: 'other',           // 其他理财
+} as const;
+
+export type InvestmentSubType = typeof INVESTMENT_SUB_TYPE[keyof typeof INVESTMENT_SUB_TYPE];
+
+export const INVESTMENT_SUB_TYPE_LABELS: Record<InvestmentSubType, string> = {
+  [INVESTMENT_SUB_TYPE.STOCK]: '股票',
+  [INVESTMENT_SUB_TYPE.FUND]: '基金',
+  [INVESTMENT_SUB_TYPE.GOLD]: '黄金',
+  [INVESTMENT_SUB_TYPE.FOREX]: '外汇',
+  [INVESTMENT_SUB_TYPE.FUTURES]: '期货',
+  [INVESTMENT_SUB_TYPE.BOND]: '债券',
+  [INVESTMENT_SUB_TYPE.REGULAR]: '固定收益',
+  [INVESTMENT_SUB_TYPE.CRYPTO]: '加密货币',
+  [INVESTMENT_SUB_TYPE.OTHER]: '其他理财',
+};
+
+/**
+ * 资产子类型 - 债务
+ */
+export const DEBT_SUB_TYPE = {
+  LEND: 'lend',   // 借出
+  BORROW: 'borrow', // 借入
+} as const;
+
+export type DebtSubType = typeof DEBT_SUB_TYPE[keyof typeof DEBT_SUB_TYPE];
+
+export const DEBT_SUB_TYPE_LABELS: Record<DebtSubType, string> = {
+  [DEBT_SUB_TYPE.LEND]: '借出',
+  [DEBT_SUB_TYPE.BORROW]: '借入',
+};
+
+/**
+ * 获取所有子类型选项
+ */
+export function getSubTypeOptions(category: AssetCategory): Record<string, string> {
+  switch (category) {
+    case ASSET_CATEGORY.FUND:
+      return FUND_SUB_TYPE_LABELS as Record<string, string>;
+    case ASSET_CATEGORY.CREDIT:
+      return CREDIT_SUB_TYPE_LABELS as Record<string, string>;
+    case ASSET_CATEGORY.TOPUP:
+      return TOPUP_SUB_TYPE_LABELS as Record<string, string>;
+    case ASSET_CATEGORY.INVESTMENT:
+      return INVESTMENT_SUB_TYPE_LABELS as Record<string, string>;
+    case ASSET_CATEGORY.DEBT:
+      return DEBT_SUB_TYPE_LABELS as Record<string, string>;
+    default:
+      return {};
+  }
+}
+
+/**
+ * 账户类型（旧版，保留兼容）
+ * @deprecated 请使用 ASSET_CATEGORY 和子类型
  */
 export const ACCOUNT_TYPE = {
   WECHAT: 'wechat',

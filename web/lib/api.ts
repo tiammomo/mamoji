@@ -1,5 +1,4 @@
 import axios, { AxiosError, AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
-import { useRouter } from 'next/navigation';
 import { TOKEN_KEY } from './constants';
 
 // API响应基础结构
@@ -8,15 +7,6 @@ export interface ApiResponse<T = unknown> {
   message: string;
   data: T;
   traceId?: string;
-}
-
-// 分页响应结构
-export interface PaginatedResponse<T> {
-  list: T[];
-  total: number;
-  page: number;
-  pageSize: number;
-  totalPages: number;
 }
 
 // JWT Token 解码
@@ -29,8 +19,8 @@ interface JWTPayload {
   role: string;
 }
 
-// 检查Token是否过期
-export const isTokenExpired = (token: string): boolean => {
+// 解码JWT Token的通用函数
+const decodeJWT = (token: string): JWTPayload | null => {
   try {
     const base64Url = token.split('.')[1];
     const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
@@ -40,31 +30,26 @@ export const isTokenExpired = (token: string): boolean => {
         .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
         .join('')
     );
-    const payload: JWTPayload = JSON.parse(jsonPayload);
-    const now = Math.floor(Date.now() / 1000);
-    return payload.exp < now;
+    return JSON.parse(jsonPayload);
   } catch {
-    return true; // 解析失败视为过期
+    return null;
   }
+};
+
+// 检查Token是否过期
+export const isTokenExpired = (token: string): boolean => {
+  const payload = decodeJWT(token);
+  if (!payload) return true;
+  const now = Math.floor(Date.now() / 1000);
+  return payload.exp < now;
 };
 
 // 获取Token剩余有效时间（秒）
 export const getTokenRemainingTime = (token: string): number => {
-  try {
-    const base64Url = token.split('.')[1];
-    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-    const jsonPayload = decodeURIComponent(
-      atob(base64)
-        .split('')
-        .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
-        .join('')
-    );
-    const payload: JWTPayload = JSON.parse(jsonPayload);
-    const now = Math.floor(Date.now() / 1000);
-    return Math.max(0, payload.exp - now);
-  } catch {
-    return 0;
-  }
+  const payload = decodeJWT(token);
+  if (!payload) return 0;
+  const now = Math.floor(Date.now() / 1000);
+  return Math.max(0, payload.exp - now);
 };
 
 // 创建Axios实例
@@ -104,14 +89,10 @@ const createApiClient = (): AxiosInstance => {
     }
   );
 
-  // 响应拦截器
+  // 响应拦截器 - 只处理状态码
   client.interceptors.response.use(
-    (response: AxiosResponse<ApiResponse>) => {
-      const { code, message, data } = response.data;
-      if (code === 0) {
-        return data;
-      }
-      return Promise.reject(new ApiError(code, message, response));
+    (response: AxiosResponse) => {
+      return response;
     },
     (error: AxiosError<ApiResponse>) => {
       if (error.response) {
@@ -151,7 +132,8 @@ export class ApiError extends Error {
     this.name = 'ApiError';
     this.code = code;
     if (response && 'headers' in response) {
-      this.traceId = response.headers['trace-id'] as string;
+      const headers = (response as AxiosResponse).headers;
+      this.traceId = headers?.['trace-id'] as string;
     }
   }
 }
@@ -163,8 +145,12 @@ export const api = createApiClient();
 export async function request<T>(
   config: AxiosRequestConfig
 ): Promise<T> {
-  const response = await api.request<T>(config);
-  return response;
+  const response = await api.request<ApiResponse<T>>(config);
+  const apiResponse = response.data as ApiResponse<T>;
+  if (apiResponse.code === 0) {
+    return apiResponse.data as T;
+  }
+  throw new ApiError(apiResponse.code, apiResponse.message, response);
 }
 
 // GET请求
@@ -238,7 +224,7 @@ export function del<T>(
 }
 
 // 文件上传
-export function upload<T>(
+export async function upload<T>(
   url: string,
   file: File,
   onProgress?: (progress: number) => void
@@ -246,7 +232,7 @@ export function upload<T>(
   const formData = new FormData();
   formData.append('file', file);
 
-  return api.post<T>(url, formData, {
+  const response = await api.post<ApiResponse<T>>(url, formData, {
     headers: {
       'Content-Type': 'multipart/form-data',
     },
@@ -257,4 +243,10 @@ export function upload<T>(
       }
     },
   });
+
+  const apiResponse = response.data as ApiResponse<T>;
+  if (apiResponse.code === 0) {
+    return apiResponse.data as T;
+  }
+  throw new ApiError(apiResponse.code, apiResponse.message, response);
 }

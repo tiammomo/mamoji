@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Bell, Search, Plus, LogIn, Settings, LogOut, User } from 'lucide-react';
+import { Bell, Search, Plus, LogIn, Settings, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -32,7 +32,6 @@ export function Header({ title, subtitle }: HeaderProps) {
   const isAuthenticated = useIsAuthenticated();
   const logout = useAuthStore((state) => state.logout);
   const [mounted, setMounted] = useState(false);
-  const [isQuickAddOpen, setIsQuickAddOpen] = useState(false);
 
   // 等待客户端挂载，避免水合作用不匹配
   useEffect(() => {
@@ -53,6 +52,16 @@ export function Header({ title, subtitle }: HeaderProps) {
       </header>
     );
   }
+
+  // 打开快速记账对话框（内联函数，避免 useCallback 在条件之后调用）
+  const handleQuickAdd = () => {
+    if (typeof window !== 'undefined') {
+      const win = window as unknown as { __quickAddOpen__?: () => void };
+      if (win.__quickAddOpen__) {
+        win.__quickAddOpen__();
+      }
+    }
+  };
 
   return (
     <header className="h-16 border-b bg-card px-6 flex items-center justify-between">
@@ -81,7 +90,7 @@ export function Header({ title, subtitle }: HeaderProps) {
         <Button
           size="sm"
           className="gap-1"
-          onClick={() => setIsQuickAddOpen(true)}
+          onClick={handleQuickAdd}
           title="快速记账"
         >
           <Plus className="w-4 h-4" />
@@ -189,7 +198,7 @@ export function Header({ title, subtitle }: HeaderProps) {
       </div>
 
       {/* 快速记账对话框 */}
-      <QuickAddDialog open={isQuickAddOpen} onOpenChange={setIsQuickAddOpen} />
+      <QuickAddDialog />
     </header>
   );
 }
