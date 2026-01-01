@@ -101,20 +101,29 @@ func (UnitPermission) TableName() string {
 	return "biz_unit_permission"
 }
 
-// Account 账户表
+// Account 资产账户表（统一管理所有类型资产）
 type Account struct {
-	AccountId        int64     `gorm:"primaryKey;autoIncrement" json:"accountId"`
-	EnterpriseId     int64     `gorm:"not null;index" json:"enterpriseId"`
-	UnitId           int64     `gorm:"not null;index" json:"unitId"`
-	Type             string    `gorm:"size:20;not null" json:"type"`
-	Name             string    `gorm:"size:50;not null" json:"name"`
-	AccountNo        string    `gorm:"size:50" json:"accountNo"`
-	BankCardType     string    `gorm:"size:20" json:"bankCardType"`
-	AvailableBalance float64   `gorm:"type:decimal(18,2);not null;default:0" json:"availableBalance"`
-	InvestedAmount   float64   `gorm:"type:decimal(18,2);not null;default:0" json:"investedAmount"`
-	Status           int       `gorm:"default:1" json:"status"`
-	CreatedAt        time.Time `gorm:"autoCreateTime" json:"createdAt"`
-	UpdatedAt        time.Time `gorm:"autoUpdateTime" json:"updatedAt"`
+	AccountId          int64     `gorm:"primaryKey;autoIncrement" json:"accountId"`
+	EnterpriseId       int64     `gorm:"not null;index" json:"enterpriseId"`
+	UnitId             int64     `gorm:"not null;index" json:"unitId"`
+	AssetCategory      string    `gorm:"size:20;not null;default:'fund'" json:"assetCategory"` // 资产大类: fund(资金账户), credit(信用卡), topup(充值账户), investment(投资理财), debt(债务)
+	SubType            string    `gorm:"size:30" json:"subType"`                               // 资产子类型: cash, wechat, alipay, bank, etc.
+	Name               string    `gorm:"size:50;not null" json:"name"`
+	Currency           string    `gorm:"size:10;default:'CNY'" json:"currency"` // 币种: CNY(人民币), USD(美元), etc.
+	AccountNo          string    `gorm:"size:50" json:"accountNo"`
+	BankName           string    `gorm:"size:50" json:"bankName"`                                       // 开户银行（银行卡类型必填）/ 发卡银行（银行信用卡）
+	BankCardType       string    `gorm:"size:20" json:"bankCardType"`                                   // 银行卡类型: type1(一类卡), type2(二类卡)
+	CreditLimit        float64   `gorm:"type:decimal(18,2);default:0" json:"creditLimit"`               // 信用额度（信用卡）
+	OutstandingBalance float64   `gorm:"type:decimal(18,2);default:0" json:"outstandingBalance"`        // 总欠款（信用卡）
+	BillingDate        int       `gorm:"default:0" json:"billingDate"`                                  // 出账日期（1-28）
+	RepaymentDate      int       `gorm:"default:0" json:"repaymentDate"`                                // 还款日期（1-28）
+	AvailableBalance   float64   `gorm:"type:decimal(18,2);not null;default:0" json:"availableBalance"` // 可用余额
+	InvestedAmount     float64   `gorm:"type:decimal(18,2);not null;default:0" json:"investedAmount"`   // 投资中金额
+	TotalValue         float64   `gorm:"type:decimal(18,2);not null;default:0" json:"totalValue"`       // 资产总价值
+	IncludeInTotal     int       `gorm:"default:1" json:"includeInTotal"`                               // 是否计入总资产: 1(是), 0(否)
+	Status             int       `gorm:"default:1" json:"status"`
+	CreatedAt          time.Time `gorm:"autoCreateTime" json:"createdAt"`
+	UpdatedAt          time.Time `gorm:"autoUpdateTime" json:"updatedAt"`
 }
 
 func (Account) TableName() string {

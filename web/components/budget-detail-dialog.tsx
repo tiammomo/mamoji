@@ -17,7 +17,6 @@ import {
   Calendar,
   DollarSign,
   FileText,
-  X,
   RefreshCw,
 } from 'lucide-react';
 import { formatCurrency, formatDate } from '@/lib/utils';
@@ -70,32 +69,51 @@ const EXPENSE_CATEGORY_LABELS: Record<string, string> = {
 };
 
 interface BudgetDetailDialogProps {
-  budgetId: number | null;
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
+  budgetId?: number | null;
   onBudgetUpdate?: () => void;
 }
 
 export function BudgetDetailDialog({
   budgetId,
-  open,
-  onOpenChange,
   onBudgetUpdate,
 }: BudgetDetailDialogProps) {
+  const [open, setOpen] = useState(false);
+  const [currentBudgetId, setCurrentBudgetId] = useState<number | null>(null);
   const [detail, setDetail] = useState<BudgetDetailResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // 打开对话框
+  const openDialog = (id: number) => {
+    setCurrentBudgetId(id);
+    setOpen(true);
+  };
+
+  // 设置全局打开函数
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      (window as unknown as { __budgetDetailOpen__?: (id: number) => void }).__budgetDetailOpen__ = openDialog;
+    }
+    return () => {
+      if (typeof window !== 'undefined') {
+        const win = window as unknown as { __budgetDetailOpen__?: (id: number) => void };
+        if (win.__budgetDetailOpen__) {
+          delete win.__budgetDetailOpen__;
+        }
+      }
+    };
+  }, [openDialog]);
+
   // 获取预算详情
   const fetchBudgetDetail = async () => {
-    if (!budgetId) return;
+    if (!currentBudgetId) return;
 
     setLoading(true);
     setError(null);
 
     try {
       const data = await get<BudgetDetailResponse>(
-        `/api/v1/budgets/${budgetId}/detail`
+        `/api/v1/budgets/${currentBudgetId}/detail`
       );
       setDetail(data);
     } catch (err: any) {
@@ -108,13 +126,14 @@ export function BudgetDetailDialog({
 
   // 监听对话框打开和budgetId变化
   useEffect(() => {
-    if (open && budgetId) {
+    if (open && currentBudgetId) {
       fetchBudgetDetail();
-    } else {
+    } else if (!open) {
       setDetail(null);
       setError(null);
+      setCurrentBudgetId(null);
     }
-  }, [open, budgetId]);
+  }, [open, currentBudgetId]);
 
   // 刷新数据
   const handleRefresh = () => {
@@ -172,7 +191,7 @@ export function BudgetDetailDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={setOpen}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <div className="flex items-center justify-between">

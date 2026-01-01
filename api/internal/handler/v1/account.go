@@ -159,7 +159,8 @@ func CreateAccount(ctx context.Context, c *app.RequestContext) {
 	log.Debugw("CreateAccount 请求参数",
 		"request_id", string(requestID),
 		"account_name", req.Name,
-		"account_type", req.Type,
+		"asset_category", req.AssetCategory,
+		"sub_type", req.SubType,
 		"available_balance", req.AvailableBalance,
 		"invested_amount", req.InvestedAmount,
 	)

@@ -4,7 +4,6 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
   LayoutDashboard,
-  Wallet,
   Receipt,
   PiggyBank,
   TrendingUp,
@@ -26,11 +25,10 @@ import { useState } from 'react';
 
 const sidebarItems = [
   { href: '/dashboard', label: '仪表盘', icon: LayoutDashboard },
-  { href: '/accounts', label: '账户管理', icon: Wallet },
+  { href: '/assets', label: '资产管理', icon: Building2 },
   { href: '/transactions', label: '收支记录', icon: Receipt },
   { href: '/budgets', label: '预算管理', icon: PiggyBank },
   { href: '/investments', label: '理财收益', icon: TrendingUp },
-  { href: '/assets', label: '资产管理', icon: Building2 },
   { href: '/reports', label: '报表统计', icon: BarChart3 },
 ];
 
