@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
+import { Home } from "lucide-react"
 
 export default function RegisterPage() {
   const router = useRouter()
@@ -84,13 +85,19 @@ export default function RegisterPage() {
       <div className="flex-1 flex items-center justify-center p-8">
         <div className="w-full max-w-md">
           {/* Logo */}
-          <div className="flex items-center space-x-2 mb-8">
-            <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center">
-              <span className="text-white font-bold text-xl">帅</span>
+          <div className="flex items-center justify-between mb-8">
+            <div className="flex items-center space-x-2">
+              <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center">
+                <span className="text-white font-bold text-xl">帅</span>
+              </div>
+              <span className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                小帅记账
+              </span>
             </div>
-            <span className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-              小帅记账
-            </span>
+            <Link href="/" className="flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700 transition">
+              <Home className="w-4 h-4" />
+              返回首页
+            </Link>
           </div>
 
           {/* Title */}

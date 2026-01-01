@@ -1,6 +1,26 @@
+"use client"
+
+import { useEffect } from "react"
+import { useRouter } from "next/navigation"
 import Link from "next/link"
+import { useAuthStore } from "@/stores/auth"
 
 export default function Home() {
+  const router = useRouter()
+  const { checkAuth } = useAuthStore()
+
+  // 检查是否已登录
+  useEffect(() => {
+    // 延迟检查，确保store已初始化
+    const timer = setTimeout(() => {
+      const isAuth = checkAuth()
+      if (isAuth) {
+        router.replace("/dashboard")
+      }
+    }, 100)
+
+    return () => clearTimeout(timer)
+  }, [router, checkAuth])
   return (
     <main className="min-h-screen flex flex-col">
       {/* Header */}
