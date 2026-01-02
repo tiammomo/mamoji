@@ -140,16 +140,16 @@ export default function TransactionsPage() {
     return new Date(Date.UTC(year, month + 1, 0));
   };
 
-  // 默认时间范围：当月第一天到今天（基于北京时间）
+  // 默认时间范围：当月第一天到当月最后一天（基于北京时间）
   const [dateRange, setDateRange] = useState<{ start: string; end: string }>(() => {
     const beijingNow = getBeijingDate();
     const year = beijingNow.getUTCFullYear();
     const month = beijingNow.getUTCMonth();
     const firstDay = new Date(Date.UTC(year, month, 1));
-    const today = new Date(Date.UTC(year, month, beijingNow.getUTCDate()));
+    const lastDay = new Date(Date.UTC(year, month + 1, 0));
     return {
       start: formatDateToString(firstDay),
-      end: formatDateToString(today),
+      end: formatDateToString(lastDay),
     };
   });
 
@@ -930,7 +930,7 @@ export default function TransactionsPage() {
                         <div>
                           <div className="flex items-center gap-2">
                             <p className="font-medium">{tx.note}</p>
-                            <Badge variant="outline" className="text-xs">
+                            <Badge variant="secondary" className="text-xs">
                               {tx.type === 'income'
                                 ? INCOME_CATEGORY_LABELS[tx.category as keyof typeof INCOME_CATEGORY_LABELS]
                                 : EXPENSE_CATEGORY_LABELS[tx.category as keyof typeof EXPENSE_CATEGORY_LABELS]}
@@ -941,7 +941,7 @@ export default function TransactionsPage() {
                                 {budgets.find(b => b.budgetId === tx.budgetId)?.name || '未知预算'}
                               </Badge>
                             ) : (
-                              <Badge variant="outline" className="text-xs text-muted-foreground">
+                              <Badge variant="secondary" className="text-xs text-muted-foreground">
                                 不涉及预算管理
                               </Badge>
                             )}

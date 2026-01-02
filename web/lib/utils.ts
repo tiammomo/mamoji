@@ -133,9 +133,16 @@ export function amountToChinese(amount: number): string {
   }
 
   if (decimalPart > 0) {
-    result += '点';
+    result += '元';
     const decimalStr = String(decimalPart).padStart(2, '0');
     result += nums[parseInt(decimalStr[0])] + '角' + nums[parseInt(decimalStr[1])] + '分';
+  } else {
+    result += '元整';
+  }
+
+  // 如果整数部分全为零，添加"零"前缀
+  if (result === '元整') {
+    return '零元整';
   }
 
   return result || '零元整';

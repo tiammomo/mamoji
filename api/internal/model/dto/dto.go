@@ -44,7 +44,8 @@ type CreateAccountRequest struct {
 	Name               string  `json:"name" binding:"required,min=1,max=50"`
 	Currency           string  `json:"currency"`
 	AccountNo          string  `json:"accountNo,omitempty"`
-	BankName           string  `json:"bankName,omitempty"` // 银行卡类型必填 / 发卡银行（银行信用卡）
+	BankCode           string  `json:"bankCode,omitempty"` // 银行编码（银行信用卡必填）
+	BankName           string  `json:"bankName,omitempty"` // 储蓄卡类型必填 / 发卡银行（银行信用卡）
 	BankCardType       string  `json:"bankCardType,omitempty"`
 	CreditLimit        float64 `json:"creditLimit"`        // 总额度（信用卡）
 	OutstandingBalance float64 `json:"outstandingBalance"` // 总欠款（信用卡）
@@ -63,6 +64,7 @@ type UpdateAccountRequest struct {
 	Name               string  `json:"name,omitempty"`
 	Currency           string  `json:"currency,omitempty"`
 	AccountNo          string  `json:"accountNo,omitempty"`
+	BankCode           string  `json:"bankCode,omitempty"` // 银行编码（银行信用卡必填）
 	BankName           string  `json:"bankName,omitempty"`
 	BankCardType       string  `json:"bankCardType,omitempty"`
 	CreditLimit        float64 `json:"creditLimit,omitempty"`

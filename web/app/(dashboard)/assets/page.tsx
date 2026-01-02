@@ -36,7 +36,7 @@ import {
   TrendingUp,
   AlertCircle,
 } from 'lucide-react';
-import { formatCurrency } from '@/lib/utils';
+import { formatCurrency, formatNumber } from '@/lib/utils';
 import {
   ASSET_CATEGORY,
   ASSET_CATEGORY_LABELS,
@@ -78,7 +78,6 @@ interface Account {
   repaymentDate: number;       // 还款日期（1-28）
   availableBalance: number;
   investedAmount: number;
-  totalValue: number;
   includeInTotal: number;
   status: number;
   createdAt: string;
@@ -115,7 +114,6 @@ interface AccountFormData {
   repaymentDate: string;     // 还款日期
   availableBalance: string;
   investedAmount: string;
-  totalValue: string;
   includeInTotal: boolean;
 }
 
@@ -217,16 +215,10 @@ export default function AssetsPage() {
   const [isInitialLoading, setIsInitialLoading] = useState(true);
   const [editingAccount, setEditingAccount] = useState<Account | null>(null);
 
-  // 调试：打印用户信息
-  useEffect(() => {
-    console.log('[Assets] 当前用户信息:', JSON.stringify(user, null, 2));
-  }, [user]);
-
   // 加载数据
   useEffect(() => {
     const timer = setTimeout(() => {
       if (isInitialLoading) {
-        console.log('[Assets] 加载超时，强制结束loading状态');
         setIsInitialLoading(false);
       }
     }, 5000);
@@ -240,7 +232,6 @@ export default function AssetsPage() {
   const fetchAccounts = async () => {
     try {
       const data = await get<Account[]>('/api/v1/accounts');
-      console.log('[Assets] 账户列表:', JSON.stringify(data, null, 2));
       setAccounts(data || []);
     } catch (error) {
       console.error('获取账户列表失败:', error);
@@ -264,9 +255,9 @@ export default function AssetsPage() {
     }
   };
 
-  // 根据筛选条件过滤账户
+  // 根据筛选条件过滤账户并按金额从大到小排序
   const filteredAccounts = useMemo(() => {
-    return accounts.filter((account) => {
+    const filtered = accounts.filter((account) => {
       const matchesSearch = !searchQuery ||
         account.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         (account.accountNo && account.accountNo.toLowerCase().includes(searchQuery.toLowerCase())) ||
@@ -276,17 +267,29 @@ export default function AssetsPage() {
 
       return matchesSearch && matchesCategory;
     });
+    // 按总价值（余额+投资金额）从大到小排序
+    return filtered.sort((a, b) => {
+      const totalA = a.availableBalance + a.investedAmount;
+      const totalB = b.availableBalance + b.investedAmount;
+      return totalB - totalA;
+    });
   }, [accounts, searchQuery, categoryFilter]);
 
   // 按分类分组统计
   const categoryStats = useMemo(() => {
-    const stats: Record<string, { count: number; totalValue: number }> = {};
+    const stats: Record<string, { count: number; balance: number; invested: number }> = {};
     accounts.forEach((account) => {
       if (!stats[account.assetCategory]) {
-        stats[account.assetCategory] = { count: 0, totalValue: 0 };
+        stats[account.assetCategory] = { count: 0, balance: 0, invested: 0 };
       }
       stats[account.assetCategory].count += 1;
-      stats[account.assetCategory].totalValue += account.totalValue || account.availableBalance;
+      // 信用卡使用负数总欠款，其他账户使用可用余额
+      if (account.assetCategory === ASSET_CATEGORY.CREDIT) {
+        stats[account.assetCategory].balance -= account.outstandingBalance;
+      } else {
+        stats[account.assetCategory].balance += account.availableBalance;
+        stats[account.assetCategory].invested += account.investedAmount;
+      }
     });
     return stats;
   }, [accounts]);
@@ -302,7 +305,7 @@ export default function AssetsPage() {
     setEditingAccount(null);
     setFormData({
       assetCategory: ASSET_CATEGORY.FUND,
-      subType: '',
+      subType: FUND_SUB_TYPE.CASH,  // 设置默认值
       name: '',
       currency: 'CNY',
       accountNo: '',
@@ -315,7 +318,6 @@ export default function AssetsPage() {
       repaymentDate: '',
       availableBalance: '',
       investedAmount: '',
-      totalValue: '',
       includeInTotal: true,
     });
     setIsDialogOpen(false);
@@ -342,7 +344,6 @@ export default function AssetsPage() {
       repaymentDate: account.repaymentDate > 0 ? account.repaymentDate.toString() : '',
       availableBalance: account.availableBalance > 0 ? account.availableBalance.toString() : '',
       investedAmount: account.investedAmount > 0 ? account.investedAmount.toString() : '',
-      totalValue: account.totalValue > 0 ? account.totalValue.toString() : '',
       includeInTotal: account.includeInTotal === 1,
     });
     setIsDialogOpen(true);
@@ -386,7 +387,6 @@ export default function AssetsPage() {
     repaymentDate: '',
     availableBalance: '',
     investedAmount: '',
-    totalValue: '',
     includeInTotal: true,
   });
 
@@ -410,33 +410,42 @@ export default function AssetsPage() {
       return false;
     }
 
-    // 银行卡类型必须填写开户行信息
-    if (isBankType(formData.assetCategory, formData.subType) && !formData.bankName.trim()) {
+    // 储蓄卡类型必须选择发卡银行
+    if (isBankType(formData.assetCategory, formData.subType) && !formData.bankCode.trim()) {
       toast({
         title: '验证失败',
-        description: '银行卡类型必须填写开户银行信息',
+        description: '储蓄卡必须选择发卡银行',
         variant: 'destructive',
       });
       return false;
     }
 
-    // 银行信用卡必须选择发卡银行
-    if (isBankCardType(formData.assetCategory, formData.subType) && !formData.bankCode.trim()) {
-      toast({
-        title: '验证失败',
-        description: '请选择发卡银行',
-        variant: 'destructive',
-      });
-      return false;
+    // 信用卡必须选择发卡银行和卡号
+    if (isCreditCardType(formData.assetCategory)) {
+      if (!formData.bankCode.trim()) {
+        toast({
+          title: '验证失败',
+          description: '信用卡必须选择发卡银行',
+          variant: 'destructive',
+        });
+        return false;
+      }
+      if (!formData.accountNo.trim()) {
+        toast({
+          title: '验证失败',
+          description: '信用卡必须填写卡号',
+          variant: 'destructive',
+        });
+        return false;
+      }
     }
 
     const availableBalance = parseFloat(formData.availableBalance) || 0;
     const investedAmount = parseFloat(formData.investedAmount) || 0;
-    const totalValue = parseFloat(formData.totalValue) || 0;
     const creditLimit = parseFloat(formData.creditLimit) || 0;
     const outstandingBalance = parseFloat(formData.outstandingBalance) || 0;
 
-    if (availableBalance < 0 || investedAmount < 0 || totalValue < 0 || creditLimit < 0 || outstandingBalance < 0) {
+    if (availableBalance < 0 || investedAmount < 0 || creditLimit < 0 || outstandingBalance < 0) {
       toast({
         title: '验证失败',
         description: '金额不能为负数',
@@ -457,7 +466,6 @@ export default function AssetsPage() {
     try {
       const availableBalance = parseFloat(formData.availableBalance) || 0;
       const investedAmount = parseFloat(formData.investedAmount) || 0;
-      const totalValue = parseFloat(formData.totalValue) || (availableBalance + investedAmount);
       const creditLimit = parseFloat(formData.creditLimit) || 0;
       const outstandingBalance = parseFloat(formData.outstandingBalance) || 0;
       const billingDate = parseInt(formData.billingDate) || 0;
@@ -470,7 +478,15 @@ export default function AssetsPage() {
         name: formData.name.trim(),
         currency: formData.currency,
         accountNo: formData.accountNo.trim() || undefined,
-        bankName: isBankType(formData.assetCategory, formData.subType) ? formData.bankName.trim() : undefined,
+        bankCode: formData.bankCode || undefined,
+        bankName: (() => {
+          // 储蓄卡和信用卡：根据bankCode获取银行名称
+          if (isBankType(formData.assetCategory, formData.subType) || isCreditCardType(formData.assetCategory)) {
+            const bank = BANK_LIST.find(b => b.value === formData.bankCode);
+            return bank?.label || '';
+          }
+          return undefined;
+        })(),
         bankCardType: formData.bankCardType || undefined,
         creditLimit,
         outstandingBalance,
@@ -478,7 +494,6 @@ export default function AssetsPage() {
         repaymentDate,
         availableBalance,
         investedAmount,
-        totalValue,
         includeInTotal,
       };
 
@@ -491,12 +506,12 @@ export default function AssetsPage() {
         setAccounts((prev) =>
           prev.map((a) =>
             a.accountId === editingAccount.accountId
-              ? { ...a, ...accountData, totalValue }
+              ? { ...a, ...accountData }
               : a
           )
         );
 
-        savedAccount = { ...editingAccount, ...accountData, totalValue };
+        savedAccount = { ...editingAccount, ...accountData };
 
         toast({
           title: '保存成功',
@@ -613,10 +628,17 @@ export default function AssetsPage() {
         </div>
       )}
 
-      {/* 分类统计 */}
+      {/* 分类统计 - 自定义顺序：资金账户、投资理财、信用卡、充值账户、债务 */}
       <div className="grid gap-2 md:grid-cols-5">
-        {Object.entries(ASSET_CATEGORY_LABELS).map(([key, label]) => {
-          const stat = categoryStats[key] || { count: 0, totalValue: 0 };
+        {[
+          ASSET_CATEGORY.FUND,
+          ASSET_CATEGORY.INVESTMENT,
+          ASSET_CATEGORY.CREDIT,
+          ASSET_CATEGORY.TOPUP,
+          ASSET_CATEGORY.DEBT,
+        ].map((key) => {
+          const label = ASSET_CATEGORY_LABELS[key];
+          const stat = categoryStats[key] || { count: 0, balance: 0, invested: 0 };
           const config = CATEGORY_CONFIG[key as AssetCategory];
           const Icon = config?.icon || Building2;
           return (
@@ -636,9 +658,19 @@ export default function AssetsPage() {
                 </div>
                 <div className="mt-2">
                   <div className="font-medium text-sm">{label}</div>
-                  <div className="text-xs text-muted-foreground">
-                    {formatCurrency(stat.totalValue)}
-                  </div>
+                  {key === ASSET_CATEGORY.INVESTMENT ? (
+                    <div className="text-xs text-muted-foreground">
+                      余额 {formatNumber(stat.balance)} 投资金额 {formatNumber(stat.invested)}
+                    </div>
+                  ) : key === ASSET_CATEGORY.CREDIT ? (
+                    <div className="text-xs">
+                      账户余额 <span className="text-red-600 font-medium">{formatCurrency(stat.balance)}</span>
+                    </div>
+                  ) : (
+                    <div className="text-xs text-muted-foreground">
+                      {formatCurrency(stat.balance)}
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -684,23 +716,23 @@ export default function AssetsPage() {
       {/* 账户列表 */}
       <Card>
         <CardContent className="pt-6">
-          <div className="space-y-4">
-            {isInitialLoading ? (
-              <div className="text-center py-12">
-                <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-                <p className="text-muted-foreground">加载中...</p>
-              </div>
-            ) : filteredAccounts.length === 0 ? (
-              <div className="text-center py-12">
-                <Building2 className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                <p className="text-muted-foreground">暂无账户</p>
-                <Button className="mt-4" onClick={handleAddAccount}>
-                  <Plus className="w-4 h-4 mr-2" />
-                  添加第一个账户
-                </Button>
-              </div>
-            ) : (
-              filteredAccounts.map((account) => {
+          {isInitialLoading ? (
+            <div className="text-center py-12">
+              <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+              <p className="text-muted-foreground">加载中...</p>
+            </div>
+          ) : filteredAccounts.length === 0 ? (
+            <div className="text-center py-12">
+              <Building2 className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+              <p className="text-muted-foreground">暂无账户</p>
+              <Button className="mt-4" onClick={handleAddAccount}>
+                <Plus className="w-4 h-4 mr-2" />
+                添加第一个账户
+              </Button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {filteredAccounts.map((account) => {
                 const config = CATEGORY_CONFIG[account.assetCategory as AssetCategory];
                 const Icon = config?.icon || Building2;
                 const subTypeLabel = getSubTypeLabel(
@@ -711,75 +743,78 @@ export default function AssetsPage() {
                 return (
                   <div
                     key={account.accountId}
-                    className="flex items-center justify-between p-4 border rounded-lg hover:bg-accent/50 transition-colors"
+                    className="p-3 border rounded-lg hover:bg-accent/50 transition-colors"
                   >
-                    <div className="flex items-center gap-4">
-                      <div className={`w-12 h-12 rounded-full flex items-center justify-center ${config?.color || 'bg-gray-100'}`}>
-                        <Icon className="w-6 h-6" />
-                      </div>
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <p className="font-medium">{account.name}</p>
-                          <Badge variant="outline" className="text-xs">
-                            {ASSET_CATEGORY_LABELS[account.assetCategory as AssetCategory]}
-                          </Badge>
-                          <Badge variant="secondary" className="text-xs">
-                            {subTypeLabel}
-                          </Badge>
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="flex items-center gap-3">
+                        <div className={`w-10 h-10 rounded-full flex items-center justify-center ${config?.color || 'bg-gray-100'}`}>
+                          <Icon className="w-5 h-5" />
                         </div>
-                        <div className="flex items-center gap-2 mt-1 text-sm text-muted-foreground">
-                          {account.bankName && (
-                            <>
-                              <span>{account.bankName}</span>
-                              <span>·</span>
-                            </>
-                          )}
-                          {account.accountNo && (
-                            <>
-                              <span>{account.accountNo}</span>
-                              <span>·</span>
-                            </>
-                          )}
-                          <span>{account.createdAt?.split(' ')[0]}</span>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-4">
-                      <div className="text-right">
-                        <span className="text-lg font-semibold">
-                          {formatCurrency(account.totalValue || account.availableBalance)}
-                        </span>
-                        {account.assetCategory === ASSET_CATEGORY.CREDIT && account.creditLimit > 0 && (
-                          <div className="text-xs text-muted-foreground">
-                            额度: {formatCurrency(account.creditLimit)}
+                        <div>
+                          <p className="font-medium text-sm">{account.name}</p>
+                          <div className="flex items-center gap-1 mt-0.5 flex-wrap">
+                            <span className="text-xs text-muted-foreground">
+                              {ASSET_CATEGORY_LABELS[account.assetCategory as AssetCategory]}
+                            </span>
+                            <span className="text-xs text-muted-foreground">·</span>
+                            <span className="text-xs text-muted-foreground">{subTypeLabel}</span>
+                            {(account.bankName || account.accountNo) && (
+                              <>
+                                <span className="text-xs text-muted-foreground">·</span>
+                                <span className="text-xs text-muted-foreground">
+                                  {account.bankName} {account.accountNo}
+                                </span>
+                              </>
+                            )}
                           </div>
-                        )}
+                        </div>
                       </div>
                       <div className="flex items-center gap-1">
                         <Button
                           variant="ghost"
                           size="icon"
+                          className="h-7 w-7"
                           onClick={() => handleEditClick(account)}
                           title="编辑"
                         >
-                          <Edit className="w-4 h-4" />
+                          <Edit className="w-3.5 h-3.5" />
                         </Button>
                         <Button
                           variant="ghost"
                           size="icon"
+                          className="h-7 w-7"
                           onClick={() => handleDeleteClick(account.accountId)}
                           title="删除"
-                          className="text-destructive hover:text-destructive"
                         >
-                          <Trash2 className="w-4 h-4" />
+                          <Trash2 className="w-3.5 h-3.5 text-destructive" />
                         </Button>
                       </div>
                     </div>
+                    {/* 金额信息：账户余额（信用卡用总欠款负数）+ 投资金额（同一行） */}
+                    <div className="flex items-baseline gap-3 mb-2">
+                      {account.assetCategory === ASSET_CATEGORY.CREDIT ? (
+                        <>
+                          <span className="text-sm font-medium">账户余额：<span className="text-red-600">{formatCurrency(-account.outstandingBalance)}</span></span>
+                          {account.creditLimit > 0 && (
+                            <span className="text-xs text-muted-foreground">额度 {formatCurrency(account.creditLimit)}</span>
+                          )}
+                        </>
+                      ) : (
+                        <>
+                          <span className="text-sm font-medium">账户余额：<span className="text-green-600">{formatCurrency(account.availableBalance)}</span></span>
+                          {account.assetCategory === ASSET_CATEGORY.INVESTMENT && account.investedAmount > 0 && (
+                            <span className="text-xs text-muted-foreground">
+                              投资金额 <span className="text-purple-600">{formatCurrency(account.investedAmount)}</span>
+                            </span>
+                          )}
+                        </>
+                      )}
+                    </div>
                   </div>
                 );
-              })
-            )}
-          </div>
+              })}
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -800,11 +835,13 @@ export default function AssetsPage() {
               <Select
                 value={formData.assetCategory}
                 onValueChange={(value: AssetCategory) => {
+                  // 如果是信用卡类型，自动设置bankCardType为credit
+                  const newBankCardType = value === ASSET_CATEGORY.CREDIT ? 'credit' : '';
                   setFormData({
                     ...formData,
                     assetCategory: value,
                     subType: '',
-                    bankCardType: '',
+                    bankCardType: newBankCardType,
                     bankName: '',
                   });
                 }}
@@ -873,30 +910,29 @@ export default function AssetsPage() {
               </Select>
             </div>
 
-            {/* 银行卡号（仅银行卡类型显示） */}
+            {/* 银行卡号和开户银行（仅银行卡类型显示） */}
             {isBankType(formData.assetCategory, formData.subType) ? (
-              <div className="space-y-2">
-                <Label htmlFor="accountNo">银行卡号</Label>
-                <Input
-                  id="accountNo"
-                  placeholder="请输入银行卡号"
-                  value={formData.accountNo}
-                  onChange={(e) => setFormData({ ...formData, accountNo: e.target.value })}
-                />
-              </div>
-            ) : isCreditCardType(formData.assetCategory) ? (
-              <div className="space-y-2">
-                <Label>发卡银行 {isBankCardType(formData.assetCategory, formData.subType) && '*'}</Label>
-                {isBankCardType(formData.assetCategory, formData.subType) ? (
+              <>
+                <div className="space-y-2">
+                  <Label htmlFor="accountNo">银行卡号</Label>
+                  <Input
+                    id="accountNo"
+                    placeholder="请输入银行卡号"
+                    value={formData.accountNo}
+                    onChange={(e) => setFormData({ ...formData, accountNo: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>开户银行 *</Label>
                   <Select
                     value={formData.bankCode}
                     onValueChange={(value) => {
-                      const bank = BANK_LIST.find(b => b.value === value);
+                      const bank = BANK_LIST.find((b) => b.value === value);
                       setFormData({ ...formData, bankCode: value, bankName: bank?.label || '' });
                     }}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="选择发卡银行" />
+                      <SelectValue placeholder="选择或搜索开户银行" />
                     </SelectTrigger>
                     <SelectContent>
                       {BANK_LIST.map((bank) => (
@@ -906,49 +942,9 @@ export default function AssetsPage() {
                       ))}
                     </SelectContent>
                   </Select>
-                ) : (
-                  <Input
-                    placeholder="请输入信用卡类型"
-                    disabled
-                    className="bg-muted"
-                  />
-                )}
-              </div>
-            ) : (
-              <div className="space-y-2">
-                <Label>发卡银行</Label>
-                <Input
-                  placeholder="请输入信用卡类型"
-                  disabled
-                  className="bg-muted"
-                />
-              </div>
-            )}
-
-            {/* 开户银行（仅银行卡类型显示） */}
-            {isBankType(formData.assetCategory, formData.subType) && (
-              <div className="space-y-2">
-                <Label>开户银行 *</Label>
-                <Select
-                  value={formData.bankCode}
-                  onValueChange={(value) => {
-                    const bank = BANK_LIST.find(b => b.value === value);
-                    setFormData({ ...formData, bankCode: value, bankName: bank?.label || '' });
-                  }}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="选择或搜索开户银行" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {BANK_LIST.map((bank) => (
-                      <SelectItem key={bank.value} value={bank.value}>
-                        {bank.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
+                </div>
+              </>
+            ) : null}
 
             {/* 银行卡类型（仅银行卡显示） */}
             {isBankType(formData.assetCategory, formData.subType) && (
@@ -972,18 +968,54 @@ export default function AssetsPage() {
               </div>
             )}
 
-            {/* 总额度（所有信用卡类型显示） */}
+            {/* 发卡银行（信用卡类型显示） */}
             {isCreditCardType(formData.assetCategory) && (
               <div className="space-y-2">
-                <Label htmlFor="creditLimit">总额度</Label>
-                <Input
-                  id="creditLimit"
-                  type="number"
-                  placeholder="请输入总额度"
-                  value={formData.creditLimit}
-                  onChange={(e) => setFormData({ ...formData, creditLimit: e.target.value })}
-                />
+                <Label>发卡银行 *</Label>
+                <Select
+                  value={formData.bankCode}
+                  onValueChange={(value) => {
+                    const bank = BANK_LIST.find((b) => b.value === value);
+                    setFormData({ ...formData, bankCode: value, bankName: bank?.label || '' });
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="选择或搜索发卡银行" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {BANK_LIST.map((bank) => (
+                      <SelectItem key={bank.value} value={bank.value}>
+                        {bank.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
+            )}
+
+            {/* 总额度（所有信用卡类型显示） */}
+            {isCreditCardType(formData.assetCategory) && (
+              <>
+                <div className="space-y-2">
+                  <Label htmlFor="accountNo">信用卡卡号 *</Label>
+                  <Input
+                    id="accountNo"
+                    placeholder="请输入信用卡卡号"
+                    value={formData.accountNo}
+                    onChange={(e) => setFormData({ ...formData, accountNo: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="creditLimit">总额度</Label>
+                  <Input
+                    id="creditLimit"
+                    type="number"
+                    placeholder="请输入总额度"
+                    value={formData.creditLimit}
+                    onChange={(e) => setFormData({ ...formData, creditLimit: e.target.value })}
+                  />
+                </div>
+              </>
             )}
 
             {/* 总欠款（所有信用卡类型显示） */}
@@ -1071,23 +1103,6 @@ export default function AssetsPage() {
                 />
               </div>
             )}
-
-            {/* 总价值（可选，用于覆盖自动计算） */}
-            <div className="col-span-2 space-y-2">
-              <Label htmlFor="totalValue">账户总价值</Label>
-              <Input
-                id="totalValue"
-                type="number"
-                placeholder="可选，不填则自动计算"
-                value={formData.totalValue}
-                onChange={(e) => setFormData({ ...formData, totalValue: e.target.value })}
-              />
-              <p className="text-xs text-muted-foreground">
-                账户余额 {formData.availableBalance || 0}
-                {formData.investedAmount ? ` + 投资金额 ${formData.investedAmount}` : ''}
-                {formData.assetCategory === ASSET_CATEGORY.CREDIT && formData.creditLimit ? `（信用额度 ${formData.creditLimit}）` : ''}
-              </p>
-            </div>
 
             {/* 是否计入总资产 */}
             <div className="col-span-2 flex items-center justify-between pt-2 border-t mt-2">

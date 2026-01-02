@@ -345,7 +345,6 @@ storybook-static/
 
 # 项目文档
 !README.md
-!INSTALLATION.md
 
 # 许可证
 !LICENSE
@@ -358,8 +357,7 @@ storybook-static/
 # 数据库初始化脚本
 !deploy/mysql/init/01_schema.sql
 
-# 示例配置
-!env.example
+# 示例配置（不包含敏感信息）
 !api/config/config.example.yaml
 
 # Go 模块文件

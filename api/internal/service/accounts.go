@@ -9,8 +9,29 @@ import (
 	"mamoji/api/internal/model/entity"
 )
 
-// 银行卡子类型
+// 储蓄卡子类型
 const FUND_SUB_TYPE_BANK = "bank"
+
+// 银行编码映射
+var bankCodeMap = map[string]string{
+	"icbc":   "中国工商银行",
+	"abc":    "中国农业银行",
+	"boc":    "中国银行",
+	"ccb":    "中国建设银行",
+	"cmb":    "招商银行",
+	"psbc":   "中国邮政储蓄银行",
+	"citic":  "中信银行",
+	"cib":    "兴业银行",
+	"cmbc":   "民生银行",
+	"spdb":   "浦发银行",
+	"gdb":    "广发银行",
+	"pab":    "平安银行",
+	"bofc":   "中国光大银行",
+	"hxb":    "华夏银行",
+	"bob":    "北京银行",
+	"shbank": "上海银行",
+	"other":  "其他银行",
+}
 
 // ===== AssetService =====
 
@@ -86,10 +107,20 @@ func (s *AccountService) GetById(accountId int64) (*dto.AccountResponse, error) 
 
 // Create 创建资产账户
 func (s *AccountService) Create(req dto.CreateAccountRequest) (*dto.AccountResponse, error) {
-	// 验证：银行卡类型必须填写开户行信息
+	// 验证：储蓄卡类型必须填写开户银行（使用bankCode选择）
 	if req.AssetCategory == "fund" && req.SubType == FUND_SUB_TYPE_BANK {
-		if req.BankName == "" {
-			return nil, errors.New("银行卡类型必须填写开户银行信息")
+		if req.BankCode == "" {
+			return nil, errors.New("储蓄卡必须选择发卡银行")
+		}
+	}
+
+	// 验证：信用卡必须填写发卡银行和卡号
+	if req.AssetCategory == "credit" {
+		if req.BankCode == "" {
+			return nil, errors.New("信用卡必须选择发卡银行")
+		}
+		if req.AccountNo == "" {
+			return nil, errors.New("信用卡必须填写卡号")
 		}
 	}
 
@@ -97,8 +128,9 @@ func (s *AccountService) Create(req dto.CreateAccountRequest) (*dto.AccountRespo
 	unitId := req.UnitId
 	if unitId == 0 {
 		var unit entity.AccountingUnit
-		database.DB.Where("enterprise_id = ? AND status = 1", req.EnterpriseId).First(&unit)
-		if unit.UnitId == 0 {
+		err := database.DB.Where("enterprise_id = ? AND status = 1", req.EnterpriseId).First(&unit).Error
+		if err != nil {
+			// 没有找到默认单元，创建新单元
 			defaultUnit := &entity.AccountingUnit{
 				EnterpriseId: req.EnterpriseId,
 				Name:         "默认单元",
@@ -106,8 +138,8 @@ func (s *AccountService) Create(req dto.CreateAccountRequest) (*dto.AccountRespo
 				Level:        1,
 				Status:       1,
 			}
-			if err := database.DB.Create(defaultUnit).Error; err != nil {
-				return nil, errors.New("创建默认单元失败")
+			if createErr := database.DB.Create(defaultUnit).Error; createErr != nil {
+				return nil, errors.New("创建默认单元失败: " + createErr.Error())
 			}
 			unitId = defaultUnit.UnitId
 		} else {
@@ -133,6 +165,14 @@ func (s *AccountService) Create(req dto.CreateAccountRequest) (*dto.AccountRespo
 		includeInTotal = 1 // 默认计入总资产
 	}
 
+	// 确定银行名称：储蓄卡使用BankName，银行信用卡根据BankCode获取银行名称
+	bankName := req.BankName
+	if req.AssetCategory == "credit" && req.SubType == "bank_card" && req.BankCode != "" {
+		if name, ok := bankCodeMap[req.BankCode]; ok {
+			bankName = name
+		}
+	}
+
 	account := &entity.Account{
 		EnterpriseId:       req.EnterpriseId,
 		UnitId:             unitId,
@@ -141,7 +181,7 @@ func (s *AccountService) Create(req dto.CreateAccountRequest) (*dto.AccountRespo
 		Name:               req.Name,
 		Currency:           currency,
 		AccountNo:          req.AccountNo,
-		BankName:           req.BankName,
+		BankName:           bankName,
 		BankCardType:       req.BankCardType,
 		CreditLimit:        req.CreditLimit,
 		OutstandingBalance: req.OutstandingBalance,
@@ -155,7 +195,7 @@ func (s *AccountService) Create(req dto.CreateAccountRequest) (*dto.AccountRespo
 	}
 
 	if err := database.DB.Create(account).Error; err != nil {
-		return nil, errors.New("创建资产账户失败")
+		return nil, errors.New("创建资产账户失败: " + err.Error())
 	}
 
 	return &dto.AccountResponse{
@@ -189,7 +229,7 @@ func (s *AccountService) Update(accountId int64, req dto.UpdateAccountRequest) (
 		return nil, errors.New("资产账户不存在")
 	}
 
-	// 验证：如果更新为银行卡类型且原类型不是银行卡，必须填写开户行信息
+	// 验证：如果更新为储蓄卡类型且原类型不是储蓄卡，必须填写开户行信息
 	newCategory := req.AssetCategory
 	newSubType := req.SubType
 	if newCategory == "" {
@@ -199,10 +239,10 @@ func (s *AccountService) Update(accountId int64, req dto.UpdateAccountRequest) (
 		newSubType = account.SubType
 	}
 
-	// 如果是银行卡类型且原开户行为空，则必须填写
+	// 如果是储蓄卡类型且原开户行为空，则必须填写
 	if newCategory == "fund" && newSubType == FUND_SUB_TYPE_BANK {
 		if account.BankName == "" && req.BankName == "" {
-			return nil, errors.New("银行卡类型必须填写开户银行信息")
+			return nil, errors.New("储蓄卡类型必须填写开户银行信息")
 		}
 	}
 
@@ -235,11 +275,9 @@ func (s *AccountService) Update(accountId int64, req dto.UpdateAccountRequest) (
 	if req.InvestedAmount > 0 || req.InvestedAmount == 0 {
 		updates["invested_amount"] = req.InvestedAmount
 	}
+	// 只有当显式传入金额时才更新TotalValue，不根据可用和投资金额自动计算
 	if req.TotalValue > 0 || req.TotalValue == 0 {
 		updates["total_value"] = req.TotalValue
-	} else if req.AvailableBalance > 0 || req.InvestedAmount > 0 {
-		// 如果没有显式设置TotalValue，根据可用和投资金额计算
-		updates["total_value"] = req.AvailableBalance + req.InvestedAmount
 	}
 	if req.CreditLimit > 0 || req.CreditLimit == 0 {
 		updates["credit_limit"] = req.CreditLimit
@@ -331,11 +369,8 @@ func (s *AccountService) GetSummary(enterpriseId int64) (*dto.AccountSummaryResp
 	lastMonthExpense = stats.Expense
 	txCount = stats.TxCount
 
-	// 使用TotalValue作为总余额，如果没有则计算
-	totalBalance := totalValue
-	if totalBalance == 0 {
-		totalBalance = totalAvailable + totalInvested
-	}
+	// 总资产 = 可用资金 + 投资理财
+	totalBalance := totalAvailable + totalInvested
 
 	// 上月初始余额 = 当月余额 - 当月收入 + 当月支出
 	lastMonthBalance := totalBalance - lastMonthIncome + lastMonthExpense

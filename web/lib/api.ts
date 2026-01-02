@@ -170,7 +170,7 @@ export function get<T>(
 // POST请求
 export function post<T>(
   url: string,
-  data?: Record<string, unknown> | unknown[],
+  data?: unknown,
   config?: AxiosRequestConfig
 ): Promise<T> {
   return request<T>({
@@ -184,7 +184,7 @@ export function post<T>(
 // PUT请求
 export function put<T>(
   url: string,
-  data?: Record<string, unknown> | unknown[],
+  data?: unknown,
   config?: AxiosRequestConfig
 ): Promise<T> {
   return request<T>({
@@ -198,7 +198,7 @@ export function put<T>(
 // PATCH请求
 export function patch<T>(
   url: string,
-  data?: Record<string, unknown> | unknown[],
+  data?: unknown,
   config?: AxiosRequestConfig
 ): Promise<T> {
   return request<T>({

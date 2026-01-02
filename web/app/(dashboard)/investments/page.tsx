@@ -211,7 +211,7 @@ export default function InvestmentsPage() {
                   <div>
                     <div className="flex items-center gap-2">
                       <CardTitle className="text-lg">{inv.name}</CardTitle>
-                      <Badge variant="outline">
+                      <Badge variant="secondary">
                         {INVESTMENT_PRODUCT_TYPE_LABELS[inv.productType as keyof typeof INVESTMENT_PRODUCT_TYPE_LABELS]}
                       </Badge>
                     </div>

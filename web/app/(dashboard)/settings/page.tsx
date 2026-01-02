@@ -543,7 +543,7 @@ export default function SettingsPage() {
                         <Badge variant={user.status === 1 ? 'default' : 'secondary'}>
                           {user.status === 1 ? '正常' : '停用'}
                         </Badge>
-                        <Badge variant="outline">{getRoleLabel(user.role)}</Badge>
+                        <Badge variant="secondary">{getRoleLabel(user.role)}</Badge>
                         <div className="flex gap-2">
                           <Button variant="outline" size="sm" onClick={() => openEditUserDialog(user)}>
                             <Edit className="w-3 h-3 mr-1" />
@@ -584,7 +584,7 @@ export default function SettingsPage() {
                         <UserCog className="w-5 h-5 text-primary" />
                         <span className="font-medium">{role.roleName}</span>
                       </div>
-                      <Badge variant="outline">{role.userCount} 人</Badge>
+                      <Badge variant="secondary">{role.userCount} 人</Badge>
                     </div>
                     <p className="text-sm text-muted-foreground mb-2">{role.description}</p>
                     <div className="flex flex-wrap gap-1">
