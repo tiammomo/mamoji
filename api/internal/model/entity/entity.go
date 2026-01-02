@@ -111,7 +111,7 @@ type Account struct {
 	Name               string    `gorm:"size:50;not null" json:"name"`
 	Currency           string    `gorm:"size:10;default:'CNY'" json:"currency"` // 币种: CNY(人民币), USD(美元), etc.
 	AccountNo          string    `gorm:"size:50" json:"accountNo"`
-	BankName           string    `gorm:"size:50" json:"bankName"`                                       // 开户银行（银行卡类型必填）/ 发卡银行（银行信用卡）
+	BankName           string    `gorm:"size:50" json:"bankName"`                                       // 开户银行（储蓄卡类型必填）/ 发卡银行（银行信用卡）
 	BankCardType       string    `gorm:"size:20" json:"bankCardType"`                                   // 银行卡类型: type1(一类卡), type2(二类卡)
 	CreditLimit        float64   `gorm:"type:decimal(18,2);default:0" json:"creditLimit"`               // 信用额度（信用卡）
 	OutstandingBalance float64   `gorm:"type:decimal(18,2);default:0" json:"outstandingBalance"`        // 总欠款（信用卡）

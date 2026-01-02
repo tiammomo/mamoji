@@ -334,7 +334,7 @@ export function BudgetDetailDialog({
                         <div>
                           <div className="flex items-center gap-2">
                             <span className="font-medium">{tx.note || '无备注'}</span>
-                            <Badge variant="outline" className="text-xs">
+                            <Badge variant="secondary" className="text-xs">
                               {getCategoryLabel(tx.category)}
                             </Badge>
                           </div>
