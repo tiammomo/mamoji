@@ -43,7 +43,7 @@ export const FUND_SUB_TYPE_LABELS: Record<FundSubType, string> = {
   [FUND_SUB_TYPE.CASH]: '现金',
   [FUND_SUB_TYPE.WECHAT]: '微信钱包',
   [FUND_SUB_TYPE.ALIPAY]: '支付宝',
-  [FUND_SUB_TYPE.BANK]: '银行卡',
+  [FUND_SUB_TYPE.BANK]: '储蓄卡',
   [FUND_SUB_TYPE.HOUSING_FUND]: '公积金',
   [FUND_SUB_TYPE.MEDICAL_FUND]: '医保',
   [FUND_SUB_TYPE.OTHER]: '其他',

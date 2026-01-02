@@ -137,6 +137,81 @@ func AddMissingColumns() error {
 		}
 	}
 
+	// 检查并添加 biz_account 表的资产字段列
+	// 该列在添加资产管理功能时需要，但历史表可能缺少这些列
+	accountColumns := []struct {
+		name    string
+		colType string
+		comment string
+	}{
+		{"type", "VARCHAR(20) DEFAULT 'bank' COMMENT '账户类型（兼容旧字段）'", "账户类型"},
+		{"currency", "VARCHAR(10) DEFAULT 'CNY' COMMENT '币种: CNY(人民币), USD(美元), etc.'", "币种"},
+		{"account_no", "VARCHAR(50) COMMENT '账号/卡号'", "账号卡号"},
+		{"bank_name", "VARCHAR(50) COMMENT '开户银行/发卡银行'", "银行名称"},
+		{"bank_card_type", "VARCHAR(20) COMMENT '银行卡类型: type1(一类卡), type2(二类卡)'", "银行卡类型"},
+		{"credit_limit", "DECIMAL(18,2) DEFAULT 0 COMMENT '信用额度（信用卡）'", "信用额度"},
+		{"outstanding_balance", "DECIMAL(18,2) DEFAULT 0 COMMENT '总欠款（信用卡）'", "总欠款"},
+		{"billing_date", "INT DEFAULT 0 COMMENT '出账日期（1-28）'", "出账日期"},
+		{"repayment_date", "INT DEFAULT 0 COMMENT '还款日期（1-28）'", "还款日期"},
+		{"invested_amount", "DECIMAL(18,2) DEFAULT 0 COMMENT '投资中金额'", "投资金额"},
+		{"asset_category", "VARCHAR(20) DEFAULT 'fund' COMMENT '资产大类: fund(资金账户), credit(信用卡), topup(充值账户), investment(投资理财), debt(债务)'", "资产大类"},
+		{"sub_type", "VARCHAR(30) COMMENT '资产子类型: cash, wechat, alipay, bank, etc.'", "资产子类型"},
+		{"total_value", "DECIMAL(18,2) DEFAULT 0 COMMENT '资产总价值'", "资产总价值"},
+		{"include_in_total", "INT DEFAULT 1 COMMENT '是否计入总资产: 1(是), 0(否)'", "是否计入总资产"},
+	}
+
+	for _, col := range accountColumns {
+		if err := DB.Raw("SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'biz_account' AND COLUMN_NAME = ?", col.name).Scan(&columnExists).Error; err != nil {
+			log.Printf("Warning: failed to check %s column: %v", col.name, err)
+			continue
+		}
+
+		if !columnExists {
+			// 添加列
+			addColSQL := fmt.Sprintf("ALTER TABLE `biz_account` ADD COLUMN `%s` %s", col.name, col.colType)
+			if err := DB.Exec(addColSQL).Error; err != nil {
+				if !isDuplicateColumnError(err) {
+					log.Printf("Warning: failed to add %s column: %v", col.name, err)
+				}
+			} else {
+				log.Printf("Added %s column to biz_account table", col.name)
+			}
+		}
+	}
+
+	// 检查并添加 biz_account 表的 unit_id 列（如果历史表缺少）
+	if err := DB.Raw("SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'biz_account' AND COLUMN_NAME = 'unit_id'").Scan(&columnExists).Error; err != nil {
+		log.Printf("Warning: failed to check unit_id column: %v", err)
+	} else if !columnExists {
+		if err := DB.Exec("ALTER TABLE `biz_account` ADD COLUMN `unit_id` BIGINT DEFAULT 0 COMMENT '记账单元ID' AFTER `enterprise_id`").Error; err != nil {
+			if !isDuplicateColumnError(err) {
+				log.Printf("Warning: failed to add unit_id column: %v", err)
+			}
+		} else {
+			log.Println("Added unit_id column to biz_account table")
+		}
+
+		// 添加索引
+		if err := DB.Exec("CREATE INDEX `idx_account_unit_id` ON `biz_account` (`unit_id`)").Error; err != nil {
+			if !isDuplicateIndexError(err) {
+				log.Printf("Warning: failed to create index on unit_id: %v", err)
+			}
+		}
+	}
+
+	// 检查 biz_account 表的 type 列是否存在且没有默认值
+	var hasDefault bool
+	if err := DB.Raw("SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'biz_account' AND COLUMN_NAME = 'type' AND COLUMN_DEFAULT IS NOT NULL").Scan(&hasDefault).Error; err != nil {
+		log.Printf("Warning: failed to check type column default: %v", err)
+	} else if !hasDefault {
+		// 列存在但没有默认值，添加默认值
+		if err := DB.Exec("ALTER TABLE `biz_account` MODIFY COLUMN `type` VARCHAR(20) DEFAULT 'bank' COMMENT '账户类型（兼容旧字段）'").Error; err != nil {
+			log.Printf("Warning: failed to modify type column: %v", err)
+		} else {
+			log.Println("Modified type column to add default value")
+		}
+	}
+
 	return nil
 }
 
