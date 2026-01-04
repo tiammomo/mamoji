@@ -2,7 +2,6 @@ package middleware
 
 import (
 	"context"
-	"os"
 	"strings"
 	"time"
 
@@ -15,8 +14,18 @@ import (
 	"mamoji/api/internal/logger"
 )
 
+// App 全局应用配置
+var App struct {
+	Env string
+}
+
 // Register 注册中间件
 func Register(h *server.Hertz) {
+	// 初始化应用配置
+	cfg, err := config.Load()
+	if err == nil {
+		App.Env = cfg.App.Env
+	}
 	// 跨域中间件
 	h.Use(CORS())
 
@@ -103,11 +112,17 @@ func Auth() app.HandlerFunc {
 		}
 		path := string(c.Request.URI().Path())
 
-		// 公开路由
+		// 公开路由（使用更精确的匹配）
 		publicPaths := []string{
 			"/api/v1/auth/login",
 			"/api/v1/auth/register",
 			"/health",
+		}
+
+		// Swagger 路径（任何 /swagger 开头的路径和 doc.json）
+		if strings.HasPrefix(path, "/swagger") || strings.HasSuffix(path, "/doc.json") {
+			c.Next(ctx)
+			return
 		}
 
 		for _, p := range publicPaths {
@@ -147,7 +162,7 @@ func Auth() app.HandlerFunc {
 		tokenString := strings.TrimPrefix(auth, "Bearer ")
 
 		// 开发模式：支持 mock token（以 mock_ 开头），仅在开发环境有效
-		if os.Getenv("MAMOJI_APP_ENV") == "development" && strings.HasPrefix(tokenString, "mock_") {
+		if App.Env == "development" && strings.HasPrefix(tokenString, "mock_") {
 			log.InfoMap("Auth: 开发模式，使用模拟用户",
 				map[string]interface{}{
 					"request_id": requestID,
