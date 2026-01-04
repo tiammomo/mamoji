@@ -50,7 +50,8 @@
       "Bash(pkill:*)",
       "Bash(npm run build)",
       "Bash(npm test)",
-      "Bash(npm run test)"
+      "Bash(npm run test)",
+      "Bash(./server.exe)"
     ]
   }
 }
