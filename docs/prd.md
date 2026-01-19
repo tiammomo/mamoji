@@ -16,6 +16,7 @@ Mamoji 是一款简洁易用的个人记账系统，支持多账户管理、预�
 | 数据库 | MySQL 8.0 |
 | 缓存 | Redis 7.x + Redisson (分布式缓存)<br>Caffeine (本地缓存) |
 | 前端 | Next.js 16 + TypeScript |
+| UI 组件 | shadcn/ui + Tailwind CSS |
 | 认证 | JWT (Bearer Token) |
 
 ## 数据库设计
