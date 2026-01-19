@@ -301,6 +301,9 @@ INSERT INTO fin_category (name, type) VALUES
 
 ## Redis 数据结构设计
 
+> Redis 客户端使用 Redisson，支持分布式锁和更多高级特性。
+> 本地缓存使用 Caffeine，与 Redis 配合实现多级缓存。
+
 ### Key 命名规范
 
 ```
