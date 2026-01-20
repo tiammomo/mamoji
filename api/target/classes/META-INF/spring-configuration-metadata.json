@@ -1,0 +1,39 @@
+{
+  "groups": [
+    {
+      "name": "jwt",
+      "type": "com.mamoji.config.JwtConfig",
+      "sourceType": "com.mamoji.config.JwtConfig"
+    }
+  ],
+  "properties": [
+    {
+      "name": "jwt.expiration",
+      "type": "java.lang.Long",
+      "description": "JWT Expiration Time (milliseconds)",
+      "sourceType": "com.mamoji.config.JwtConfig"
+    },
+    {
+      "name": "jwt.header",
+      "type": "java.lang.String",
+      "description": "JWT Header Name",
+      "sourceType": "com.mamoji.config.JwtConfig"
+    },
+    {
+      "name": "jwt.prefix",
+      "type": "java.lang.String",
+      "description": "JWT Token Prefix",
+      "sourceType": "com.mamoji.config.JwtConfig"
+    },
+    {
+      "name": "jwt.secret",
+      "type": "java.lang.String",
+      "description": "JWT Secret Key",
+      "sourceType": "com.mamoji.config.JwtConfig"
+    }
+  ],
+  "hints": [],
+  "ignored": {
+    "properties": []
+  }
+}

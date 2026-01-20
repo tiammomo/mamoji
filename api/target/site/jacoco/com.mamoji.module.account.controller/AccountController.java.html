@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AccountController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">mamoji-api</a> &gt; <a href="index.source.html" class="el_package">com.mamoji.module.account.controller</a> &gt; <span class="el_source">AccountController.java</span></div><h1>AccountController.java</h1><pre class="source lang-java linenums">package com.mamoji.module.account.controller;
+
+import com.mamoji.common.result.Result;
+import com.mamoji.module.account.dto.AccountDTO;
+import com.mamoji.module.account.dto.AccountVO;
+import com.mamoji.module.account.service.AccountService;
+import com.mamoji.module.transaction.dto.TransactionVO;
+import com.mamoji.module.transaction.service.TransactionService;
+import com.mamoji.security.UserPrincipal;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+import java.util.Map;
+
+/**
+ * Account Controller
+ */
+@RestController
+@RequestMapping(&quot;/api/v1/accounts&quot;)
+@RequiredArgsConstructor
+public class AccountController {
+
+    private final AccountService accountService;
+    private final TransactionService transactionService;
+
+    /**
+     * Get all accounts for current user
+     */
+    @GetMapping
+    public Result&lt;List&lt;AccountVO&gt;&gt; listAccounts(@AuthenticationPrincipal UserPrincipal user) {
+<span class="nc" id="L34">        List&lt;AccountVO&gt; accounts = accountService.listAccounts(user.userId());</span>
+<span class="nc" id="L35">        return Result.success(accounts);</span>
+    }
+
+    /**
+     * Get account by ID
+     */
+    @GetMapping(&quot;/{id}&quot;)
+    public Result&lt;AccountVO&gt; getAccount(
+            @AuthenticationPrincipal UserPrincipal user,
+            @PathVariable Long id) {
+<span class="nc" id="L45">        AccountVO account = accountService.getAccount(user.userId(), id);</span>
+<span class="nc" id="L46">        return Result.success(account);</span>
+    }
+
+    /**
+     * Create a new account
+     */
+    @PostMapping
+    public Result&lt;Long&gt; createAccount(
+            @AuthenticationPrincipal UserPrincipal user,
+            @Valid @RequestBody AccountDTO request) {
+<span class="nc" id="L56">        Long accountId = accountService.createAccount(user.userId(), request);</span>
+<span class="nc" id="L57">        return Result.success(accountId);</span>
+    }
+
+    /**
+     * Update an account
+     */
+    @PutMapping(&quot;/{id}&quot;)
+    public Result&lt;Void&gt; updateAccount(
+            @AuthenticationPrincipal UserPrincipal user,
+            @PathVariable Long id,
+            @Valid @RequestBody AccountDTO request) {
+<span class="nc" id="L68">        accountService.updateAccount(user.userId(), id, request);</span>
+<span class="nc" id="L69">        return Result.success();</span>
+    }
+
+    /**
+     * Delete an account
+     */
+    @DeleteMapping(&quot;/{id}&quot;)
+    public Result&lt;Void&gt; deleteAccount(
+            @AuthenticationPrincipal UserPrincipal user,
+            @PathVariable Long id) {
+<span class="nc" id="L79">        accountService.deleteAccount(user.userId(), id);</span>
+<span class="nc" id="L80">        return Result.success();</span>
+    }
+
+    /**
+     * Get recent transactions for an account
+     */
+    @GetMapping(&quot;/{id}/flows&quot;)
+    public Result&lt;List&lt;TransactionVO&gt;&gt; listAccountFlows(
+            @AuthenticationPrincipal UserPrincipal user,
+            @PathVariable Long id,
+            @RequestParam(defaultValue = &quot;10&quot;) Integer limit) {
+<span class="nc" id="L91">        List&lt;TransactionVO&gt; flows = transactionService.getRecentTransactions(user.userId(), id, limit);</span>
+<span class="nc" id="L92">        return Result.success(flows);</span>
+    }
+
+    /**
+     * Get account summary
+     */
+    @GetMapping(&quot;/summary&quot;)
+    public Result&lt;Map&lt;String, Object&gt;&gt; getAccountSummary(@AuthenticationPrincipal UserPrincipal user) {
+<span class="nc" id="L100">        Map&lt;String, Object&gt; summary = (Map&lt;String, Object&gt;) accountService.getAccountSummary(user.userId());</span>
+<span class="nc" id="L101">        return Result.success(summary);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

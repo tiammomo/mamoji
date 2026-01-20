@@ -1,0 +1,964 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://maven.apache.org/surefire/maven-surefire-plugin/xsd/surefire-test-report.xsd" version="3.0.2" name="com.mamoji.module.EndToEndFlowTest" time="7.928" tests="5" errors="0" skipped="0" failures="0">
+  <properties>
+    <property name="java.specification.version" value="21"/>
+    <property name="sun.jnu.encoding" value="UTF-8"/>
+    <property name="java.class.path" value="/home/ubuntu/deploy_projects/mamoji/api/target/test-classes:/home/ubuntu/deploy_projects/mamoji/api/target/classes:/home/ubuntu/.m2/repository/org/springframework/boot/spring-boot-starter-web/3.5.3/spring-boot-starter-web-3.5.3.jar:/home/ubuntu/.m2/repository/org/springframework/boot/spring-boot-starter/3.5.3/spring-boot-starter-3.5.3.jar:/home/ubuntu/.m2/repository/org/springframework/boot/spring-boot-starter-logging/3.5.3/spring-boot-starter-logging-3.5.3.jar:/home/ubuntu/.m2/repository/ch/qos/logback/logback-classic/1.5.18/logback-classic-1.5.18.jar:/home/ubuntu/.m2/repository/ch/qos/logback/logback-core/1.5.18/logback-core-1.5.18.jar:/home/ubuntu/.m2/repository/org/apache/logging/log4j/log4j-to-slf4j/2.24.3/log4j-to-slf4j-2.24.3.jar:/home/ubuntu/.m2/repository/org/apache/logging/log4j/log4j-api/2.24.3/log4j-api-2.24.3.jar:/home/ubuntu/.m2/repository/org/slf4j/jul-to-slf4j/2.0.17/jul-to-slf4j-2.0.17.jar:/home/ubuntu/.m2/repository/jakarta/annotation/jakarta.annotation-api/2.1.1/jakarta.annotation-api-2.1.1.jar:/home/ubuntu/.m2/repository/org/springframework/boot/spring-boot-starter-json/3.5.3/spring-boot-starter-json-3.5.3.jar:/home/ubuntu/.m2/repository/com/fasterxml/jackson/datatype/jackson-datatype-jdk8/2.19.1/jackson-datatype-jdk8-2.19.1.jar:/home/ubuntu/.m2/repository/com/fasterxml/jackson/datatype/jackson-datatype-jsr310/2.19.1/jackson-datatype-jsr310-2.19.1.jar:/home/ubuntu/.m2/repository/com/fasterxml/jackson/module/jackson-module-parameter-names/2.19.1/jackson-module-parameter-names-2.19.1.jar:/home/ubuntu/.m2/repository/org/springframework/boot/spring-boot-starter-tomcat/3.5.3/spring-boot-starter-tomcat-3.5.3.jar:/home/ubuntu/.m2/repository/org/apache/tomcat/embed/tomcat-embed-core/10.1.42/tomcat-embed-core-10.1.42.jar:/home/ubuntu/.m2/repository/org/apache/tomcat/embed/tomcat-embed-websocket/10.1.42/tomcat-embed-websocket-10.1.42.jar:/home/ubuntu/.m2/repository/org/springframework/spring-web/6.2.8/spring-web-6.2.8.jar:/home/ubuntu/.m2/repository/org/springframework/spring-beans/6.2.8/spring-beans-6.2.8.jar:/home/ubuntu/.m2/repository/io/micrometer/micrometer-observation/1.15.1/micrometer-observation-1.15.1.jar:/home/ubuntu/.m2/repository/io/micrometer/micrometer-commons/1.15.1/micrometer-commons-1.15.1.jar:/home/ubuntu/.m2/repository/org/springframework/spring-webmvc/6.2.8/spring-webmvc-6.2.8.jar:/home/ubuntu/.m2/repository/org/springframework/spring-context/6.2.8/spring-context-6.2.8.jar:/home/ubuntu/.m2/repository/org/springframework/spring-expression/6.2.8/spring-expression-6.2.8.jar:/home/ubuntu/.m2/repository/org/springframework/boot/spring-boot-starter-validation/3.5.3/spring-boot-starter-validation-3.5.3.jar:/home/ubuntu/.m2/repository/org/apache/tomcat/embed/tomcat-embed-el/10.1.42/tomcat-embed-el-10.1.42.jar:/home/ubuntu/.m2/repository/org/hibernate/validator/hibernate-validator/8.0.2.Final/hibernate-validator-8.0.2.Final.jar:/home/ubuntu/.m2/repository/jakarta/validation/jakarta.validation-api/3.0.2/jakarta.validation-api-3.0.2.jar:/home/ubuntu/.m2/repository/org/jboss/logging/jboss-logging/3.6.1.Final/jboss-logging-3.6.1.Final.jar:/home/ubuntu/.m2/repository/com/fasterxml/classmate/1.7.0/classmate-1.7.0.jar:/home/ubuntu/.m2/repository/org/springframework/boot/spring-boot-starter-security/3.5.3/spring-boot-starter-security-3.5.3.jar:/home/ubuntu/.m2/repository/org/springframework/spring-aop/6.2.8/spring-aop-6.2.8.jar:/home/ubuntu/.m2/repository/org/springframework/security/spring-security-config/6.5.1/spring-security-config-6.5.1.jar:/home/ubuntu/.m2/repository/org/springframework/security/spring-security-web/6.5.1/spring-security-web-6.5.1.jar:/home/ubuntu/.m2/repository/org/springframework/boot/spring-boot-starter-data-redis/3.5.3/spring-boot-starter-data-redis-3.5.3.jar:/home/ubuntu/.m2/repository/io/lettuce/lettuce-core/6.6.0.RELEASE/lettuce-core-6.6.0.RELEASE.jar:/home/ubuntu/.m2/repository/redis/clients/authentication/redis-authx-core/0.1.1-beta2/redis-authx-core-0.1.1-beta2.jar:/home/ubuntu/.m2/repository/io/netty/netty-common/4.1.122.Final/netty-common-4.1.122.Final.jar:/home/ubuntu/.m2/repository/io/netty/netty-handler/4.1.122.Final/netty-handler-4.1.122.Final.jar:/home/ubuntu/.m2/repository/io/netty/netty-transport-native-unix-common/4.1.122.Final/netty-transport-native-unix-common-4.1.122.Final.jar:/home/ubuntu/.m2/repository/io/netty/netty-transport/4.1.122.Final/netty-transport-4.1.122.Final.jar:/home/ubuntu/.m2/repository/io/projectreactor/reactor-core/3.7.7/reactor-core-3.7.7.jar:/home/ubuntu/.m2/repository/org/springframework/data/spring-data-redis/3.5.1/spring-data-redis-3.5.1.jar:/home/ubuntu/.m2/repository/org/springframework/data/spring-data-keyvalue/3.5.1/spring-data-keyvalue-3.5.1.jar:/home/ubuntu/.m2/repository/org/springframework/data/spring-data-commons/3.5.1/spring-data-commons-3.5.1.jar:/home/ubuntu/.m2/repository/org/springframework/spring-tx/6.2.8/spring-tx-6.2.8.jar:/home/ubuntu/.m2/repository/org/springframework/spring-oxm/6.2.8/spring-oxm-6.2.8.jar:/home/ubuntu/.m2/repository/org/slf4j/slf4j-api/2.0.17/slf4j-api-2.0.17.jar:/home/ubuntu/.m2/repository/org/springframework/boot/spring-boot-starter-aop/3.5.3/spring-boot-starter-aop-3.5.3.jar:/home/ubuntu/.m2/repository/org/aspectj/aspectjweaver/1.9.24/aspectjweaver-1.9.24.jar:/home/ubuntu/.m2/repository/com/baomidou/mybatis-plus-spring-boot3-starter/3.5.5/mybatis-plus-spring-boot3-starter-3.5.5.jar:/home/ubuntu/.m2/repository/com/baomidou/mybatis-plus/3.5.5/mybatis-plus-3.5.5.jar:/home/ubuntu/.m2/repository/com/baomidou/mybatis-plus-core/3.5.5/mybatis-plus-core-3.5.5.jar:/home/ubuntu/.m2/repository/com/baomidou/mybatis-plus-annotation/3.5.5/mybatis-plus-annotation-3.5.5.jar:/home/ubuntu/.m2/repository/com/baomidou/mybatis-plus-extension/3.5.5/mybatis-plus-extension-3.5.5.jar:/home/ubuntu/.m2/repository/org/mybatis/mybatis/3.5.15/mybatis-3.5.15.jar:/home/ubuntu/.m2/repository/com/github/jsqlparser/jsqlparser/4.6/jsqlparser-4.6.jar:/home/ubuntu/.m2/repository/org/mybatis/mybatis-spring/3.0.3/mybatis-spring-3.0.3.jar:/home/ubuntu/.m2/repository/com/baomidou/mybatis-plus-spring-boot-autoconfigure/3.5.5/mybatis-plus-spring-boot-autoconfigure-3.5.5.jar:/home/ubuntu/.m2/repository/org/springframework/boot/spring-boot-autoconfigure/3.5.3/spring-boot-autoconfigure-3.5.3.jar:/home/ubuntu/.m2/repository/org/springframework/boot/spring-boot-starter-jdbc/3.5.3/spring-boot-starter-jdbc-3.5.3.jar:/home/ubuntu/.m2/repository/com/zaxxer/HikariCP/6.3.0/HikariCP-6.3.0.jar:/home/ubuntu/.m2/repository/org/springframework/spring-jdbc/6.2.8/spring-jdbc-6.2.8.jar:/home/ubuntu/.m2/repository/com/mysql/mysql-connector-j/9.2.0/mysql-connector-j-9.2.0.jar:/home/ubuntu/.m2/repository/org/redisson/redisson-spring-boot-starter/3.28.0/redisson-spring-boot-starter-3.28.0.jar:/home/ubuntu/.m2/repository/org/springframework/boot/spring-boot-starter-actuator/3.5.3/spring-boot-starter-actuator-3.5.3.jar:/home/ubuntu/.m2/repository/org/springframework/boot/spring-boot-actuator-autoconfigure/3.5.3/spring-boot-actuator-autoconfigure-3.5.3.jar:/home/ubuntu/.m2/repository/org/springframework/boot/spring-boot-actuator/3.5.3/spring-boot-actuator-3.5.3.jar:/home/ubuntu/.m2/repository/io/micrometer/micrometer-jakarta9/1.15.1/micrometer-jakarta9-1.15.1.jar:/home/ubuntu/.m2/repository/io/micrometer/micrometer-core/1.15.1/micrometer-core-1.15.1.jar:/home/ubuntu/.m2/repository/org/hdrhistogram/HdrHistogram/2.2.2/HdrHistogram-2.2.2.jar:/home/ubuntu/.m2/repository/org/latencyutils/LatencyUtils/2.0.3/LatencyUtils-2.0.3.jar:/home/ubuntu/.m2/repository/org/redisson/redisson/3.28.0/redisson-3.28.0.jar:/home/ubuntu/.m2/repository/io/netty/netty-codec/4.1.122.Final/netty-codec-4.1.122.Final.jar:/home/ubuntu/.m2/repository/io/netty/netty-buffer/4.1.122.Final/netty-buffer-4.1.122.Final.jar:/home/ubuntu/.m2/repository/io/netty/netty-resolver/4.1.122.Final/netty-resolver-4.1.122.Final.jar:/home/ubuntu/.m2/repository/io/netty/netty-resolver-dns/4.1.122.Final/netty-resolver-dns-4.1.122.Final.jar:/home/ubuntu/.m2/repository/io/netty/netty-codec-dns/4.1.122.Final/netty-codec-dns-4.1.122.Final.jar:/home/ubuntu/.m2/repository/javax/cache/cache-api/1.1.1/cache-api-1.1.1.jar:/home/ubuntu/.m2/repository/org/reactivestreams/reactive-streams/1.0.4/reactive-streams-1.0.4.jar:/home/ubuntu/.m2/repository/io/reactivex/rxjava3/rxjava/3.1.10/rxjava-3.1.10.jar:/home/ubuntu/.m2/repository/org/jboss/marshalling/jboss-marshalling/2.0.11.Final/jboss-marshalling-2.0.11.Final.jar:/home/ubuntu/.m2/repository/org/jboss/marshalling/jboss-marshalling-river/2.0.11.Final/jboss-marshalling-river-2.0.11.Final.jar:/home/ubuntu/.m2/repository/com/esotericsoftware/kryo/5.6.0/kryo-5.6.0.jar:/home/ubuntu/.m2/repository/com/esotericsoftware/reflectasm/1.11.9/reflectasm-1.11.9.jar:/home/ubuntu/.m2/repository/com/esotericsoftware/minlog/1.3.1/minlog-1.3.1.jar:/home/ubuntu/.m2/repository/com/fasterxml/jackson/core/jackson-annotations/2.19.1/jackson-annotations-2.19.1.jar:/home/ubuntu/.m2/repository/com/fasterxml/jackson/dataformat/jackson-dataformat-yaml/2.19.1/jackson-dataformat-yaml-2.19.1.jar:/home/ubuntu/.m2/repository/com/fasterxml/jackson/core/jackson-core/2.19.1/jackson-core-2.19.1.jar:/home/ubuntu/.m2/repository/net/bytebuddy/byte-buddy/1.17.6/byte-buddy-1.17.6.jar:/home/ubuntu/.m2/repository/org/jodd/jodd-bean/5.1.6/jodd-bean-5.1.6.jar:/home/ubuntu/.m2/repository/org/jodd/jodd-core/5.1.6/jodd-core-5.1.6.jar:/home/ubuntu/.m2/repository/org/redisson/redisson-spring-data-32/3.28.0/redisson-spring-data-32-3.28.0.jar:/home/ubuntu/.m2/repository/com/github/ben-manes/caffeine/caffeine/3.1.8/caffeine-3.1.8.jar:/home/ubuntu/.m2/repository/org/checkerframework/checker-qual/3.37.0/checker-qual-3.37.0.jar:/home/ubuntu/.m2/repository/com/google/errorprone/error_prone_annotations/2.21.1/error_prone_annotations-2.21.1.jar:/home/ubuntu/.m2/repository/org/springframework/boot/spring-boot-starter-cache/3.5.3/spring-boot-starter-cache-3.5.3.jar:/home/ubuntu/.m2/repository/org/springframework/spring-context-support/6.2.8/spring-context-support-6.2.8.jar:/home/ubuntu/.m2/repository/io/jsonwebtoken/jjwt-api/0.12.6/jjwt-api-0.12.6.jar:/home/ubuntu/.m2/repository/io/jsonwebtoken/jjwt-impl/0.12.6/jjwt-impl-0.12.6.jar:/home/ubuntu/.m2/repository/io/jsonwebtoken/jjwt-jackson/0.12.6/jjwt-jackson-0.12.6.jar:/home/ubuntu/.m2/repository/com/fasterxml/jackson/core/jackson-databind/2.19.1/jackson-databind-2.19.1.jar:/home/ubuntu/.m2/repository/cn/hutool/hutool-all/5.8.24/hutool-all-5.8.24.jar:/home/ubuntu/.m2/repository/org/projectlombok/lombok/1.18.38/lombok-1.18.38.jar:/home/ubuntu/.m2/repository/org/springframework/boot/spring-boot-configuration-processor/3.5.3/spring-boot-configuration-processor-3.5.3.jar:/home/ubuntu/.m2/repository/org/yaml/snakeyaml/2.4/snakeyaml-2.4.jar:/home/ubuntu/.m2/repository/org/springframework/boot/spring-boot-starter-test/3.5.3/spring-boot-starter-test-3.5.3.jar:/home/ubuntu/.m2/repository/org/springframework/boot/spring-boot-test/3.5.3/spring-boot-test-3.5.3.jar:/home/ubuntu/.m2/repository/com/jayway/jsonpath/json-path/2.9.0/json-path-2.9.0.jar:/home/ubuntu/.m2/repository/jakarta/xml/bind/jakarta.xml.bind-api/4.0.2/jakarta.xml.bind-api-4.0.2.jar:/home/ubuntu/.m2/repository/jakarta/activation/jakarta.activation-api/2.1.3/jakarta.activation-api-2.1.3.jar:/home/ubuntu/.m2/repository/net/minidev/json-smart/2.5.2/json-smart-2.5.2.jar:/home/ubuntu/.m2/repository/net/minidev/accessors-smart/2.5.2/accessors-smart-2.5.2.jar:/home/ubuntu/.m2/repository/org/ow2/asm/asm/9.7.1/asm-9.7.1.jar:/home/ubuntu/.m2/repository/org/assertj/assertj-core/3.27.3/assertj-core-3.27.3.jar:/home/ubuntu/.m2/repository/org/awaitility/awaitility/4.2.2/awaitility-4.2.2.jar:/home/ubuntu/.m2/repository/org/hamcrest/hamcrest/3.0/hamcrest-3.0.jar:/home/ubuntu/.m2/repository/org/junit/jupiter/junit-jupiter/5.12.2/junit-jupiter-5.12.2.jar:/home/ubuntu/.m2/repository/org/junit/jupiter/junit-jupiter-api/5.12.2/junit-jupiter-api-5.12.2.jar:/home/ubuntu/.m2/repository/org/opentest4j/opentest4j/1.3.0/opentest4j-1.3.0.jar:/home/ubuntu/.m2/repository/org/junit/platform/junit-platform-commons/1.12.2/junit-platform-commons-1.12.2.jar:/home/ubuntu/.m2/repository/org/apiguardian/apiguardian-api/1.1.2/apiguardian-api-1.1.2.jar:/home/ubuntu/.m2/repository/org/junit/jupiter/junit-jupiter-params/5.12.2/junit-jupiter-params-5.12.2.jar:/home/ubuntu/.m2/repository/org/junit/jupiter/junit-jupiter-engine/5.12.2/junit-jupiter-engine-5.12.2.jar:/home/ubuntu/.m2/repository/org/junit/platform/junit-platform-engine/1.12.2/junit-platform-engine-1.12.2.jar:/home/ubuntu/.m2/repository/org/mockito/mockito-core/5.17.0/mockito-core-5.17.0.jar:/home/ubuntu/.m2/repository/net/bytebuddy/byte-buddy-agent/1.17.6/byte-buddy-agent-1.17.6.jar:/home/ubuntu/.m2/repository/org/objenesis/objenesis/3.3/objenesis-3.3.jar:/home/ubuntu/.m2/repository/org/mockito/mockito-junit-jupiter/5.17.0/mockito-junit-jupiter-5.17.0.jar:/home/ubuntu/.m2/repository/org/skyscreamer/jsonassert/1.5.3/jsonassert-1.5.3.jar:/home/ubuntu/.m2/repository/com/vaadin/external/google/android-json/0.0.20131108.vaadin1/android-json-0.0.20131108.vaadin1.jar:/home/ubuntu/.m2/repository/org/springframework/spring-core/6.2.8/spring-core-6.2.8.jar:/home/ubuntu/.m2/repository/org/springframework/spring-jcl/6.2.8/spring-jcl-6.2.8.jar:/home/ubuntu/.m2/repository/org/springframework/spring-test/6.2.8/spring-test-6.2.8.jar:/home/ubuntu/.m2/repository/org/xmlunit/xmlunit-core/2.10.2/xmlunit-core-2.10.2.jar:/home/ubuntu/.m2/repository/org/springframework/boot/spring-boot-test-autoconfigure/3.5.3/spring-boot-test-autoconfigure-3.5.3.jar:/home/ubuntu/.m2/repository/org/springframework/boot/spring-boot/3.5.3/spring-boot-3.5.3.jar:/home/ubuntu/.m2/repository/org/springframework/security/spring-security-test/6.5.1/spring-security-test-6.5.1.jar:/home/ubuntu/.m2/repository/org/springframework/security/spring-security-core/6.5.1/spring-security-core-6.5.1.jar:/home/ubuntu/.m2/repository/org/springframework/security/spring-security-crypto/6.5.1/spring-security-crypto-6.5.1.jar:"/>
+    <property name="java.vm.vendor" value="Ubuntu"/>
+    <property name="sun.arch.data.model" value="64"/>
+    <property name="java.vendor.url" value="https://ubuntu.com/"/>
+    <property name="user.timezone" value="Asia/Shanghai"/>
+    <property name="org.jboss.logging.provider" value="slf4j"/>
+    <property name="os.name" value="Linux"/>
+    <property name="java.vm.specification.version" value="21"/>
+    <property name="APPLICATION_NAME" value="mamoji-api"/>
+    <property name="sun.java.launcher" value="SUN_STANDARD"/>
+    <property name="sun.boot.library.path" value="/usr/lib/jvm/java-21-openjdk-amd64/lib"/>
+    <property name="sun.java.command" value="/home/ubuntu/deploy_projects/mamoji/api/target/surefire/surefirebooter-20260121003914449_3.jar /home/ubuntu/deploy_projects/mamoji/api/target/surefire 2026-01-21T00-39-14_377-jvmRun1 surefire-20260121003914449_1tmp surefire_0-20260121003914449_2tmp"/>
+    <property name="jdk.debug" value="release"/>
+    <property name="test" value="EndToEndFlowTest"/>
+    <property name="surefire.test.class.path" value="/home/ubuntu/deploy_projects/mamoji/api/target/test-classes:/home/ubuntu/deploy_projects/mamoji/api/target/classes:/home/ubuntu/.m2/repository/org/springframework/boot/spring-boot-starter-web/3.5.3/spring-boot-starter-web-3.5.3.jar:/home/ubuntu/.m2/repository/org/springframework/boot/spring-boot-starter/3.5.3/spring-boot-starter-3.5.3.jar:/home/ubuntu/.m2/repository/org/springframework/boot/spring-boot-starter-logging/3.5.3/spring-boot-starter-logging-3.5.3.jar:/home/ubuntu/.m2/repository/ch/qos/logback/logback-classic/1.5.18/logback-classic-1.5.18.jar:/home/ubuntu/.m2/repository/ch/qos/logback/logback-core/1.5.18/logback-core-1.5.18.jar:/home/ubuntu/.m2/repository/org/apache/logging/log4j/log4j-to-slf4j/2.24.3/log4j-to-slf4j-2.24.3.jar:/home/ubuntu/.m2/repository/org/apache/logging/log4j/log4j-api/2.24.3/log4j-api-2.24.3.jar:/home/ubuntu/.m2/repository/org/slf4j/jul-to-slf4j/2.0.17/jul-to-slf4j-2.0.17.jar:/home/ubuntu/.m2/repository/jakarta/annotation/jakarta.annotation-api/2.1.1/jakarta.annotation-api-2.1.1.jar:/home/ubuntu/.m2/repository/org/springframework/boot/spring-boot-starter-json/3.5.3/spring-boot-starter-json-3.5.3.jar:/home/ubuntu/.m2/repository/com/fasterxml/jackson/datatype/jackson-datatype-jdk8/2.19.1/jackson-datatype-jdk8-2.19.1.jar:/home/ubuntu/.m2/repository/com/fasterxml/jackson/datatype/jackson-datatype-jsr310/2.19.1/jackson-datatype-jsr310-2.19.1.jar:/home/ubuntu/.m2/repository/com/fasterxml/jackson/module/jackson-module-parameter-names/2.19.1/jackson-module-parameter-names-2.19.1.jar:/home/ubuntu/.m2/repository/org/springframework/boot/spring-boot-starter-tomcat/3.5.3/spring-boot-starter-tomcat-3.5.3.jar:/home/ubuntu/.m2/repository/org/apache/tomcat/embed/tomcat-embed-core/10.1.42/tomcat-embed-core-10.1.42.jar:/home/ubuntu/.m2/repository/org/apache/tomcat/embed/tomcat-embed-websocket/10.1.42/tomcat-embed-websocket-10.1.42.jar:/home/ubuntu/.m2/repository/org/springframework/spring-web/6.2.8/spring-web-6.2.8.jar:/home/ubuntu/.m2/repository/org/springframework/spring-beans/6.2.8/spring-beans-6.2.8.jar:/home/ubuntu/.m2/repository/io/micrometer/micrometer-observation/1.15.1/micrometer-observation-1.15.1.jar:/home/ubuntu/.m2/repository/io/micrometer/micrometer-commons/1.15.1/micrometer-commons-1.15.1.jar:/home/ubuntu/.m2/repository/org/springframework/spring-webmvc/6.2.8/spring-webmvc-6.2.8.jar:/home/ubuntu/.m2/repository/org/springframework/spring-context/6.2.8/spring-context-6.2.8.jar:/home/ubuntu/.m2/repository/org/springframework/spring-expression/6.2.8/spring-expression-6.2.8.jar:/home/ubuntu/.m2/repository/org/springframework/boot/spring-boot-starter-validation/3.5.3/spring-boot-starter-validation-3.5.3.jar:/home/ubuntu/.m2/repository/org/apache/tomcat/embed/tomcat-embed-el/10.1.42/tomcat-embed-el-10.1.42.jar:/home/ubuntu/.m2/repository/org/hibernate/validator/hibernate-validator/8.0.2.Final/hibernate-validator-8.0.2.Final.jar:/home/ubuntu/.m2/repository/jakarta/validation/jakarta.validation-api/3.0.2/jakarta.validation-api-3.0.2.jar:/home/ubuntu/.m2/repository/org/jboss/logging/jboss-logging/3.6.1.Final/jboss-logging-3.6.1.Final.jar:/home/ubuntu/.m2/repository/com/fasterxml/classmate/1.7.0/classmate-1.7.0.jar:/home/ubuntu/.m2/repository/org/springframework/boot/spring-boot-starter-security/3.5.3/spring-boot-starter-security-3.5.3.jar:/home/ubuntu/.m2/repository/org/springframework/spring-aop/6.2.8/spring-aop-6.2.8.jar:/home/ubuntu/.m2/repository/org/springframework/security/spring-security-config/6.5.1/spring-security-config-6.5.1.jar:/home/ubuntu/.m2/repository/org/springframework/security/spring-security-web/6.5.1/spring-security-web-6.5.1.jar:/home/ubuntu/.m2/repository/org/springframework/boot/spring-boot-starter-data-redis/3.5.3/spring-boot-starter-data-redis-3.5.3.jar:/home/ubuntu/.m2/repository/io/lettuce/lettuce-core/6.6.0.RELEASE/lettuce-core-6.6.0.RELEASE.jar:/home/ubuntu/.m2/repository/redis/clients/authentication/redis-authx-core/0.1.1-beta2/redis-authx-core-0.1.1-beta2.jar:/home/ubuntu/.m2/repository/io/netty/netty-common/4.1.122.Final/netty-common-4.1.122.Final.jar:/home/ubuntu/.m2/repository/io/netty/netty-handler/4.1.122.Final/netty-handler-4.1.122.Final.jar:/home/ubuntu/.m2/repository/io/netty/netty-transport-native-unix-common/4.1.122.Final/netty-transport-native-unix-common-4.1.122.Final.jar:/home/ubuntu/.m2/repository/io/netty/netty-transport/4.1.122.Final/netty-transport-4.1.122.Final.jar:/home/ubuntu/.m2/repository/io/projectreactor/reactor-core/3.7.7/reactor-core-3.7.7.jar:/home/ubuntu/.m2/repository/org/springframework/data/spring-data-redis/3.5.1/spring-data-redis-3.5.1.jar:/home/ubuntu/.m2/repository/org/springframework/data/spring-data-keyvalue/3.5.1/spring-data-keyvalue-3.5.1.jar:/home/ubuntu/.m2/repository/org/springframework/data/spring-data-commons/3.5.1/spring-data-commons-3.5.1.jar:/home/ubuntu/.m2/repository/org/springframework/spring-tx/6.2.8/spring-tx-6.2.8.jar:/home/ubuntu/.m2/repository/org/springframework/spring-oxm/6.2.8/spring-oxm-6.2.8.jar:/home/ubuntu/.m2/repository/org/slf4j/slf4j-api/2.0.17/slf4j-api-2.0.17.jar:/home/ubuntu/.m2/repository/org/springframework/boot/spring-boot-starter-aop/3.5.3/spring-boot-starter-aop-3.5.3.jar:/home/ubuntu/.m2/repository/org/aspectj/aspectjweaver/1.9.24/aspectjweaver-1.9.24.jar:/home/ubuntu/.m2/repository/com/baomidou/mybatis-plus-spring-boot3-starter/3.5.5/mybatis-plus-spring-boot3-starter-3.5.5.jar:/home/ubuntu/.m2/repository/com/baomidou/mybatis-plus/3.5.5/mybatis-plus-3.5.5.jar:/home/ubuntu/.m2/repository/com/baomidou/mybatis-plus-core/3.5.5/mybatis-plus-core-3.5.5.jar:/home/ubuntu/.m2/repository/com/baomidou/mybatis-plus-annotation/3.5.5/mybatis-plus-annotation-3.5.5.jar:/home/ubuntu/.m2/repository/com/baomidou/mybatis-plus-extension/3.5.5/mybatis-plus-extension-3.5.5.jar:/home/ubuntu/.m2/repository/org/mybatis/mybatis/3.5.15/mybatis-3.5.15.jar:/home/ubuntu/.m2/repository/com/github/jsqlparser/jsqlparser/4.6/jsqlparser-4.6.jar:/home/ubuntu/.m2/repository/org/mybatis/mybatis-spring/3.0.3/mybatis-spring-3.0.3.jar:/home/ubuntu/.m2/repository/com/baomidou/mybatis-plus-spring-boot-autoconfigure/3.5.5/mybatis-plus-spring-boot-autoconfigure-3.5.5.jar:/home/ubuntu/.m2/repository/org/springframework/boot/spring-boot-autoconfigure/3.5.3/spring-boot-autoconfigure-3.5.3.jar:/home/ubuntu/.m2/repository/org/springframework/boot/spring-boot-starter-jdbc/3.5.3/spring-boot-starter-jdbc-3.5.3.jar:/home/ubuntu/.m2/repository/com/zaxxer/HikariCP/6.3.0/HikariCP-6.3.0.jar:/home/ubuntu/.m2/repository/org/springframework/spring-jdbc/6.2.8/spring-jdbc-6.2.8.jar:/home/ubuntu/.m2/repository/com/mysql/mysql-connector-j/9.2.0/mysql-connector-j-9.2.0.jar:/home/ubuntu/.m2/repository/org/redisson/redisson-spring-boot-starter/3.28.0/redisson-spring-boot-starter-3.28.0.jar:/home/ubuntu/.m2/repository/org/springframework/boot/spring-boot-starter-actuator/3.5.3/spring-boot-starter-actuator-3.5.3.jar:/home/ubuntu/.m2/repository/org/springframework/boot/spring-boot-actuator-autoconfigure/3.5.3/spring-boot-actuator-autoconfigure-3.5.3.jar:/home/ubuntu/.m2/repository/org/springframework/boot/spring-boot-actuator/3.5.3/spring-boot-actuator-3.5.3.jar:/home/ubuntu/.m2/repository/io/micrometer/micrometer-jakarta9/1.15.1/micrometer-jakarta9-1.15.1.jar:/home/ubuntu/.m2/repository/io/micrometer/micrometer-core/1.15.1/micrometer-core-1.15.1.jar:/home/ubuntu/.m2/repository/org/hdrhistogram/HdrHistogram/2.2.2/HdrHistogram-2.2.2.jar:/home/ubuntu/.m2/repository/org/latencyutils/LatencyUtils/2.0.3/LatencyUtils-2.0.3.jar:/home/ubuntu/.m2/repository/org/redisson/redisson/3.28.0/redisson-3.28.0.jar:/home/ubuntu/.m2/repository/io/netty/netty-codec/4.1.122.Final/netty-codec-4.1.122.Final.jar:/home/ubuntu/.m2/repository/io/netty/netty-buffer/4.1.122.Final/netty-buffer-4.1.122.Final.jar:/home/ubuntu/.m2/repository/io/netty/netty-resolver/4.1.122.Final/netty-resolver-4.1.122.Final.jar:/home/ubuntu/.m2/repository/io/netty/netty-resolver-dns/4.1.122.Final/netty-resolver-dns-4.1.122.Final.jar:/home/ubuntu/.m2/repository/io/netty/netty-codec-dns/4.1.122.Final/netty-codec-dns-4.1.122.Final.jar:/home/ubuntu/.m2/repository/javax/cache/cache-api/1.1.1/cache-api-1.1.1.jar:/home/ubuntu/.m2/repository/org/reactivestreams/reactive-streams/1.0.4/reactive-streams-1.0.4.jar:/home/ubuntu/.m2/repository/io/reactivex/rxjava3/rxjava/3.1.10/rxjava-3.1.10.jar:/home/ubuntu/.m2/repository/org/jboss/marshalling/jboss-marshalling/2.0.11.Final/jboss-marshalling-2.0.11.Final.jar:/home/ubuntu/.m2/repository/org/jboss/marshalling/jboss-marshalling-river/2.0.11.Final/jboss-marshalling-river-2.0.11.Final.jar:/home/ubuntu/.m2/repository/com/esotericsoftware/kryo/5.6.0/kryo-5.6.0.jar:/home/ubuntu/.m2/repository/com/esotericsoftware/reflectasm/1.11.9/reflectasm-1.11.9.jar:/home/ubuntu/.m2/repository/com/esotericsoftware/minlog/1.3.1/minlog-1.3.1.jar:/home/ubuntu/.m2/repository/com/fasterxml/jackson/core/jackson-annotations/2.19.1/jackson-annotations-2.19.1.jar:/home/ubuntu/.m2/repository/com/fasterxml/jackson/dataformat/jackson-dataformat-yaml/2.19.1/jackson-dataformat-yaml-2.19.1.jar:/home/ubuntu/.m2/repository/com/fasterxml/jackson/core/jackson-core/2.19.1/jackson-core-2.19.1.jar:/home/ubuntu/.m2/repository/net/bytebuddy/byte-buddy/1.17.6/byte-buddy-1.17.6.jar:/home/ubuntu/.m2/repository/org/jodd/jodd-bean/5.1.6/jodd-bean-5.1.6.jar:/home/ubuntu/.m2/repository/org/jodd/jodd-core/5.1.6/jodd-core-5.1.6.jar:/home/ubuntu/.m2/repository/org/redisson/redisson-spring-data-32/3.28.0/redisson-spring-data-32-3.28.0.jar:/home/ubuntu/.m2/repository/com/github/ben-manes/caffeine/caffeine/3.1.8/caffeine-3.1.8.jar:/home/ubuntu/.m2/repository/org/checkerframework/checker-qual/3.37.0/checker-qual-3.37.0.jar:/home/ubuntu/.m2/repository/com/google/errorprone/error_prone_annotations/2.21.1/error_prone_annotations-2.21.1.jar:/home/ubuntu/.m2/repository/org/springframework/boot/spring-boot-starter-cache/3.5.3/spring-boot-starter-cache-3.5.3.jar:/home/ubuntu/.m2/repository/org/springframework/spring-context-support/6.2.8/spring-context-support-6.2.8.jar:/home/ubuntu/.m2/repository/io/jsonwebtoken/jjwt-api/0.12.6/jjwt-api-0.12.6.jar:/home/ubuntu/.m2/repository/io/jsonwebtoken/jjwt-impl/0.12.6/jjwt-impl-0.12.6.jar:/home/ubuntu/.m2/repository/io/jsonwebtoken/jjwt-jackson/0.12.6/jjwt-jackson-0.12.6.jar:/home/ubuntu/.m2/repository/com/fasterxml/jackson/core/jackson-databind/2.19.1/jackson-databind-2.19.1.jar:/home/ubuntu/.m2/repository/cn/hutool/hutool-all/5.8.24/hutool-all-5.8.24.jar:/home/ubuntu/.m2/repository/org/projectlombok/lombok/1.18.38/lombok-1.18.38.jar:/home/ubuntu/.m2/repository/org/springframework/boot/spring-boot-configuration-processor/3.5.3/spring-boot-configuration-processor-3.5.3.jar:/home/ubuntu/.m2/repository/org/yaml/snakeyaml/2.4/snakeyaml-2.4.jar:/home/ubuntu/.m2/repository/org/springframework/boot/spring-boot-starter-test/3.5.3/spring-boot-starter-test-3.5.3.jar:/home/ubuntu/.m2/repository/org/springframework/boot/spring-boot-test/3.5.3/spring-boot-test-3.5.3.jar:/home/ubuntu/.m2/repository/com/jayway/jsonpath/json-path/2.9.0/json-path-2.9.0.jar:/home/ubuntu/.m2/repository/jakarta/xml/bind/jakarta.xml.bind-api/4.0.2/jakarta.xml.bind-api-4.0.2.jar:/home/ubuntu/.m2/repository/jakarta/activation/jakarta.activation-api/2.1.3/jakarta.activation-api-2.1.3.jar:/home/ubuntu/.m2/repository/net/minidev/json-smart/2.5.2/json-smart-2.5.2.jar:/home/ubuntu/.m2/repository/net/minidev/accessors-smart/2.5.2/accessors-smart-2.5.2.jar:/home/ubuntu/.m2/repository/org/ow2/asm/asm/9.7.1/asm-9.7.1.jar:/home/ubuntu/.m2/repository/org/assertj/assertj-core/3.27.3/assertj-core-3.27.3.jar:/home/ubuntu/.m2/repository/org/awaitility/awaitility/4.2.2/awaitility-4.2.2.jar:/home/ubuntu/.m2/repository/org/hamcrest/hamcrest/3.0/hamcrest-3.0.jar:/home/ubuntu/.m2/repository/org/junit/jupiter/junit-jupiter/5.12.2/junit-jupiter-5.12.2.jar:/home/ubuntu/.m2/repository/org/junit/jupiter/junit-jupiter-api/5.12.2/junit-jupiter-api-5.12.2.jar:/home/ubuntu/.m2/repository/org/opentest4j/opentest4j/1.3.0/opentest4j-1.3.0.jar:/home/ubuntu/.m2/repository/org/junit/platform/junit-platform-commons/1.12.2/junit-platform-commons-1.12.2.jar:/home/ubuntu/.m2/repository/org/apiguardian/apiguardian-api/1.1.2/apiguardian-api-1.1.2.jar:/home/ubuntu/.m2/repository/org/junit/jupiter/junit-jupiter-params/5.12.2/junit-jupiter-params-5.12.2.jar:/home/ubuntu/.m2/repository/org/junit/jupiter/junit-jupiter-engine/5.12.2/junit-jupiter-engine-5.12.2.jar:/home/ubuntu/.m2/repository/org/junit/platform/junit-platform-engine/1.12.2/junit-platform-engine-1.12.2.jar:/home/ubuntu/.m2/repository/org/mockito/mockito-core/5.17.0/mockito-core-5.17.0.jar:/home/ubuntu/.m2/repository/net/bytebuddy/byte-buddy-agent/1.17.6/byte-buddy-agent-1.17.6.jar:/home/ubuntu/.m2/repository/org/objenesis/objenesis/3.3/objenesis-3.3.jar:/home/ubuntu/.m2/repository/org/mockito/mockito-junit-jupiter/5.17.0/mockito-junit-jupiter-5.17.0.jar:/home/ubuntu/.m2/repository/org/skyscreamer/jsonassert/1.5.3/jsonassert-1.5.3.jar:/home/ubuntu/.m2/repository/com/vaadin/external/google/android-json/0.0.20131108.vaadin1/android-json-0.0.20131108.vaadin1.jar:/home/ubuntu/.m2/repository/org/springframework/spring-core/6.2.8/spring-core-6.2.8.jar:/home/ubuntu/.m2/repository/org/springframework/spring-jcl/6.2.8/spring-jcl-6.2.8.jar:/home/ubuntu/.m2/repository/org/springframework/spring-test/6.2.8/spring-test-6.2.8.jar:/home/ubuntu/.m2/repository/org/xmlunit/xmlunit-core/2.10.2/xmlunit-core-2.10.2.jar:/home/ubuntu/.m2/repository/org/springframework/boot/spring-boot-test-autoconfigure/3.5.3/spring-boot-test-autoconfigure-3.5.3.jar:/home/ubuntu/.m2/repository/org/springframework/boot/spring-boot/3.5.3/spring-boot-3.5.3.jar:/home/ubuntu/.m2/repository/org/springframework/security/spring-security-test/6.5.1/spring-security-test-6.5.1.jar:/home/ubuntu/.m2/repository/org/springframework/security/spring-security-core/6.5.1/spring-security-core-6.5.1.jar:/home/ubuntu/.m2/repository/org/springframework/security/spring-security-crypto/6.5.1/spring-security-crypto-6.5.1.jar:"/>
+    <property name="sun.cpu.endian" value="little"/>
+    <property name="user.home" value="/home/ubuntu"/>
+    <property name="user.language" value="en"/>
+    <property name="java.specification.vendor" value="Oracle Corporation"/>
+    <property name="java.version.date" value="2025-10-21"/>
+    <property name="java.home" value="/usr/lib/jvm/java-21-openjdk-amd64"/>
+    <property name="file.separator" value="/"/>
+    <property name="basedir" value="/home/ubuntu/deploy_projects/mamoji/api"/>
+    <property name="java.vm.compressedOopsMode" value="Zero based"/>
+    <property name="line.separator" value="&#10;"/>
+    <property name="java.vm.specification.vendor" value="Oracle Corporation"/>
+    <property name="java.specification.name" value="Java Platform API Specification"/>
+    <property name="FILE_LOG_CHARSET" value="UTF-8"/>
+    <property name="java.awt.headless" value="true"/>
+    <property name="surefire.real.class.path" value="/home/ubuntu/deploy_projects/mamoji/api/target/surefire/surefirebooter-20260121003914449_3.jar"/>
+    <property name="sun.management.compiler" value="HotSpot 64-Bit Tiered Compilers"/>
+    <property name="java.runtime.version" value="21.0.9+10-Ubuntu-124.04"/>
+    <property name="user.name" value="ubuntu"/>
+    <property name="stdout.encoding" value="UTF-8"/>
+    <property name="path.separator" value=":"/>
+    <property name="os.version" value="6.6.87.2-microsoft-standard-WSL2"/>
+    <property name="java.runtime.name" value="OpenJDK Runtime Environment"/>
+    <property name="file.encoding" value="UTF-8"/>
+    <property name="java.vm.name" value="OpenJDK 64-Bit Server VM"/>
+    <property name="localRepository" value="/home/ubuntu/.m2/repository"/>
+    <property name="java.vendor.url.bug" value="https://bugs.launchpad.net/ubuntu/+source/openjdk-21"/>
+    <property name="java.io.tmpdir" value="/tmp"/>
+    <property name="java.version" value="21.0.9"/>
+    <property name="user.dir" value="/home/ubuntu/deploy_projects/mamoji/api"/>
+    <property name="os.arch" value="amd64"/>
+    <property name="java.vm.specification.name" value="Java Virtual Machine Specification"/>
+    <property name="PID" value="26378"/>
+    <property name="CONSOLE_LOG_CHARSET" value="UTF-8"/>
+    <property name="native.encoding" value="UTF-8"/>
+    <property name="java.library.path" value="/usr/java/packages/lib:/usr/lib/x86_64-linux-gnu/jni:/lib/x86_64-linux-gnu:/usr/lib/x86_64-linux-gnu:/usr/lib/jni:/lib:/usr/lib"/>
+    <property name="java.vm.info" value="mixed mode, sharing"/>
+    <property name="stderr.encoding" value="UTF-8"/>
+    <property name="java.vendor" value="Ubuntu"/>
+    <property name="java.vm.version" value="21.0.9+10-Ubuntu-124.04"/>
+    <property name="sun.io.unicode.encoding" value="UnicodeLittle"/>
+    <property name="java.class.version" value="65.0"/>
+    <property name="CONSOLE_LOG_PATTERN" value="%d{yyyy-MM-dd HH:mm:ss} - %msg%n"/>
+    <property name="LOGGED_APPLICATION_NAME" value="[mamoji-api] "/>
+  </properties>
+  <testcase name="testCompleteAccountingFlow" classname="com.mamoji.module.EndToEndFlowTest" time="1.441">
+    <system-out><![CDATA[00:39:13.770 [main] INFO org.springframework.test.context.support.AnnotationConfigContextLoaderUtils -- Could not detect default configuration classes for test class [com.mamoji.module.EndToEndFlowTest]: EndToEndFlowTest does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+00:39:13.948 [main] INFO org.springframework.boot.test.context.SpringBootTestContextBootstrapper -- Found @SpringBootConfiguration com.mamoji.MamojiApplication for test class com.mamoji.module.EndToEndFlowTest
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+
+ :: Spring Boot ::                (v3.5.3)
+
+2026-01-21 00:39:14 - Starting EndToEndFlowTest using Java 21.0.9 with PID 26378 (started by ubuntu in /home/ubuntu/deploy_projects/mamoji/api)
+2026-01-21 00:39:14 - Running with Spring Boot v3.5.3, Spring v6.2.8
+2026-01-21 00:39:14 - The following 1 profile is active: "test"
+2026-01-21 00:39:15 - Multiple Spring Data modules found, entering strict repository configuration mode
+2026-01-21 00:39:15 - Bootstrapping Spring Data Redis repositories in DEFAULT mode.
+2026-01-21 00:39:15 - Finished Spring Data repository scanning in 19 ms. Found 0 Redis repository interfaces.
+2026-01-21 00:39:16 - Redisson 3.28.0
+2026-01-21 00:39:16 - 1 connections initialized for localhost/127.0.0.1:6379
+2026-01-21 00:39:16 - 10 connections initialized for localhost/127.0.0.1:6379
+Logging initialized using 'class org.apache.ibatis.logging.stdout.StdOutImpl' adapter.
+Initialization Sequence datacenterId:1 workerId:31
+2026-01-21 00:39:17 - Exposing 1 endpoint beneath base path '/actuator'
+2026-01-21 00:39:18 - Started EndToEndFlowTest in 4.426 seconds (process running for 5.846)
+2026-01-21 00:39:18 - MamojiHikariCP - Starting...
+2026-01-21 00:39:18 - MamojiHikariCP - Added connection com.mysql.cj.jdbc.ConnectionImpl@7e14cc79
+2026-01-21 00:39:18 - MamojiHikariCP - Start completed.
+Creating a new SqlSession
+Registering transaction synchronization for SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@c8cc0fe]
+JDBC Connection [HikariProxyConnection@338468492 wrapping com.mysql.cj.jdbc.ConnectionImpl@7e14cc79] will be managed by Spring
+==>  Preparing: SELECT COUNT( * ) AS total FROM fin_category WHERE status=1 AND (user_id = ? AND name = ? AND status = ?)
+==> Parameters: 999(Long), 工资-1768927159679(String), 1(Integer)
+<==    Columns: total
+<==        Row: 0
+<==      Total: 1
+Releasing transactional SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@c8cc0fe]
+Fetched SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@c8cc0fe] from current transaction
+==>  Preparing: INSERT INTO fin_category ( user_id, name, type, status, created_at, updated_at ) VALUES ( ?, ?, ?, ?, ?, ? )
+==> Parameters: 999(Long), 工资-1768927159679(String), income(String), 1(Integer), 2026-01-21T00:39:19.830146943(LocalDateTime), 2026-01-21T00:39:19.831343604(LocalDateTime)
+<==    Updates: 1
+Releasing transactional SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@c8cc0fe]
+2026-01-21 00:39:19 - Category created: userId=999, name=工资-1768927159679
+Fetched SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@c8cc0fe] from current transaction
+==>  Preparing: SELECT COUNT( * ) AS total FROM fin_category WHERE status=1 AND (user_id = ? AND name = ? AND status = ?)
+==> Parameters: 999(Long), 餐饮-1768927159839(String), 1(Integer)
+<==    Columns: total
+<==        Row: 0
+<==      Total: 1
+Releasing transactional SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@c8cc0fe]
+Fetched SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@c8cc0fe] from current transaction
+==>  Preparing: INSERT INTO fin_category ( user_id, name, type, status, created_at, updated_at ) VALUES ( ?, ?, ?, ?, ?, ? )
+==> Parameters: 999(Long), 餐饮-1768927159839(String), expense(String), 1(Integer), 2026-01-21T00:39:19.844618591(LocalDateTime), 2026-01-21T00:39:19.844679585(LocalDateTime)
+<==    Updates: 1
+Releasing transactional SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@c8cc0fe]
+2026-01-21 00:39:19 - Category created: userId=999, name=餐饮-1768927159839
+Fetched SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@c8cc0fe] from current transaction
+==>  Preparing: INSERT INTO fin_account ( user_id, name, account_type, currency, balance, include_in_total, status, created_at, updated_at ) VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ? )
+==> Parameters: 999(Long), 测试钱包-EndToEnd-1768927159850(String), bank(String), CNY(String), 0(BigDecimal), 1(Integer), 1(Integer), 2026-01-21T00:39:19.852571440(LocalDateTime), 2026-01-21T00:39:19.852667888(LocalDateTime)
+<==    Updates: 1
+Releasing transactional SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@c8cc0fe]
+2026-01-21 00:39:19 - Account created: userId=999, name=测试钱包-EndToEnd-1768927159850
+Fetched SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@c8cc0fe] from current transaction
+==>  Preparing: SELECT account_id,user_id,name,account_type,account_sub_type,currency,balance,include_in_total,status,created_at,updated_at FROM fin_account WHERE account_id=? AND status=1
+==> Parameters: 1(Long)
+<==    Columns: account_id, user_id, name, account_type, account_sub_type, currency, balance, include_in_total, status, created_at, updated_at
+<==        Row: 1, 999, 测试钱包-EndToEnd-1768927159850, bank, null, CNY, 0.0000, 1, 1, 2026-01-21 00:39:20, 2026-01-21 00:39:20
+<==      Total: 1
+Releasing transactional SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@c8cc0fe]
+Fetched SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@c8cc0fe] from current transaction
+==>  Preparing: INSERT INTO fin_budget ( user_id, name, amount, spent, start_date, end_date, status, created_at, updated_at ) VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ? )
+==> Parameters: 999(Long), 月度餐饮预算-EndToEnd-1768927159870(String), 1000.00(BigDecimal), 0(BigDecimal), 2026-01-01(LocalDate), 2026-02-01(LocalDate), 1(Integer), 2026-01-21T00:39:19.872920859(LocalDateTime), 2026-01-21T00:39:19.873109116(LocalDateTime)
+<==    Updates: 1
+Releasing transactional SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@c8cc0fe]
+2026-01-21 00:39:19 - Budget created: userId=999, name=月度餐饮预算-EndToEnd-1768927159870
+Fetched SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@c8cc0fe] from current transaction
+==>  Preparing: SELECT * FROM fin_budget WHERE budget_id = ?
+==> Parameters: 1(Long)
+<==    Columns: budget_id, user_id, name, amount, spent, start_date, end_date, status, created_at, updated_at
+<==        Row: 1, 999, 月度餐饮预算-EndToEnd-1768927159870, 1000.0000, 0.0000, 2026-01-01, 2026-02-01, 1, 2026-01-21 00:39:20, 2026-01-21 00:39:20
+<==      Total: 1
+Releasing transactional SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@c8cc0fe]
+Fetched SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@c8cc0fe] from current transaction
+==>  Preparing: SELECT account_id,user_id,name,account_type,account_sub_type,currency,balance,include_in_total,status,created_at,updated_at FROM fin_account WHERE status=1 AND (user_id = ? AND status = ?) ORDER BY created_at DESC
+==> Parameters: 999(Long), 1(Integer)
+<==    Columns: account_id, user_id, name, account_type, account_sub_type, currency, balance, include_in_total, status, created_at, updated_at
+<==        Row: 1, 999, 测试钱包-EndToEnd-1768927159850, bank, null, CNY, 0.0000, 1, 1, 2026-01-21 00:39:20, 2026-01-21 00:39:20
+<==      Total: 1
+Releasing transactional SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@c8cc0fe]
+Fetched SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@c8cc0fe] from current transaction
+==>  Preparing: SELECT category_id,user_id,name,type,status,created_at,updated_at FROM fin_category WHERE category_id=? AND status=1
+==> Parameters: 1(Long)
+<==    Columns: category_id, user_id, name, type, status, created_at, updated_at
+<==        Row: 1, 999, 工资-1768927159679, income, 1, 2026-01-21 00:39:20, 2026-01-21 00:39:20
+<==      Total: 1
+Releasing transactional SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@c8cc0fe]
+Fetched SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@c8cc0fe] from current transaction
+==>  Preparing: INSERT INTO fin_transaction ( user_id, account_id, category_id, type, amount, currency, occurred_at, note, status, created_at, updated_at ) VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? )
+==> Parameters: 999(Long), 1(Long), 1(Long), income(String), 500.00(BigDecimal), CNY(String), 2026-01-21T00:39:19.884298770(LocalDateTime), 工资收入(String), 1(Integer), 2026-01-21T00:39:19.896477916(LocalDateTime), 2026-01-21T00:39:19.896574575(LocalDateTime)
+<==    Updates: 1
+Releasing transactional SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@c8cc0fe]
+Fetched SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@c8cc0fe] from current transaction
+==>  Preparing: UPDATE fin_account SET balance = balance + 500.00 WHERE status=1 AND (account_id = ?)
+==> Parameters: 1(Long)
+<==    Updates: 1
+Releasing transactional SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@c8cc0fe]
+2026-01-21 00:39:20 - Transaction created: userId=999, type=income, amount=500.00
+Fetched SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@c8cc0fe] from current transaction
+==>  Preparing: SELECT account_id,user_id,name,account_type,account_sub_type,currency,balance,include_in_total,status,created_at,updated_at FROM fin_account WHERE account_id=? AND status=1
+==> Parameters: 1(Long)
+<==    Columns: account_id, user_id, name, account_type, account_sub_type, currency, balance, include_in_total, status, created_at, updated_at
+<==        Row: 1, 999, 测试钱包-EndToEnd-1768927159850, bank, null, CNY, 500.0000, 1, 1, 2026-01-21 00:39:20, 2026-01-20 16:39:20
+<==      Total: 1
+Releasing transactional SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@c8cc0fe]
+Fetched SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@c8cc0fe] from current transaction
+==>  Preparing: SELECT * FROM fin_budget WHERE budget_id = ?
+==> Parameters: 1(Long)
+<==    Columns: budget_id, user_id, name, amount, spent, start_date, end_date, status, created_at, updated_at
+<==        Row: 1, 999, 月度餐饮预算-EndToEnd-1768927159870, 1000.0000, 0.0000, 2026-01-01, 2026-02-01, 1, 2026-01-21 00:39:20, 2026-01-21 00:39:20
+<==      Total: 1
+Releasing transactional SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@c8cc0fe]
+Fetched SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@c8cc0fe] from current transaction
+==>  Preparing: SELECT account_id,user_id,name,account_type,account_sub_type,currency,balance,include_in_total,status,created_at,updated_at FROM fin_account WHERE status=1 AND (user_id = ? AND status = ?) ORDER BY created_at DESC
+==> Parameters: 999(Long), 1(Integer)
+<==    Columns: account_id, user_id, name, account_type, account_sub_type, currency, balance, include_in_total, status, created_at, updated_at
+<==        Row: 1, 999, 测试钱包-EndToEnd-1768927159850, bank, null, CNY, 500.0000, 1, 1, 2026-01-21 00:39:20, 2026-01-20 16:39:20
+<==      Total: 1
+Releasing transactional SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@c8cc0fe]
+Fetched SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@c8cc0fe] from current transaction
+==>  Preparing: SELECT category_id,user_id,name,type,status,created_at,updated_at FROM fin_category WHERE category_id=? AND status=1
+==> Parameters: 2(Long)
+<==    Columns: category_id, user_id, name, type, status, created_at, updated_at
+<==        Row: 2, 999, 餐饮-1768927159839, expense, 1, 2026-01-21 00:39:20, 2026-01-21 00:39:20
+<==      Total: 1
+Releasing transactional SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@c8cc0fe]
+Fetched SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@c8cc0fe] from current transaction
+==>  Preparing: INSERT INTO fin_transaction ( user_id, account_id, category_id, budget_id, type, amount, currency, occurred_at, note, status, created_at, updated_at ) VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? )
+==> Parameters: 999(Long), 1(Long), 2(Long), 1(Long), expense(String), 200.00(BigDecimal), CNY(String), 2026-01-21T00:39:20.011121239(LocalDateTime), 午餐支出(String), 1(Integer), 2026-01-21T00:39:20.020512371(LocalDateTime), 2026-01-21T00:39:20.020558934(LocalDateTime)
+<==    Updates: 1
+Releasing transactional SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@c8cc0fe]
+Fetched SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@c8cc0fe] from current transaction
+==>  Preparing: UPDATE fin_account SET balance = balance + -200.00 WHERE status=1 AND (account_id = ?)
+==> Parameters: 1(Long)
+<==    Updates: 1
+Releasing transactional SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@c8cc0fe]
+Fetched SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@c8cc0fe] from current transaction
+==>  Preparing: SELECT * FROM fin_budget WHERE budget_id = ?
+==> Parameters: 1(Long)
+<==    Columns: budget_id, user_id, name, amount, spent, start_date, end_date, status, created_at, updated_at
+<==        Row: 1, 999, 月度餐饮预算-EndToEnd-1768927159870, 1000.0000, 0.0000, 2026-01-01, 2026-02-01, 1, 2026-01-21 00:39:20, 2026-01-21 00:39:20
+<==      Total: 1
+Releasing transactional SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@c8cc0fe]
+Fetched SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@c8cc0fe] from current transaction
+==>  Preparing: SELECT COALESCE(SUM(amount), 0) FROM fin_transaction WHERE budget_id = ? AND status = 1 AND type = 'expense' AND occurred_at >= ? AND occurred_at <= ?
+==> Parameters: 1(Long), 2026-01-01T00:00(LocalDateTime), 2026-02-01T23:59:59(LocalDateTime)
+<==    Columns: COALESCE(SUM(amount), 0)
+<==        Row: 200.0000
+<==      Total: 1
+Releasing transactional SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@c8cc0fe]
+Fetched SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@c8cc0fe] from current transaction
+==>  Preparing: UPDATE fin_budget SET spent=?,status=? WHERE status=1 AND (budget_id = ?)
+==> Parameters: 200.0000(BigDecimal), 1(Integer), 1(Long)
+<==    Updates: 1
+Releasing transactional SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@c8cc0fe]
+2026-01-21 00:39:20 - Transaction created: userId=999, type=expense, amount=200.00
+Fetched SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@c8cc0fe] from current transaction
+==>  Preparing: SELECT account_id,user_id,name,account_type,account_sub_type,currency,balance,include_in_total,status,created_at,updated_at FROM fin_account WHERE account_id=? AND status=1
+==> Parameters: 1(Long)
+<==    Columns: account_id, user_id, name, account_type, account_sub_type, currency, balance, include_in_total, status, created_at, updated_at
+<==        Row: 1, 999, 测试钱包-EndToEnd-1768927159850, bank, null, CNY, 300.0000, 1, 1, 2026-01-21 00:39:20, 2026-01-20 16:39:20
+<==      Total: 1
+Releasing transactional SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@c8cc0fe]
+Fetched SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@c8cc0fe] from current transaction
+==>  Preparing: SELECT * FROM fin_budget WHERE budget_id = ?
+==> Parameters: 1(Long)
+<==    Columns: budget_id, user_id, name, amount, spent, start_date, end_date, status, created_at, updated_at
+<==        Row: 1, 999, 月度餐饮预算-EndToEnd-1768927159870, 1000.0000, 200.0000, 2026-01-01, 2026-02-01, 1, 2026-01-21 00:39:20, 2026-01-20 16:39:20
+<==      Total: 1
+Releasing transactional SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@c8cc0fe]
+Fetched SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@c8cc0fe] from current transaction
+==>  Preparing: SELECT account_id,user_id,name,account_type,account_sub_type,currency,balance,include_in_total,status,created_at,updated_at FROM fin_account WHERE status=1 AND (user_id = ? AND status = ?)
+==> Parameters: 999(Long), 1(Integer)
+<==    Columns: account_id, user_id, name, account_type, account_sub_type, currency, balance, include_in_total, status, created_at, updated_at
+<==        Row: 1, 999, 测试钱包-EndToEnd-1768927159850, bank, null, CNY, 300.0000, 1, 1, 2026-01-21 00:39:20, 2026-01-20 16:39:20
+<==      Total: 1
+Releasing transactional SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@c8cc0fe]
+Fetched SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@c8cc0fe] from current transaction
+==>  Preparing: SELECT transaction_id,user_id,account_id,category_id,budget_id,type,amount,currency,occurred_at,note,status,created_at,updated_at FROM fin_transaction WHERE transaction_id=? AND status=1
+==> Parameters: 2(Long)
+<==    Columns: transaction_id, user_id, account_id, category_id, budget_id, type, amount, currency, occurred_at, note, status, created_at, updated_at
+<==        Row: 2, 999, 1, 2, 1, expense, 200.0000, CNY, 2026-01-21 00:39:20, 午餐支出, 1, 2026-01-21 00:39:20, 2026-01-21 00:39:20
+<==      Total: 1
+Releasing transactional SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@c8cc0fe]
+Fetched SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@c8cc0fe] from current transaction
+==>  Preparing: UPDATE fin_account SET balance = balance + 200.0000 WHERE status=1 AND (account_id = ?)
+==> Parameters: 1(Long)
+<==    Updates: 1
+Releasing transactional SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@c8cc0fe]
+Fetched SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@c8cc0fe] from current transaction
+==>  Preparing: SELECT * FROM fin_budget WHERE budget_id = ?
+==> Parameters: 1(Long)
+<==    Columns: budget_id, user_id, name, amount, spent, start_date, end_date, status, created_at, updated_at
+<==        Row: 1, 999, 月度餐饮预算-EndToEnd-1768927159870, 1000.0000, 200.0000, 2026-01-01, 2026-02-01, 1, 2026-01-21 00:39:20, 2026-01-20 16:39:20
+<==      Total: 1
+Releasing transactional SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@c8cc0fe]
+Fetched SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@c8cc0fe] from current transaction
+==>  Preparing: SELECT COALESCE(SUM(amount), 0) FROM fin_transaction WHERE budget_id = ? AND status = 1 AND type = 'expense' AND occurred_at >= ? AND occurred_at <= ?
+==> Parameters: 1(Long), 2026-01-01T00:00(LocalDateTime), 2026-02-01T23:59:59(LocalDateTime)
+<==    Columns: COALESCE(SUM(amount), 0)
+<==        Row: 200.0000
+<==      Total: 1
+Releasing transactional SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@c8cc0fe]
+Fetched SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@c8cc0fe] from current transaction
+==>  Preparing: UPDATE fin_budget SET spent=?,status=? WHERE status=1 AND (budget_id = ?)
+==> Parameters: 200.0000(BigDecimal), 1(Integer), 1(Long)
+<==    Updates: 1
+Releasing transactional SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@c8cc0fe]
+Fetched SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@c8cc0fe] from current transaction
+==>  Preparing: UPDATE fin_transaction SET status=? WHERE status=1 AND (transaction_id = ?)
+==> Parameters: 0(Integer), 2(Long)
+<==    Updates: 1
+Releasing transactional SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@c8cc0fe]
+2026-01-21 00:39:20 - Transaction deleted: transactionId=2
+Fetched SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@c8cc0fe] from current transaction
+==>  Preparing: SELECT account_id,user_id,name,account_type,account_sub_type,currency,balance,include_in_total,status,created_at,updated_at FROM fin_account WHERE account_id=? AND status=1
+==> Parameters: 1(Long)
+<==    Columns: account_id, user_id, name, account_type, account_sub_type, currency, balance, include_in_total, status, created_at, updated_at
+<==        Row: 1, 999, 测试钱包-EndToEnd-1768927159850, bank, null, CNY, 500.0000, 1, 1, 2026-01-21 00:39:20, 2026-01-20 16:39:20
+<==      Total: 1
+Releasing transactional SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@c8cc0fe]
+✅ 完整记账流程测试通过！
+Transaction synchronization deregistering SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@c8cc0fe]
+Transaction synchronization closing SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@c8cc0fe]
+]]></system-out>
+    <system-err><![CDATA[Mockito is currently self-attaching to enable the inline-mock-maker. This will no longer work in future releases of the JDK. Please add Mockito as an agent to your build as described in Mockito's documentation: https://javadoc.io/doc/org.mockito/mockito-core/latest/org.mockito/org/mockito/Mockito.html#0.3
+WARNING: A Java agent has been loaded dynamically (/home/ubuntu/.m2/repository/net/bytebuddy/byte-buddy-agent/1.17.6/byte-buddy-agent-1.17.6.jar)
+WARNING: If a serviceability tool is in use, please run with -XX:+EnableDynamicAgentLoading to hide this warning
+WARNING: If a serviceability tool is not in use, please run with -Djdk.instrument.traceUsage for more information
+WARNING: Dynamic loading of agents will be disallowed by default in a future release
+]]></system-err>
+  </testcase>
+  <testcase name="testMultipleTransactionsWithBudget" classname="com.mamoji.module.EndToEndFlowTest" time="0.469">
+    <system-out><![CDATA[Creating a new SqlSession
+Registering transaction synchronization for SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@69cf08a5]
+JDBC Connection [HikariProxyConnection@546810339 wrapping com.mysql.cj.jdbc.ConnectionImpl@7e14cc79] will be managed by Spring
+==>  Preparing: SELECT COUNT( * ) AS total FROM fin_category WHERE status=1 AND (user_id = ? AND name = ? AND status = ?)
+==> Parameters: 999(Long), 工资-1768927160456(String), 1(Integer)
+<==    Columns: total
+<==        Row: 0
+<==      Total: 1
+Releasing transactional SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@69cf08a5]
+Fetched SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@69cf08a5] from current transaction
+==>  Preparing: INSERT INTO fin_category ( user_id, name, type, status, created_at, updated_at ) VALUES ( ?, ?, ?, ?, ?, ? )
+==> Parameters: 999(Long), 工资-1768927160456(String), income(String), 1(Integer), 2026-01-21T00:39:20.461436259(LocalDateTime), 2026-01-21T00:39:20.461489539(LocalDateTime)
+<==    Updates: 1
+Releasing transactional SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@69cf08a5]
+2026-01-21 00:39:20 - Category created: userId=999, name=工资-1768927160456
+Fetched SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@69cf08a5] from current transaction
+==>  Preparing: SELECT COUNT( * ) AS total FROM fin_category WHERE status=1 AND (user_id = ? AND name = ? AND status = ?)
+==> Parameters: 999(Long), 餐饮-1768927160464(String), 1(Integer)
+<==    Columns: total
+<==        Row: 0
+<==      Total: 1
+Releasing transactional SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@69cf08a5]
+Fetched SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@69cf08a5] from current transaction
+==>  Preparing: INSERT INTO fin_category ( user_id, name, type, status, created_at, updated_at ) VALUES ( ?, ?, ?, ?, ?, ? )
+==> Parameters: 999(Long), 餐饮-1768927160464(String), expense(String), 1(Integer), 2026-01-21T00:39:20.467329750(LocalDateTime), 2026-01-21T00:39:20.467356841(LocalDateTime)
+<==    Updates: 1
+Releasing transactional SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@69cf08a5]
+2026-01-21 00:39:20 - Category created: userId=999, name=餐饮-1768927160464
+Fetched SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@69cf08a5] from current transaction
+==>  Preparing: INSERT INTO fin_account ( user_id, name, account_type, currency, balance, include_in_total, status, created_at, updated_at ) VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ? )
+==> Parameters: 999(Long), 测试钱包-Multiple-1768927160471(String), bank(String), CNY(String), 0(BigDecimal), 1(Integer), 1(Integer), 2026-01-21T00:39:20.471801706(LocalDateTime), 2026-01-21T00:39:20.471857098(LocalDateTime)
+<==    Updates: 1
+Releasing transactional SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@69cf08a5]
+2026-01-21 00:39:20 - Account created: userId=999, name=测试钱包-Multiple-1768927160471
+Fetched SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@69cf08a5] from current transaction
+==>  Preparing: INSERT INTO fin_budget ( user_id, name, amount, spent, start_date, end_date, status, created_at, updated_at ) VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ? )
+==> Parameters: 999(Long), 月度餐饮预算-Multiple-1768927160474(String), 1000.00(BigDecimal), 0(BigDecimal), 2026-01-01(LocalDate), 2026-02-01(LocalDate), 1(Integer), 2026-01-21T00:39:20.475777192(LocalDateTime), 2026-01-21T00:39:20.475860385(LocalDateTime)
+<==    Updates: 1
+Releasing transactional SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@69cf08a5]
+2026-01-21 00:39:20 - Budget created: userId=999, name=月度餐饮预算-Multiple-1768927160474
+Fetched SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@69cf08a5] from current transaction
+==>  Preparing: SELECT account_id,user_id,name,account_type,account_sub_type,currency,balance,include_in_total,status,created_at,updated_at FROM fin_account WHERE status=1 AND (user_id = ? AND status = ?) ORDER BY created_at DESC
+==> Parameters: 999(Long), 1(Integer)
+<==    Columns: account_id, user_id, name, account_type, account_sub_type, currency, balance, include_in_total, status, created_at, updated_at
+<==        Row: 1, 999, 测试钱包-Multiple-1768927160471, bank, null, CNY, 0.0000, 1, 1, 2026-01-21 00:39:20, 2026-01-21 00:39:20
+<==      Total: 1
+Releasing transactional SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@69cf08a5]
+Fetched SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@69cf08a5] from current transaction
+==>  Preparing: SELECT category_id,user_id,name,type,status,created_at,updated_at FROM fin_category WHERE category_id=? AND status=1
+==> Parameters: 2(Long)
+<==    Columns: category_id, user_id, name, type, status, created_at, updated_at
+<==        Row: 2, 999, 餐饮-1768927160464, expense, 1, 2026-01-21 00:39:20, 2026-01-21 00:39:20
+<==      Total: 1
+Releasing transactional SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@69cf08a5]
+Fetched SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@69cf08a5] from current transaction
+==>  Preparing: INSERT INTO fin_transaction ( user_id, account_id, category_id, budget_id, type, amount, currency, occurred_at, note, status, created_at, updated_at ) VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? )
+==> Parameters: 999(Long), 1(Long), 2(Long), 1(Long), expense(String), 100.00(BigDecimal), CNY(String), 2026-01-21T00:39:20.478220663(LocalDateTime), 早餐(String), 1(Integer), 2026-01-21T00:39:20.483406742(LocalDateTime), 2026-01-21T00:39:20.483436879(LocalDateTime)
+<==    Updates: 1
+Releasing transactional SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@69cf08a5]
+Fetched SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@69cf08a5] from current transaction
+==>  Preparing: UPDATE fin_account SET balance = balance + -100.00 WHERE status=1 AND (account_id = ?)
+==> Parameters: 1(Long)
+<==    Updates: 1
+Releasing transactional SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@69cf08a5]
+Fetched SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@69cf08a5] from current transaction
+==>  Preparing: SELECT * FROM fin_budget WHERE budget_id = ?
+==> Parameters: 1(Long)
+<==    Columns: budget_id, user_id, name, amount, spent, start_date, end_date, status, created_at, updated_at
+<==        Row: 1, 999, 月度餐饮预算-Multiple-1768927160474, 1000.0000, 0.0000, 2026-01-01, 2026-02-01, 1, 2026-01-21 00:39:20, 2026-01-21 00:39:20
+<==      Total: 1
+Releasing transactional SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@69cf08a5]
+Fetched SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@69cf08a5] from current transaction
+==>  Preparing: SELECT COALESCE(SUM(amount), 0) FROM fin_transaction WHERE budget_id = ? AND status = 1 AND type = 'expense' AND occurred_at >= ? AND occurred_at <= ?
+==> Parameters: 1(Long), 2026-01-01T00:00(LocalDateTime), 2026-02-01T23:59:59(LocalDateTime)
+<==    Columns: COALESCE(SUM(amount), 0)
+<==        Row: 100.0000
+<==      Total: 1
+Releasing transactional SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@69cf08a5]
+Fetched SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@69cf08a5] from current transaction
+==>  Preparing: UPDATE fin_budget SET spent=?,status=? WHERE status=1 AND (budget_id = ?)
+==> Parameters: 100.0000(BigDecimal), 1(Integer), 1(Long)
+<==    Updates: 1
+Releasing transactional SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@69cf08a5]
+2026-01-21 00:39:20 - Transaction created: userId=999, type=expense, amount=100.00
+Fetched SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@69cf08a5] from current transaction
+==>  Preparing: SELECT account_id,user_id,name,account_type,account_sub_type,currency,balance,include_in_total,status,created_at,updated_at FROM fin_account WHERE status=1 AND (user_id = ? AND status = ?) ORDER BY created_at DESC
+==> Parameters: 999(Long), 1(Integer)
+<==    Columns: account_id, user_id, name, account_type, account_sub_type, currency, balance, include_in_total, status, created_at, updated_at
+<==        Row: 1, 999, 测试钱包-Multiple-1768927160471, bank, null, CNY, -100.0000, 1, 1, 2026-01-21 00:39:20, 2026-01-20 16:39:20
+<==      Total: 1
+Releasing transactional SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@69cf08a5]
+Fetched SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@69cf08a5] from current transaction
+==>  Preparing: SELECT category_id,user_id,name,type,status,created_at,updated_at FROM fin_category WHERE category_id=? AND status=1
+==> Parameters: 2(Long)
+<==    Columns: category_id, user_id, name, type, status, created_at, updated_at
+<==        Row: 2, 999, 餐饮-1768927160464, expense, 1, 2026-01-21 00:39:20, 2026-01-21 00:39:20
+<==      Total: 1
+Releasing transactional SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@69cf08a5]
+Fetched SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@69cf08a5] from current transaction
+==>  Preparing: INSERT INTO fin_transaction ( user_id, account_id, category_id, budget_id, type, amount, currency, occurred_at, note, status, created_at, updated_at ) VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? )
+==> Parameters: 999(Long), 1(Long), 2(Long), 1(Long), expense(String), 200.00(BigDecimal), CNY(String), 2026-01-21T00:39:20.498345855(LocalDateTime), 午餐(String), 1(Integer), 2026-01-21T00:39:20.503343072(LocalDateTime), 2026-01-21T00:39:20.503382664(LocalDateTime)
+<==    Updates: 1
+Releasing transactional SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@69cf08a5]
+Fetched SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@69cf08a5] from current transaction
+==>  Preparing: UPDATE fin_account SET balance = balance + -200.00 WHERE status=1 AND (account_id = ?)
+==> Parameters: 1(Long)
+<==    Updates: 1
+Releasing transactional SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@69cf08a5]
+Fetched SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@69cf08a5] from current transaction
+==>  Preparing: SELECT * FROM fin_budget WHERE budget_id = ?
+==> Parameters: 1(Long)
+<==    Columns: budget_id, user_id, name, amount, spent, start_date, end_date, status, created_at, updated_at
+<==        Row: 1, 999, 月度餐饮预算-Multiple-1768927160474, 1000.0000, 100.0000, 2026-01-01, 2026-02-01, 1, 2026-01-21 00:39:20, 2026-01-20 16:39:20
+<==      Total: 1
+Releasing transactional SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@69cf08a5]
+Fetched SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@69cf08a5] from current transaction
+==>  Preparing: SELECT COALESCE(SUM(amount), 0) FROM fin_transaction WHERE budget_id = ? AND status = 1 AND type = 'expense' AND occurred_at >= ? AND occurred_at <= ?
+==> Parameters: 1(Long), 2026-01-01T00:00(LocalDateTime), 2026-02-01T23:59:59(LocalDateTime)
+<==    Columns: COALESCE(SUM(amount), 0)
+<==        Row: 300.0000
+<==      Total: 1
+Releasing transactional SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@69cf08a5]
+Fetched SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@69cf08a5] from current transaction
+==>  Preparing: UPDATE fin_budget SET spent=?,status=? WHERE status=1 AND (budget_id = ?)
+==> Parameters: 300.0000(BigDecimal), 1(Integer), 1(Long)
+<==    Updates: 1
+Releasing transactional SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@69cf08a5]
+2026-01-21 00:39:20 - Transaction created: userId=999, type=expense, amount=200.00
+Fetched SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@69cf08a5] from current transaction
+==>  Preparing: SELECT account_id,user_id,name,account_type,account_sub_type,currency,balance,include_in_total,status,created_at,updated_at FROM fin_account WHERE status=1 AND (user_id = ? AND status = ?) ORDER BY created_at DESC
+==> Parameters: 999(Long), 1(Integer)
+<==    Columns: account_id, user_id, name, account_type, account_sub_type, currency, balance, include_in_total, status, created_at, updated_at
+<==        Row: 1, 999, 测试钱包-Multiple-1768927160471, bank, null, CNY, -300.0000, 1, 1, 2026-01-21 00:39:20, 2026-01-20 16:39:20
+<==      Total: 1
+Releasing transactional SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@69cf08a5]
+Fetched SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@69cf08a5] from current transaction
+==>  Preparing: SELECT category_id,user_id,name,type,status,created_at,updated_at FROM fin_category WHERE category_id=? AND status=1
+==> Parameters: 2(Long)
+<==    Columns: category_id, user_id, name, type, status, created_at, updated_at
+<==        Row: 2, 999, 餐饮-1768927160464, expense, 1, 2026-01-21 00:39:20, 2026-01-21 00:39:20
+<==      Total: 1
+Releasing transactional SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@69cf08a5]
+Fetched SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@69cf08a5] from current transaction
+==>  Preparing: INSERT INTO fin_transaction ( user_id, account_id, category_id, budget_id, type, amount, currency, occurred_at, note, status, created_at, updated_at ) VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? )
+==> Parameters: 999(Long), 1(Long), 2(Long), 1(Long), expense(String), 300.00(BigDecimal), CNY(String), 2026-01-21T00:39:20.514821291(LocalDateTime), 晚餐(String), 1(Integer), 2026-01-21T00:39:20.519407988(LocalDateTime), 2026-01-21T00:39:20.519457087(LocalDateTime)
+<==    Updates: 1
+Releasing transactional SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@69cf08a5]
+Fetched SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@69cf08a5] from current transaction
+==>  Preparing: UPDATE fin_account SET balance = balance + -300.00 WHERE status=1 AND (account_id = ?)
+==> Parameters: 1(Long)
+<==    Updates: 1
+Releasing transactional SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@69cf08a5]
+Fetched SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@69cf08a5] from current transaction
+==>  Preparing: SELECT * FROM fin_budget WHERE budget_id = ?
+==> Parameters: 1(Long)
+<==    Columns: budget_id, user_id, name, amount, spent, start_date, end_date, status, created_at, updated_at
+<==        Row: 1, 999, 月度餐饮预算-Multiple-1768927160474, 1000.0000, 300.0000, 2026-01-01, 2026-02-01, 1, 2026-01-21 00:39:20, 2026-01-20 16:39:20
+<==      Total: 1
+Releasing transactional SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@69cf08a5]
+Fetched SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@69cf08a5] from current transaction
+==>  Preparing: SELECT COALESCE(SUM(amount), 0) FROM fin_transaction WHERE budget_id = ? AND status = 1 AND type = 'expense' AND occurred_at >= ? AND occurred_at <= ?
+==> Parameters: 1(Long), 2026-01-01T00:00(LocalDateTime), 2026-02-01T23:59:59(LocalDateTime)
+<==    Columns: COALESCE(SUM(amount), 0)
+<==        Row: 600.0000
+<==      Total: 1
+Releasing transactional SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@69cf08a5]
+Fetched SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@69cf08a5] from current transaction
+==>  Preparing: UPDATE fin_budget SET spent=?,status=? WHERE status=1 AND (budget_id = ?)
+==> Parameters: 600.0000(BigDecimal), 1(Integer), 1(Long)
+<==    Updates: 1
+Releasing transactional SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@69cf08a5]
+2026-01-21 00:39:20 - Transaction created: userId=999, type=expense, amount=300.00
+Fetched SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@69cf08a5] from current transaction
+==>  Preparing: SELECT account_id,user_id,name,account_type,account_sub_type,currency,balance,include_in_total,status,created_at,updated_at FROM fin_account WHERE account_id=? AND status=1
+==> Parameters: 1(Long)
+<==    Columns: account_id, user_id, name, account_type, account_sub_type, currency, balance, include_in_total, status, created_at, updated_at
+<==        Row: 1, 999, 测试钱包-Multiple-1768927160471, bank, null, CNY, -600.0000, 1, 1, 2026-01-21 00:39:20, 2026-01-20 16:39:20
+<==      Total: 1
+Releasing transactional SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@69cf08a5]
+Fetched SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@69cf08a5] from current transaction
+==>  Preparing: SELECT * FROM fin_budget WHERE budget_id = ?
+==> Parameters: 1(Long)
+<==    Columns: budget_id, user_id, name, amount, spent, start_date, end_date, status, created_at, updated_at
+<==        Row: 1, 999, 月度餐饮预算-Multiple-1768927160474, 1000.0000, 600.0000, 2026-01-01, 2026-02-01, 1, 2026-01-21 00:39:20, 2026-01-20 16:39:20
+<==      Total: 1
+Releasing transactional SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@69cf08a5]
+Fetched SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@69cf08a5] from current transaction
+==>  Preparing: SELECT transaction_id,user_id,account_id,category_id,budget_id,type,amount,currency,occurred_at,note,status,created_at,updated_at FROM fin_transaction WHERE transaction_id=? AND status=1
+==> Parameters: 2(Long)
+<==    Columns: transaction_id, user_id, account_id, category_id, budget_id, type, amount, currency, occurred_at, note, status, created_at, updated_at
+<==        Row: 2, 999, 1, 2, 1, expense, 200.0000, CNY, 2026-01-21 00:39:20, 午餐, 1, 2026-01-21 00:39:21, 2026-01-21 00:39:21
+<==      Total: 1
+Releasing transactional SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@69cf08a5]
+Fetched SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@69cf08a5] from current transaction
+==>  Preparing: UPDATE fin_account SET balance = balance + 200.0000 WHERE status=1 AND (account_id = ?)
+==> Parameters: 1(Long)
+<==    Updates: 1
+Releasing transactional SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@69cf08a5]
+Fetched SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@69cf08a5] from current transaction
+==>  Preparing: SELECT * FROM fin_budget WHERE budget_id = ?
+==> Parameters: 1(Long)
+<==    Columns: budget_id, user_id, name, amount, spent, start_date, end_date, status, created_at, updated_at
+<==        Row: 1, 999, 月度餐饮预算-Multiple-1768927160474, 1000.0000, 600.0000, 2026-01-01, 2026-02-01, 1, 2026-01-21 00:39:20, 2026-01-20 16:39:20
+<==      Total: 1
+Releasing transactional SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@69cf08a5]
+Fetched SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@69cf08a5] from current transaction
+==>  Preparing: SELECT COALESCE(SUM(amount), 0) FROM fin_transaction WHERE budget_id = ? AND status = 1 AND type = 'expense' AND occurred_at >= ? AND occurred_at <= ?
+==> Parameters: 1(Long), 2026-01-01T00:00(LocalDateTime), 2026-02-01T23:59:59(LocalDateTime)
+<==    Columns: COALESCE(SUM(amount), 0)
+<==        Row: 600.0000
+<==      Total: 1
+Releasing transactional SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@69cf08a5]
+Fetched SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@69cf08a5] from current transaction
+==>  Preparing: UPDATE fin_budget SET spent=?,status=? WHERE status=1 AND (budget_id = ?)
+==> Parameters: 600.0000(BigDecimal), 1(Integer), 1(Long)
+<==    Updates: 1
+Releasing transactional SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@69cf08a5]
+Fetched SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@69cf08a5] from current transaction
+==>  Preparing: UPDATE fin_transaction SET status=? WHERE status=1 AND (transaction_id = ?)
+==> Parameters: 0(Integer), 2(Long)
+<==    Updates: 1
+Releasing transactional SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@69cf08a5]
+2026-01-21 00:39:20 - Transaction deleted: transactionId=2
+Fetched SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@69cf08a5] from current transaction
+==>  Preparing: SELECT account_id,user_id,name,account_type,account_sub_type,currency,balance,include_in_total,status,created_at,updated_at FROM fin_account WHERE account_id=? AND status=1
+==> Parameters: 1(Long)
+<==    Columns: account_id, user_id, name, account_type, account_sub_type, currency, balance, include_in_total, status, created_at, updated_at
+<==        Row: 1, 999, 测试钱包-Multiple-1768927160471, bank, null, CNY, -400.0000, 1, 1, 2026-01-21 00:39:20, 2026-01-20 16:39:20
+<==      Total: 1
+Releasing transactional SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@69cf08a5]
+✅ 多笔支出测试通过！
+Transaction synchronization deregistering SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@69cf08a5]
+Transaction synchronization closing SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@69cf08a5]
+]]></system-out>
+  </testcase>
+  <testcase name="testTransferBetweenAccounts" classname="com.mamoji.module.EndToEndFlowTest" time="0.293">
+    <system-out><![CDATA[Creating a new SqlSession
+Registering transaction synchronization for SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@635d34a9]
+JDBC Connection [HikariProxyConnection@1016316711 wrapping com.mysql.cj.jdbc.ConnectionImpl@7e14cc79] will be managed by Spring
+==>  Preparing: SELECT COUNT( * ) AS total FROM fin_category WHERE status=1 AND (user_id = ? AND name = ? AND status = ?)
+==> Parameters: 999(Long), 工资-1768927160816(String), 1(Integer)
+<==    Columns: total
+<==        Row: 0
+<==      Total: 1
+Releasing transactional SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@635d34a9]
+Fetched SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@635d34a9] from current transaction
+==>  Preparing: INSERT INTO fin_category ( user_id, name, type, status, created_at, updated_at ) VALUES ( ?, ?, ?, ?, ?, ? )
+==> Parameters: 999(Long), 工资-1768927160816(String), income(String), 1(Integer), 2026-01-21T00:39:20.820118286(LocalDateTime), 2026-01-21T00:39:20.820190571(LocalDateTime)
+<==    Updates: 1
+Releasing transactional SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@635d34a9]
+2026-01-21 00:39:20 - Category created: userId=999, name=工资-1768927160816
+Fetched SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@635d34a9] from current transaction
+==>  Preparing: SELECT COUNT( * ) AS total FROM fin_category WHERE status=1 AND (user_id = ? AND name = ? AND status = ?)
+==> Parameters: 999(Long), 餐饮-1768927160822(String), 1(Integer)
+<==    Columns: total
+<==        Row: 0
+<==      Total: 1
+Releasing transactional SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@635d34a9]
+Fetched SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@635d34a9] from current transaction
+==>  Preparing: INSERT INTO fin_category ( user_id, name, type, status, created_at, updated_at ) VALUES ( ?, ?, ?, ?, ?, ? )
+==> Parameters: 999(Long), 餐饮-1768927160822(String), expense(String), 1(Integer), 2026-01-21T00:39:20.824695972(LocalDateTime), 2026-01-21T00:39:20.824715815(LocalDateTime)
+<==    Updates: 1
+Releasing transactional SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@635d34a9]
+2026-01-21 00:39:20 - Category created: userId=999, name=餐饮-1768927160822
+Fetched SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@635d34a9] from current transaction
+==>  Preparing: INSERT INTO fin_account ( user_id, name, account_type, currency, balance, include_in_total, status, created_at, updated_at ) VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ? )
+==> Parameters: 999(Long), 钱包1-Transfer-1768927160827(String), bank(String), CNY(String), 1000.00(BigDecimal), 1(Integer), 1(Integer), 2026-01-21T00:39:20.828215813(LocalDateTime), 2026-01-21T00:39:20.828304684(LocalDateTime)
+<==    Updates: 1
+Releasing transactional SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@635d34a9]
+2026-01-21 00:39:20 - Account created: userId=999, name=钱包1-Transfer-1768927160827
+Fetched SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@635d34a9] from current transaction
+==>  Preparing: INSERT INTO fin_account ( user_id, name, account_type, currency, balance, include_in_total, status, created_at, updated_at ) VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ? )
+==> Parameters: 999(Long), 钱包2-Transfer-1768927160830(String), alipay(String), CNY(String), 0(BigDecimal), 1(Integer), 1(Integer), 2026-01-21T00:39:20.830425335(LocalDateTime), 2026-01-21T00:39:20.830472630(LocalDateTime)
+<==    Updates: 1
+Releasing transactional SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@635d34a9]
+2026-01-21 00:39:20 - Account created: userId=999, name=钱包2-Transfer-1768927160830
+Fetched SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@635d34a9] from current transaction
+==>  Preparing: SELECT account_id,user_id,name,account_type,account_sub_type,currency,balance,include_in_total,status,created_at,updated_at FROM fin_account WHERE status=1 AND (user_id = ? AND status = ?) ORDER BY created_at DESC
+==> Parameters: 999(Long), 1(Integer)
+<==    Columns: account_id, user_id, name, account_type, account_sub_type, currency, balance, include_in_total, status, created_at, updated_at
+<==        Row: 1, 999, 钱包1-Transfer-1768927160827, bank, null, CNY, 1000.0000, 1, 1, 2026-01-21 00:39:21, 2026-01-21 00:39:21
+<==        Row: 2, 999, 钱包2-Transfer-1768927160830, alipay, null, CNY, 0.0000, 1, 1, 2026-01-21 00:39:21, 2026-01-21 00:39:21
+<==      Total: 2
+Releasing transactional SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@635d34a9]
+Fetched SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@635d34a9] from current transaction
+==>  Preparing: SELECT category_id,user_id,name,type,status,created_at,updated_at FROM fin_category WHERE category_id=? AND status=1
+==> Parameters: 2(Long)
+<==    Columns: category_id, user_id, name, type, status, created_at, updated_at
+<==        Row: 2, 999, 餐饮-1768927160822, expense, 1, 2026-01-21 00:39:21, 2026-01-21 00:39:21
+<==      Total: 1
+Releasing transactional SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@635d34a9]
+Fetched SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@635d34a9] from current transaction
+==>  Preparing: INSERT INTO fin_transaction ( user_id, account_id, category_id, type, amount, currency, occurred_at, note, status, created_at, updated_at ) VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? )
+==> Parameters: 999(Long), 1(Long), 2(Long), expense(String), 300.00(BigDecimal), CNY(String), 2026-01-21T00:39:20.832826931(LocalDateTime), 转账到钱包2(String), 1(Integer), 2026-01-21T00:39:20.837488842(LocalDateTime), 2026-01-21T00:39:20.837516761(LocalDateTime)
+<==    Updates: 1
+Releasing transactional SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@635d34a9]
+Fetched SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@635d34a9] from current transaction
+==>  Preparing: UPDATE fin_account SET balance = balance + -300.00 WHERE status=1 AND (account_id = ?)
+==> Parameters: 1(Long)
+<==    Updates: 1
+Releasing transactional SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@635d34a9]
+2026-01-21 00:39:20 - Transaction created: userId=999, type=expense, amount=300.00
+Fetched SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@635d34a9] from current transaction
+==>  Preparing: SELECT account_id,user_id,name,account_type,account_sub_type,currency,balance,include_in_total,status,created_at,updated_at FROM fin_account WHERE status=1 AND (user_id = ? AND status = ?) ORDER BY created_at DESC
+==> Parameters: 999(Long), 1(Integer)
+<==    Columns: account_id, user_id, name, account_type, account_sub_type, currency, balance, include_in_total, status, created_at, updated_at
+<==        Row: 1, 999, 钱包1-Transfer-1768927160827, bank, null, CNY, 700.0000, 1, 1, 2026-01-21 00:39:21, 2026-01-20 16:39:20
+<==        Row: 2, 999, 钱包2-Transfer-1768927160830, alipay, null, CNY, 0.0000, 1, 1, 2026-01-21 00:39:21, 2026-01-21 00:39:21
+<==      Total: 2
+Releasing transactional SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@635d34a9]
+Fetched SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@635d34a9] from current transaction
+==>  Preparing: SELECT category_id,user_id,name,type,status,created_at,updated_at FROM fin_category WHERE category_id=? AND status=1
+==> Parameters: 1(Long)
+<==    Columns: category_id, user_id, name, type, status, created_at, updated_at
+<==        Row: 1, 999, 工资-1768927160816, income, 1, 2026-01-21 00:39:21, 2026-01-21 00:39:21
+<==      Total: 1
+Releasing transactional SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@635d34a9]
+Fetched SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@635d34a9] from current transaction
+==>  Preparing: INSERT INTO fin_transaction ( user_id, account_id, category_id, type, amount, currency, occurred_at, note, status, created_at, updated_at ) VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? )
+==> Parameters: 999(Long), 2(Long), 1(Long), income(String), 300.00(BigDecimal), CNY(String), 2026-01-21T00:39:20.844078506(LocalDateTime), 从钱包1转入(String), 1(Integer), 2026-01-21T00:39:20.848121544(LocalDateTime), 2026-01-21T00:39:20.848473479(LocalDateTime)
+<==    Updates: 1
+Releasing transactional SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@635d34a9]
+Fetched SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@635d34a9] from current transaction
+==>  Preparing: UPDATE fin_account SET balance = balance + 300.00 WHERE status=1 AND (account_id = ?)
+==> Parameters: 2(Long)
+<==    Updates: 1
+Releasing transactional SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@635d34a9]
+2026-01-21 00:39:20 - Transaction created: userId=999, type=income, amount=300.00
+Fetched SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@635d34a9] from current transaction
+==>  Preparing: SELECT account_id,user_id,name,account_type,account_sub_type,currency,balance,include_in_total,status,created_at,updated_at FROM fin_account WHERE account_id=? AND status=1
+==> Parameters: 1(Long)
+<==    Columns: account_id, user_id, name, account_type, account_sub_type, currency, balance, include_in_total, status, created_at, updated_at
+<==        Row: 1, 999, 钱包1-Transfer-1768927160827, bank, null, CNY, 700.0000, 1, 1, 2026-01-21 00:39:21, 2026-01-20 16:39:20
+<==      Total: 1
+Releasing transactional SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@635d34a9]
+Fetched SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@635d34a9] from current transaction
+==>  Preparing: SELECT account_id,user_id,name,account_type,account_sub_type,currency,balance,include_in_total,status,created_at,updated_at FROM fin_account WHERE account_id=? AND status=1
+==> Parameters: 2(Long)
+<==    Columns: account_id, user_id, name, account_type, account_sub_type, currency, balance, include_in_total, status, created_at, updated_at
+<==        Row: 2, 999, 钱包2-Transfer-1768927160830, alipay, null, CNY, 300.0000, 1, 1, 2026-01-21 00:39:21, 2026-01-20 16:39:20
+<==      Total: 1
+Releasing transactional SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@635d34a9]
+✅ 账户间转账测试通过！
+Transaction synchronization deregistering SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@635d34a9]
+Transaction synchronization closing SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@635d34a9]
+]]></system-out>
+  </testcase>
+  <testcase name="testBudgetOverrun" classname="com.mamoji.module.EndToEndFlowTest" time="0.287">
+    <system-out><![CDATA[Creating a new SqlSession
+Registering transaction synchronization for SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@27646bb3]
+JDBC Connection [HikariProxyConnection@1546472393 wrapping com.mysql.cj.jdbc.ConnectionImpl@7e14cc79] will be managed by Spring
+==>  Preparing: SELECT COUNT( * ) AS total FROM fin_category WHERE status=1 AND (user_id = ? AND name = ? AND status = ?)
+==> Parameters: 999(Long), 工资-1768927161105(String), 1(Integer)
+<==    Columns: total
+<==        Row: 0
+<==      Total: 1
+Releasing transactional SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@27646bb3]
+Fetched SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@27646bb3] from current transaction
+==>  Preparing: INSERT INTO fin_category ( user_id, name, type, status, created_at, updated_at ) VALUES ( ?, ?, ?, ?, ?, ? )
+==> Parameters: 999(Long), 工资-1768927161105(String), income(String), 1(Integer), 2026-01-21T00:39:21.110409272(LocalDateTime), 2026-01-21T00:39:21.110466447(LocalDateTime)
+<==    Updates: 1
+Releasing transactional SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@27646bb3]
+2026-01-21 00:39:21 - Category created: userId=999, name=工资-1768927161105
+Fetched SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@27646bb3] from current transaction
+==>  Preparing: SELECT COUNT( * ) AS total FROM fin_category WHERE status=1 AND (user_id = ? AND name = ? AND status = ?)
+==> Parameters: 999(Long), 餐饮-1768927161112(String), 1(Integer)
+<==    Columns: total
+<==        Row: 0
+<==      Total: 1
+Releasing transactional SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@27646bb3]
+Fetched SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@27646bb3] from current transaction
+==>  Preparing: INSERT INTO fin_category ( user_id, name, type, status, created_at, updated_at ) VALUES ( ?, ?, ?, ?, ?, ? )
+==> Parameters: 999(Long), 餐饮-1768927161112(String), expense(String), 1(Integer), 2026-01-21T00:39:21.115071709(LocalDateTime), 2026-01-21T00:39:21.115187352(LocalDateTime)
+<==    Updates: 1
+Releasing transactional SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@27646bb3]
+2026-01-21 00:39:21 - Category created: userId=999, name=餐饮-1768927161112
+Fetched SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@27646bb3] from current transaction
+==>  Preparing: SELECT COUNT( * ) AS total FROM fin_category WHERE status=1 AND (user_id = ? AND name = ? AND status = ?)
+==> Parameters: 999(Long), 餐饮-Overrun-1768927161117(String), 1(Integer)
+<==    Columns: total
+<==        Row: 0
+<==      Total: 1
+Releasing transactional SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@27646bb3]
+Fetched SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@27646bb3] from current transaction
+==>  Preparing: INSERT INTO fin_category ( user_id, name, type, status, created_at, updated_at ) VALUES ( ?, ?, ?, ?, ?, ? )
+==> Parameters: 999(Long), 餐饮-Overrun-1768927161117(String), expense(String), 1(Integer), 2026-01-21T00:39:21.120068856(LocalDateTime), 2026-01-21T00:39:21.120091607(LocalDateTime)
+<==    Updates: 1
+Releasing transactional SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@27646bb3]
+2026-01-21 00:39:21 - Category created: userId=999, name=餐饮-Overrun-1768927161117
+Fetched SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@27646bb3] from current transaction
+==>  Preparing: INSERT INTO fin_account ( user_id, name, account_type, currency, balance, include_in_total, status, created_at, updated_at ) VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ? )
+==> Parameters: 999(Long), 测试钱包-Overrun-1768927161121(String), bank(String), CNY(String), 1000.00(BigDecimal), 1(Integer), 1(Integer), 2026-01-21T00:39:21.122383288(LocalDateTime), 2026-01-21T00:39:21.122414528(LocalDateTime)
+<==    Updates: 1
+Releasing transactional SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@27646bb3]
+2026-01-21 00:39:21 - Account created: userId=999, name=测试钱包-Overrun-1768927161121
+Fetched SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@27646bb3] from current transaction
+==>  Preparing: INSERT INTO fin_budget ( user_id, name, amount, spent, start_date, end_date, status, created_at, updated_at ) VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ? )
+==> Parameters: 999(Long), 餐饮预算-Overrun-1768927161124(String), 500.00(BigDecimal), 0(BigDecimal), 2026-01-01(LocalDate), 2026-02-01(LocalDate), 1(Integer), 2026-01-21T00:39:21.124997901(LocalDateTime), 2026-01-21T00:39:21.125032770(LocalDateTime)
+<==    Updates: 1
+Releasing transactional SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@27646bb3]
+2026-01-21 00:39:21 - Budget created: userId=999, name=餐饮预算-Overrun-1768927161124
+Fetched SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@27646bb3] from current transaction
+==>  Preparing: SELECT account_id,user_id,name,account_type,account_sub_type,currency,balance,include_in_total,status,created_at,updated_at FROM fin_account WHERE status=1 AND (user_id = ? AND status = ?) ORDER BY created_at DESC
+==> Parameters: 999(Long), 1(Integer)
+<==    Columns: account_id, user_id, name, account_type, account_sub_type, currency, balance, include_in_total, status, created_at, updated_at
+<==        Row: 1, 999, 测试钱包-Overrun-1768927161121, bank, null, CNY, 1000.0000, 1, 1, 2026-01-21 00:39:21, 2026-01-21 00:39:21
+<==      Total: 1
+Releasing transactional SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@27646bb3]
+Fetched SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@27646bb3] from current transaction
+==>  Preparing: SELECT category_id,user_id,name,type,status,created_at,updated_at FROM fin_category WHERE category_id=? AND status=1
+==> Parameters: 3(Long)
+<==    Columns: category_id, user_id, name, type, status, created_at, updated_at
+<==        Row: 3, 999, 餐饮-Overrun-1768927161117, expense, 1, 2026-01-21 00:39:21, 2026-01-21 00:39:21
+<==      Total: 1
+Releasing transactional SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@27646bb3]
+Fetched SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@27646bb3] from current transaction
+==>  Preparing: INSERT INTO fin_transaction ( user_id, account_id, category_id, budget_id, type, amount, currency, occurred_at, note, status, created_at, updated_at ) VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? )
+==> Parameters: 999(Long), 1(Long), 3(Long), 1(Long), expense(String), 600.00(BigDecimal), CNY(String), 2026-01-21T00:39:21.127018470(LocalDateTime), 大额消费(String), 1(Integer), 2026-01-21T00:39:21.131140663(LocalDateTime), 2026-01-21T00:39:21.131260742(LocalDateTime)
+<==    Updates: 1
+Releasing transactional SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@27646bb3]
+Fetched SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@27646bb3] from current transaction
+==>  Preparing: UPDATE fin_account SET balance = balance + -600.00 WHERE status=1 AND (account_id = ?)
+==> Parameters: 1(Long)
+<==    Updates: 1
+Releasing transactional SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@27646bb3]
+Fetched SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@27646bb3] from current transaction
+==>  Preparing: SELECT * FROM fin_budget WHERE budget_id = ?
+==> Parameters: 1(Long)
+<==    Columns: budget_id, user_id, name, amount, spent, start_date, end_date, status, created_at, updated_at
+<==        Row: 1, 999, 餐饮预算-Overrun-1768927161124, 500.0000, 0.0000, 2026-01-01, 2026-02-01, 1, 2026-01-21 00:39:21, 2026-01-21 00:39:21
+<==      Total: 1
+Releasing transactional SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@27646bb3]
+Fetched SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@27646bb3] from current transaction
+==>  Preparing: SELECT COALESCE(SUM(amount), 0) FROM fin_transaction WHERE budget_id = ? AND status = 1 AND type = 'expense' AND occurred_at >= ? AND occurred_at <= ?
+==> Parameters: 1(Long), 2026-01-01T00:00(LocalDateTime), 2026-02-01T23:59:59(LocalDateTime)
+<==    Columns: COALESCE(SUM(amount), 0)
+<==        Row: 600.0000
+<==      Total: 1
+Releasing transactional SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@27646bb3]
+Fetched SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@27646bb3] from current transaction
+==>  Preparing: UPDATE fin_budget SET spent=?,status=? WHERE status=1 AND (budget_id = ?)
+==> Parameters: 600.0000(BigDecimal), 3(Integer), 1(Long)
+<==    Updates: 1
+Releasing transactional SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@27646bb3]
+2026-01-21 00:39:21 - Transaction created: userId=999, type=expense, amount=600.00
+DEBUG: budgetId=1, userId=999
+Fetched SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@27646bb3] from current transaction
+==>  Preparing: SELECT * FROM fin_budget WHERE budget_id = ?
+==> Parameters: 1(Long)
+<==    Columns: budget_id, user_id, name, amount, spent, start_date, end_date, status, created_at, updated_at
+<==        Row: 1, 999, 餐饮预算-Overrun-1768927161124, 500.0000, 600.0000, 2026-01-01, 2026-02-01, 3, 2026-01-21 00:39:21, 2026-01-20 16:39:21
+<==      Total: 1
+Releasing transactional SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@27646bb3]
+✅ 预算超额测试通过！
+Transaction synchronization deregistering SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@27646bb3]
+Transaction synchronization closing SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@27646bb3]
+]]></system-out>
+  </testcase>
+  <testcase name="testBudgetCompleted" classname="com.mamoji.module.EndToEndFlowTest" time="0.312">
+    <system-out><![CDATA[Creating a new SqlSession
+Registering transaction synchronization for SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@6f35c40a]
+JDBC Connection [HikariProxyConnection@1261864194 wrapping com.mysql.cj.jdbc.ConnectionImpl@7e14cc79] will be managed by Spring
+==>  Preparing: SELECT COUNT( * ) AS total FROM fin_category WHERE status=1 AND (user_id = ? AND name = ? AND status = ?)
+==> Parameters: 999(Long), 工资-1768927161386(String), 1(Integer)
+<==    Columns: total
+<==        Row: 0
+<==      Total: 1
+Releasing transactional SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@6f35c40a]
+Fetched SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@6f35c40a] from current transaction
+==>  Preparing: INSERT INTO fin_category ( user_id, name, type, status, created_at, updated_at ) VALUES ( ?, ?, ?, ?, ?, ? )
+==> Parameters: 999(Long), 工资-1768927161386(String), income(String), 1(Integer), 2026-01-21T00:39:21.392191525(LocalDateTime), 2026-01-21T00:39:21.392261932(LocalDateTime)
+<==    Updates: 1
+Releasing transactional SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@6f35c40a]
+2026-01-21 00:39:21 - Category created: userId=999, name=工资-1768927161386
+Fetched SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@6f35c40a] from current transaction
+==>  Preparing: SELECT COUNT( * ) AS total FROM fin_category WHERE status=1 AND (user_id = ? AND name = ? AND status = ?)
+==> Parameters: 999(Long), 餐饮-1768927161394(String), 1(Integer)
+<==    Columns: total
+<==        Row: 0
+<==      Total: 1
+Releasing transactional SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@6f35c40a]
+Fetched SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@6f35c40a] from current transaction
+==>  Preparing: INSERT INTO fin_category ( user_id, name, type, status, created_at, updated_at ) VALUES ( ?, ?, ?, ?, ?, ? )
+==> Parameters: 999(Long), 餐饮-1768927161394(String), expense(String), 1(Integer), 2026-01-21T00:39:21.396389303(LocalDateTime), 2026-01-21T00:39:21.396411237(LocalDateTime)
+<==    Updates: 1
+Releasing transactional SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@6f35c40a]
+2026-01-21 00:39:21 - Category created: userId=999, name=餐饮-1768927161394
+Fetched SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@6f35c40a] from current transaction
+==>  Preparing: SELECT COUNT( * ) AS total FROM fin_category WHERE status=1 AND (user_id = ? AND name = ? AND status = ?)
+==> Parameters: 999(Long), 餐饮-Completed-1768927161398(String), 1(Integer)
+<==    Columns: total
+<==        Row: 0
+<==      Total: 1
+Releasing transactional SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@6f35c40a]
+Fetched SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@6f35c40a] from current transaction
+==>  Preparing: INSERT INTO fin_category ( user_id, name, type, status, created_at, updated_at ) VALUES ( ?, ?, ?, ?, ?, ? )
+==> Parameters: 999(Long), 餐饮-Completed-1768927161398(String), expense(String), 1(Integer), 2026-01-21T00:39:21.401049082(LocalDateTime), 2026-01-21T00:39:21.401068024(LocalDateTime)
+<==    Updates: 1
+Releasing transactional SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@6f35c40a]
+2026-01-21 00:39:21 - Category created: userId=999, name=餐饮-Completed-1768927161398
+Fetched SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@6f35c40a] from current transaction
+==>  Preparing: INSERT INTO fin_account ( user_id, name, account_type, currency, balance, include_in_total, status, created_at, updated_at ) VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ? )
+==> Parameters: 999(Long), 测试钱包-Completed-1768927161403(String), bank(String), CNY(String), 0(BigDecimal), 1(Integer), 1(Integer), 2026-01-21T00:39:21.403511177(LocalDateTime), 2026-01-21T00:39:21.403530628(LocalDateTime)
+<==    Updates: 1
+Releasing transactional SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@6f35c40a]
+2026-01-21 00:39:21 - Account created: userId=999, name=测试钱包-Completed-1768927161403
+Fetched SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@6f35c40a] from current transaction
+==>  Preparing: INSERT INTO fin_budget ( user_id, name, amount, spent, start_date, end_date, status, created_at, updated_at ) VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ? )
+==> Parameters: 999(Long), 餐饮预算-Completed-1768927161405(String), 500.00(BigDecimal), 0(BigDecimal), 2026-01-01(LocalDate), 2026-02-01(LocalDate), 1(Integer), 2026-01-21T00:39:21.406014582(LocalDateTime), 2026-01-21T00:39:21.406037057(LocalDateTime)
+<==    Updates: 1
+Releasing transactional SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@6f35c40a]
+2026-01-21 00:39:21 - Budget created: userId=999, name=餐饮预算-Completed-1768927161405
+Fetched SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@6f35c40a] from current transaction
+==>  Preparing: SELECT account_id,user_id,name,account_type,account_sub_type,currency,balance,include_in_total,status,created_at,updated_at FROM fin_account WHERE status=1 AND (user_id = ? AND status = ?) ORDER BY created_at DESC
+==> Parameters: 999(Long), 1(Integer)
+<==    Columns: account_id, user_id, name, account_type, account_sub_type, currency, balance, include_in_total, status, created_at, updated_at
+<==        Row: 1, 999, 测试钱包-Completed-1768927161403, bank, null, CNY, 0.0000, 1, 1, 2026-01-21 00:39:21, 2026-01-21 00:39:21
+<==      Total: 1
+Releasing transactional SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@6f35c40a]
+Fetched SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@6f35c40a] from current transaction
+==>  Preparing: SELECT category_id,user_id,name,type,status,created_at,updated_at FROM fin_category WHERE category_id=? AND status=1
+==> Parameters: 3(Long)
+<==    Columns: category_id, user_id, name, type, status, created_at, updated_at
+<==        Row: 3, 999, 餐饮-Completed-1768927161398, expense, 1, 2026-01-21 00:39:21, 2026-01-21 00:39:21
+<==      Total: 1
+Releasing transactional SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@6f35c40a]
+Fetched SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@6f35c40a] from current transaction
+==>  Preparing: INSERT INTO fin_transaction ( user_id, account_id, category_id, budget_id, type, amount, currency, occurred_at, note, status, created_at, updated_at ) VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? )
+==> Parameters: 999(Long), 1(Long), 3(Long), 1(Long), expense(String), 200.00(BigDecimal), CNY(String), 2026-01-21T00:39:21.408264002(LocalDateTime), 支出1(String), 1(Integer), 2026-01-21T00:39:21.412163(LocalDateTime), 2026-01-21T00:39:21.412190929(LocalDateTime)
+<==    Updates: 1
+Releasing transactional SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@6f35c40a]
+Fetched SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@6f35c40a] from current transaction
+==>  Preparing: UPDATE fin_account SET balance = balance + -200.00 WHERE status=1 AND (account_id = ?)
+==> Parameters: 1(Long)
+<==    Updates: 1
+Releasing transactional SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@6f35c40a]
+Fetched SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@6f35c40a] from current transaction
+==>  Preparing: SELECT * FROM fin_budget WHERE budget_id = ?
+==> Parameters: 1(Long)
+<==    Columns: budget_id, user_id, name, amount, spent, start_date, end_date, status, created_at, updated_at
+<==        Row: 1, 999, 餐饮预算-Completed-1768927161405, 500.0000, 0.0000, 2026-01-01, 2026-02-01, 1, 2026-01-21 00:39:21, 2026-01-21 00:39:21
+<==      Total: 1
+Releasing transactional SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@6f35c40a]
+Fetched SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@6f35c40a] from current transaction
+==>  Preparing: SELECT COALESCE(SUM(amount), 0) FROM fin_transaction WHERE budget_id = ? AND status = 1 AND type = 'expense' AND occurred_at >= ? AND occurred_at <= ?
+==> Parameters: 1(Long), 2026-01-01T00:00(LocalDateTime), 2026-02-01T23:59:59(LocalDateTime)
+<==    Columns: COALESCE(SUM(amount), 0)
+<==        Row: 200.0000
+<==      Total: 1
+Releasing transactional SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@6f35c40a]
+Fetched SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@6f35c40a] from current transaction
+==>  Preparing: UPDATE fin_budget SET spent=?,status=? WHERE status=1 AND (budget_id = ?)
+==> Parameters: 200.0000(BigDecimal), 1(Integer), 1(Long)
+<==    Updates: 1
+Releasing transactional SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@6f35c40a]
+2026-01-21 00:39:21 - Transaction created: userId=999, type=expense, amount=200.00
+Fetched SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@6f35c40a] from current transaction
+==>  Preparing: SELECT account_id,user_id,name,account_type,account_sub_type,currency,balance,include_in_total,status,created_at,updated_at FROM fin_account WHERE status=1 AND (user_id = ? AND status = ?) ORDER BY created_at DESC
+==> Parameters: 999(Long), 1(Integer)
+<==    Columns: account_id, user_id, name, account_type, account_sub_type, currency, balance, include_in_total, status, created_at, updated_at
+<==        Row: 1, 999, 测试钱包-Completed-1768927161403, bank, null, CNY, -200.0000, 1, 1, 2026-01-21 00:39:21, 2026-01-20 16:39:21
+<==      Total: 1
+Releasing transactional SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@6f35c40a]
+Fetched SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@6f35c40a] from current transaction
+==>  Preparing: SELECT category_id,user_id,name,type,status,created_at,updated_at FROM fin_category WHERE category_id=? AND status=1
+==> Parameters: 3(Long)
+<==    Columns: category_id, user_id, name, type, status, created_at, updated_at
+<==        Row: 3, 999, 餐饮-Completed-1768927161398, expense, 1, 2026-01-21 00:39:21, 2026-01-21 00:39:21
+<==      Total: 1
+Releasing transactional SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@6f35c40a]
+Fetched SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@6f35c40a] from current transaction
+==>  Preparing: INSERT INTO fin_transaction ( user_id, account_id, category_id, budget_id, type, amount, currency, occurred_at, note, status, created_at, updated_at ) VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? )
+==> Parameters: 999(Long), 1(Long), 3(Long), 1(Long), expense(String), 150.00(BigDecimal), CNY(String), 2026-01-21T00:39:21.424827470(LocalDateTime), 支出2(String), 1(Integer), 2026-01-21T00:39:21.428969841(LocalDateTime), 2026-01-21T00:39:21.429007533(LocalDateTime)
+<==    Updates: 1
+Releasing transactional SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@6f35c40a]
+Fetched SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@6f35c40a] from current transaction
+==>  Preparing: UPDATE fin_account SET balance = balance + -150.00 WHERE status=1 AND (account_id = ?)
+==> Parameters: 1(Long)
+<==    Updates: 1
+Releasing transactional SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@6f35c40a]
+Fetched SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@6f35c40a] from current transaction
+==>  Preparing: SELECT * FROM fin_budget WHERE budget_id = ?
+==> Parameters: 1(Long)
+<==    Columns: budget_id, user_id, name, amount, spent, start_date, end_date, status, created_at, updated_at
+<==        Row: 1, 999, 餐饮预算-Completed-1768927161405, 500.0000, 200.0000, 2026-01-01, 2026-02-01, 1, 2026-01-21 00:39:21, 2026-01-20 16:39:21
+<==      Total: 1
+Releasing transactional SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@6f35c40a]
+Fetched SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@6f35c40a] from current transaction
+==>  Preparing: SELECT COALESCE(SUM(amount), 0) FROM fin_transaction WHERE budget_id = ? AND status = 1 AND type = 'expense' AND occurred_at >= ? AND occurred_at <= ?
+==> Parameters: 1(Long), 2026-01-01T00:00(LocalDateTime), 2026-02-01T23:59:59(LocalDateTime)
+<==    Columns: COALESCE(SUM(amount), 0)
+<==        Row: 350.0000
+<==      Total: 1
+Releasing transactional SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@6f35c40a]
+Fetched SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@6f35c40a] from current transaction
+==>  Preparing: UPDATE fin_budget SET spent=?,status=? WHERE status=1 AND (budget_id = ?)
+==> Parameters: 350.0000(BigDecimal), 1(Integer), 1(Long)
+<==    Updates: 1
+Releasing transactional SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@6f35c40a]
+2026-01-21 00:39:21 - Transaction created: userId=999, type=expense, amount=150.00
+Fetched SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@6f35c40a] from current transaction
+==>  Preparing: SELECT account_id,user_id,name,account_type,account_sub_type,currency,balance,include_in_total,status,created_at,updated_at FROM fin_account WHERE status=1 AND (user_id = ? AND status = ?) ORDER BY created_at DESC
+==> Parameters: 999(Long), 1(Integer)
+<==    Columns: account_id, user_id, name, account_type, account_sub_type, currency, balance, include_in_total, status, created_at, updated_at
+<==        Row: 1, 999, 测试钱包-Completed-1768927161403, bank, null, CNY, -350.0000, 1, 1, 2026-01-21 00:39:21, 2026-01-20 16:39:21
+<==      Total: 1
+Releasing transactional SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@6f35c40a]
+Fetched SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@6f35c40a] from current transaction
+==>  Preparing: SELECT category_id,user_id,name,type,status,created_at,updated_at FROM fin_category WHERE category_id=? AND status=1
+==> Parameters: 3(Long)
+<==    Columns: category_id, user_id, name, type, status, created_at, updated_at
+<==        Row: 3, 999, 餐饮-Completed-1768927161398, expense, 1, 2026-01-21 00:39:21, 2026-01-21 00:39:21
+<==      Total: 1
+Releasing transactional SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@6f35c40a]
+Fetched SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@6f35c40a] from current transaction
+==>  Preparing: INSERT INTO fin_transaction ( user_id, account_id, category_id, budget_id, type, amount, currency, occurred_at, note, status, created_at, updated_at ) VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? )
+==> Parameters: 999(Long), 1(Long), 3(Long), 1(Long), expense(String), 150.00(BigDecimal), CNY(String), 2026-01-21T00:39:21.440126915(LocalDateTime), 支出3(String), 1(Integer), 2026-01-21T00:39:21.445409767(LocalDateTime), 2026-01-21T00:39:21.445498107(LocalDateTime)
+<==    Updates: 1
+Releasing transactional SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@6f35c40a]
+Fetched SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@6f35c40a] from current transaction
+==>  Preparing: UPDATE fin_account SET balance = balance + -150.00 WHERE status=1 AND (account_id = ?)
+==> Parameters: 1(Long)
+<==    Updates: 1
+Releasing transactional SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@6f35c40a]
+Fetched SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@6f35c40a] from current transaction
+==>  Preparing: SELECT * FROM fin_budget WHERE budget_id = ?
+==> Parameters: 1(Long)
+<==    Columns: budget_id, user_id, name, amount, spent, start_date, end_date, status, created_at, updated_at
+<==        Row: 1, 999, 餐饮预算-Completed-1768927161405, 500.0000, 350.0000, 2026-01-01, 2026-02-01, 1, 2026-01-21 00:39:21, 2026-01-20 16:39:21
+<==      Total: 1
+Releasing transactional SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@6f35c40a]
+Fetched SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@6f35c40a] from current transaction
+==>  Preparing: SELECT COALESCE(SUM(amount), 0) FROM fin_transaction WHERE budget_id = ? AND status = 1 AND type = 'expense' AND occurred_at >= ? AND occurred_at <= ?
+==> Parameters: 1(Long), 2026-01-01T00:00(LocalDateTime), 2026-02-01T23:59:59(LocalDateTime)
+<==    Columns: COALESCE(SUM(amount), 0)
+<==        Row: 500.0000
+<==      Total: 1
+Releasing transactional SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@6f35c40a]
+Fetched SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@6f35c40a] from current transaction
+==>  Preparing: UPDATE fin_budget SET spent=?,status=? WHERE status=1 AND (budget_id = ?)
+==> Parameters: 500.0000(BigDecimal), 2(Integer), 1(Long)
+<==    Updates: 1
+Releasing transactional SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@6f35c40a]
+2026-01-21 00:39:21 - Transaction created: userId=999, type=expense, amount=150.00
+Fetched SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@6f35c40a] from current transaction
+==>  Preparing: SELECT * FROM fin_budget WHERE budget_id = ?
+==> Parameters: 1(Long)
+<==    Columns: budget_id, user_id, name, amount, spent, start_date, end_date, status, created_at, updated_at
+<==        Row: 1, 999, 餐饮预算-Completed-1768927161405, 500.0000, 500.0000, 2026-01-01, 2026-02-01, 2, 2026-01-21 00:39:21, 2026-01-20 16:39:21
+<==      Total: 1
+Releasing transactional SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@6f35c40a]
+✅ 预算完成状态测试通过！
+Transaction synchronization deregistering SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@6f35c40a]
+Transaction synchronization closing SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@6f35c40a]
+]]></system-out>
+  </testcase>
+</testsuite>

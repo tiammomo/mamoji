@@ -90,10 +90,10 @@ CREATE TABLE `fin_account` (
   `account_id` BIGINT UNSIGNED PRIMARY KEY AUTO_INCREMENT COMMENT '账户ID',
   `user_id` BIGINT UNSIGNED NOT NULL COMMENT '用户ID',
   `name` VARCHAR(100) NOT NULL COMMENT '账户名称',
-  `type` VARCHAR(20) NOT NULL COMMENT '账户类型: cash, bank, credit, alipay, wechat',
-  `asset_category` VARCHAR(20) DEFAULT 'fund' COMMENT '资产类别: fund(资金), credit(信用), topup(充值), debt(负债)',
+  `account_type` VARCHAR(30) NOT NULL COMMENT '账户类型',
+  `account_sub_type` VARCHAR(30) COMMENT '子类型',
   `currency` VARCHAR(10) DEFAULT 'CNY' COMMENT '币种',
-  `balance` DECIMAL(18,2) DEFAULT 0.00 COMMENT '当前余额',
+  `balance` DECIMAL(18,2) DEFAULT 0.00 COMMENT '余额(负债类为负数)',
   `include_in_total` TINYINT DEFAULT 1 COMMENT '是否计入总资产: 1是, 0否',
   `status` TINYINT DEFAULT 1 COMMENT '状态: 0禁用, 1正常',
   `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
@@ -101,26 +101,29 @@ CREATE TABLE `fin_account` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='账户表';
 ```
 
-**账户类型说明：**
+**账户类型 (account_type) 说明：**
 
-| type | asset_category | 说明 |
-|------|----------------|------|
-| cash | fund | 现金 |
-| bank | fund | 储蓄卡 |
-| bank | credit | 信用卡 |
-| credit | credit | 信用卡（独立类型） |
-| alipay | fund/topup | 支付宝 |
-| wechat | fund/topup | 微信 |
+| account_type | account_sub_type | 说明 |
+|--------------|------------------|------|
+| bank | bank_primary | 一类银行卡 |
+| bank | bank_secondary | 二类银行卡 |
+| credit | credit_card | 信用卡 |
+| cash | - | 现金 |
+| alipay | - | 支付宝 |
+| wechat | - | 微信 |
+| gold | - | 黄金 |
+| fund_accumulation | - | 公积金 |
+| fund | - | 基金 |
+| stock | - | 股票 |
+| topup | - | 充值卡 |
+| debt | - | 借款 |
 
-**账户 type 枚举值：**
+**余额规则：**
+- 资产类（bank/credit/cash/alipay/wechat/gold/fund_accumulation/fund/stock/topup）：余额为正数
+- 负债类（credit/debt）：余额为负数
 
-| 值 | 说明 |
-|----|------|
-| cash | 现金 |
-| bank | 银行卡 |
-| credit | 信用卡 |
-| alipay | 支付宝 |
-| wechat | 微信 |
+**计入总资产：**
+- 默认计入（include_in_total = 1），可手动关闭
 
 ---
 
@@ -131,8 +134,8 @@ CREATE TABLE `fin_transaction` (
   `transaction_id` BIGINT UNSIGNED PRIMARY KEY AUTO_INCREMENT COMMENT '交易ID',
   `user_id` BIGINT UNSIGNED NOT NULL COMMENT '用户ID',
   `account_id` BIGINT UNSIGNED NOT NULL COMMENT '账户ID',
-  `category_id` BIGINT UNSIGNED COMMENT '分类ID',
-  `budget_id` BIGINT UNSIGNED COMMENT '预算ID',
+  `category_id` BIGINT UNSIGNED NOT NULL COMMENT '分类ID',
+  `budget_id` BIGINT UNSIGNED COMMENT '预算ID(可选)',
   `type` VARCHAR(20) NOT NULL COMMENT '类型: income, expense',
   `amount` DECIMAL(18,2) NOT NULL COMMENT '金额',
   `currency` VARCHAR(10) DEFAULT 'CNY' COMMENT '币种',
@@ -143,6 +146,10 @@ CREATE TABLE `fin_transaction` (
   `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='交易记录表';
 ```
+
+**字段说明：**
+- `category_id`：必填，记录交易的收支分类
+- `budget_id`：可选，关联预算便于统计
 
 ---
 
@@ -155,29 +162,42 @@ CREATE TABLE `fin_budget` (
   `name` VARCHAR(100) NOT NULL COMMENT '预算名称',
   `amount` DECIMAL(18,2) NOT NULL COMMENT '预算金额',
   `spent` DECIMAL(18,2) DEFAULT 0.00 COMMENT '已花费(实时更新)',
-  `period_type` VARCHAR(20) DEFAULT 'monthly' COMMENT '周期: monthly, yearly',
   `start_date` DATE NOT NULL COMMENT '开始日期',
   `end_date` DATE NOT NULL COMMENT '结束日期',
-  `status` TINYINT DEFAULT 1 COMMENT '状态: 0取消, 1进行中, 2已完成',
+  `status` TINYINT DEFAULT 1 COMMENT '状态: 0取消, 1进行中, 2已完成, 3超支',
   `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='预算表';
 ```
 
+**说明：**
+- 周期由 `start_date` 和 `end_date` 定义，支持任意时长（周、月、季度、年等）
+
+**预算状态：**
+
+| 状态 | 说明 | 触发条件 |
+|------|------|----------|
+| 0 | 已取消 | 用户手动取消 |
+| 1 | 进行中 | 正常进行中 |
+| 2 | 已完成 | 正常结束，未超支 |
+| 3 | 超支 | spent > amount |
+
 ---
 
-## 用户偏好设置
+### 6. sys_preference 用户偏好表
 
-用户偏好设置存储在 **前端 localStorage**：
-
-| 字段 | 默认值 | 说明 |
-|------|--------|------|
-| currency | CNY | 默认货币 |
-| timezone | Asia/Shanghai | 时区 |
-| dateFormat | YYYY-MM-DD | 日期格式 |
-| monthStart | 1 | 月度开始日期 |
-
-后端仅存储全局默认值，个性化设置由前端管理。
+```sql
+CREATE TABLE `sys_preference` (
+  `pref_id` BIGINT UNSIGNED PRIMARY KEY AUTO_INCREMENT COMMENT '偏好ID',
+  `user_id` BIGINT UNSIGNED NOT NULL UNIQUE COMMENT '用户ID',
+  `currency` VARCHAR(10) DEFAULT 'CNY' COMMENT '默认货币',
+  `timezone` VARCHAR(50) DEFAULT 'Asia/Shanghai' COMMENT '时区',
+  `date_format` VARCHAR(20) DEFAULT 'YYYY-MM-DD' COMMENT '日期格式',
+  `month_start` INT DEFAULT 1 COMMENT '月度开始日期',
+  `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='用户偏好表';
+```
 
 ---
 
@@ -193,6 +213,8 @@ CREATE TABLE `fin_budget` (
 | fin_category | user_id, type | INDEX | 用户+类型复合索引 |
 | fin_account | user_id | INDEX | 用户索引 |
 | fin_account | status | INDEX | 状态索引 |
+| fin_account | user_id, status | INDEX | 用户+状态复合索引 |
+| fin_account | account_type | INDEX | 账户类型索引 |
 | fin_transaction | user_id | INDEX | 用户索引 |
 | fin_transaction | account_id | INDEX | 账户索引 |
 | fin_transaction | category_id | INDEX | 分类索引 |
@@ -203,6 +225,28 @@ CREATE TABLE `fin_budget` (
 | fin_budget | status | INDEX | 状态索引 |
 | fin_budget | user_id, status | INDEX | 用户+状态复合索引 |
 | fin_budget | user_id, start_date, end_date | INDEX | 周期查询复合索引 |
+| sys_preference | user_id | UNIQUE | 用户唯一索引 |
+
+---
+
+## 软删除策略
+
+系统采用**软删除**策略，通过 `status` 字段控制数据的有效性：
+
+| 表名 | status=0 含义 | status=1 含义 |
+|------|---------------|---------------|
+| sys_user | 禁用 | 正常 |
+| fin_category | 禁用 | 正常 |
+| fin_account | 禁用 | 正常 |
+| fin_transaction | 已删除 | 正常 |
+| fin_budget | 已取消 | 进行中/已完成/超支 |
+
+**查询数据时需过滤** `status = 1`（或 `status != 0`）：
+
+```sql
+-- 查询有效数据
+SELECT * FROM fin_transaction WHERE user_id = ? AND status = 1;
+```
 
 ---
 
@@ -238,8 +282,8 @@ INSERT INTO fin_category (name, type) VALUES
 
 | 值 | 说明 | 适用表 |
 |----|------|--------|
-| 0 | 禁用/删除 | sys_user, fin_category, fin_account, fin_transaction, fin_budget |
-| 1 | 正常 | sys_user, fin_category, fin_account, fin_transaction, fin_budget |
+| 0 | 禁用/删除/取消 | sys_user, fin_category, fin_account, fin_transaction, fin_budget |
+| 1 | 正常/进行中 | sys_user, fin_category, fin_account, fin_transaction, fin_budget |
 
 ### role 用户角色
 
@@ -256,21 +300,30 @@ INSERT INTO fin_category (name, type) VALUES
 | income | 收入 | fin_category, fin_transaction |
 | expense | 支出 | fin_category, fin_transaction |
 
-### asset_category 资产类别
+### account_type 账户类型
 
-| 值 | 说明 | 典型账户类型 |
-|----|------|-------------|
-| fund | 资金账户 | cash, bank (储蓄), alipay, wechat |
-| credit | 信用账户 | bank (信用卡) |
-| topup | 充值账户 | alipay (余额), wechat (零钱) |
-| debt | 负债账户 | 贷款、借款 |
+| 值 | account_sub_type | 说明 |
+|----|------------------|------|
+| bank | bank_primary / bank_secondary | 银行卡 |
+| credit | credit_card | 信用卡 |
+| cash | - | 现金 |
+| alipay | - | 支付宝 |
+| wechat | - | 微信 |
+| gold | - | 黄金 |
+| fund_accumulation | - | 公积金 |
+| fund | - | 基金 |
+| stock | - | 股票 |
+| topup | - | 充值卡 |
+| debt | - | 借款 |
 
-### period_type 周期类型
+### budget_status 预算状态
 
-| 值 | 说明 |
-|----|------|
-| monthly | 月度预算 |
-| yearly | 年度预算 |
+| 值 | 说明 | 触发条件 |
+|----|------|----------|
+| 0 | 已取消 | 用户手动取消 |
+| 1 | 进行中 | 正常进行中 |
+| 2 | 已完成 | 正常结束，未超支 |
+| 3 | 超支 | spent > amount |
 
 ### include_in_total 是否计入总资产
 
@@ -278,14 +331,6 @@ INSERT INTO fin_category (name, type) VALUES
 |----|------|
 | 0 | 不计入 |
 | 1 | 计入 |
-
-### budget_status 预算状态
-
-| 值 | 说明 |
-|----|------|
-| 0 | 已取消 |
-| 1 | 进行中 |
-| 2 | 已完成 |
 
 ### 用户角色权限
 
