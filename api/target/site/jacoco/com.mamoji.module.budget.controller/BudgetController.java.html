@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>BudgetController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">mamoji-api</a> &gt; <a href="index.source.html" class="el_package">com.mamoji.module.budget.controller</a> &gt; <span class="el_source">BudgetController.java</span></div><h1>BudgetController.java</h1><pre class="source lang-java linenums">package com.mamoji.module.budget.controller;
+
+import com.mamoji.common.result.Result;
+import com.mamoji.module.budget.dto.BudgetDTO;
+import com.mamoji.module.budget.dto.BudgetVO;
+import com.mamoji.module.budget.service.BudgetService;
+import com.mamoji.security.UserPrincipal;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+
+/**
+ * Budget Controller
+ */
+@RestController
+@RequestMapping(&quot;/api/v1/budgets&quot;)
+@RequiredArgsConstructor
+public class BudgetController {
+
+    private final BudgetService budgetService;
+
+    /**
+     * Get all budgets for current user
+     */
+    @GetMapping
+    public Result&lt;List&lt;BudgetVO&gt;&gt; listBudgets(
+            @AuthenticationPrincipal UserPrincipal user,
+            @RequestParam(required = false, defaultValue = &quot;false&quot;) Boolean activeOnly) {
+        List&lt;BudgetVO&gt; budgets;
+<span class="fc bfc" id="L33" title="All 2 branches covered.">        if (activeOnly) {</span>
+<span class="fc" id="L34">            budgets = budgetService.listActiveBudgets(user.userId());</span>
+<span class="fc" id="L35">        } else {</span>
+<span class="fc" id="L36">            budgets = budgetService.listBudgets(user.userId());</span>
+        }
+<span class="fc" id="L38">        return Result.success(budgets);</span>
+    }
+
+    /**
+     * Get budget by ID
+     */
+    @GetMapping(&quot;/{id}&quot;)
+    public Result&lt;BudgetVO&gt; getBudget(
+            @AuthenticationPrincipal UserPrincipal user,
+            @PathVariable Long id) {
+<span class="fc" id="L48">        BudgetVO budget = budgetService.getBudget(user.userId(), id);</span>
+<span class="fc" id="L49">        return Result.success(budget);</span>
+    }
+
+    /**
+     * Create a new budget
+     */
+    @PostMapping
+    public Result&lt;Long&gt; createBudget(
+            @AuthenticationPrincipal UserPrincipal user,
+            @Valid @RequestBody BudgetDTO request) {
+<span class="fc" id="L59">        Long budgetId = budgetService.createBudget(user.userId(), request);</span>
+<span class="fc" id="L60">        return Result.success(budgetId);</span>
+    }
+
+    /**
+     * Update a budget
+     */
+    @PutMapping(&quot;/{id}&quot;)
+    public Result&lt;Void&gt; updateBudget(
+            @AuthenticationPrincipal UserPrincipal user,
+            @PathVariable Long id,
+            @Valid @RequestBody BudgetDTO request) {
+<span class="fc" id="L71">        budgetService.updateBudget(user.userId(), id, request);</span>
+<span class="fc" id="L72">        return Result.success();</span>
+    }
+
+    /**
+     * Delete a budget
+     */
+    @DeleteMapping(&quot;/{id}&quot;)
+    public Result&lt;Void&gt; deleteBudget(
+            @AuthenticationPrincipal UserPrincipal user,
+            @PathVariable Long id) {
+<span class="fc" id="L82">        budgetService.deleteBudget(user.userId(), id);</span>
+<span class="fc" id="L83">        return Result.success();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

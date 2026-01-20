@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ReportController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">mamoji-api</a> &gt; <a href="index.source.html" class="el_package">com.mamoji.module.report.controller</a> &gt; <span class="el_source">ReportController.java</span></div><h1>ReportController.java</h1><pre class="source lang-java linenums">package com.mamoji.module.report.controller;
+
+import com.mamoji.common.result.Result;
+import com.mamoji.module.report.dto.CategoryReportVO;
+import com.mamoji.module.report.dto.ReportQueryDTO;
+import com.mamoji.module.report.dto.SummaryVO;
+import com.mamoji.module.report.service.ReportService;
+import com.mamoji.security.UserPrincipal;
+import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.*;
+
+import java.time.LocalDate;
+import java.util.List;
+import java.util.Map;
+
+/**
+ * Report Controller
+ */
+@RestController
+@RequestMapping(&quot;/api/v1/reports&quot;)
+@RequiredArgsConstructor
+public class ReportController {
+
+    private final ReportService reportService;
+
+    /**
+     * Get summary report (total income, expense, net income)
+     */
+    @GetMapping(&quot;/summary&quot;)
+    public Result&lt;SummaryVO&gt; getSummary(
+            @AuthenticationPrincipal UserPrincipal user,
+            @RequestParam(required = false) LocalDate startDate,
+            @RequestParam(required = false) LocalDate endDate) {
+<span class="nc" id="L35">        ReportQueryDTO request = ReportQueryDTO.builder()</span>
+<span class="nc" id="L36">                .startDate(startDate)</span>
+<span class="nc bnc" id="L37" title="All 2 branches missed.">                .endDate(endDate != null ? endDate : LocalDate.now())</span>
+<span class="nc" id="L38">                .build();</span>
+<span class="nc" id="L39">        SummaryVO summary = reportService.getSummary(user.userId(), request);</span>
+<span class="nc" id="L40">        return Result.success(summary);</span>
+    }
+
+    /**
+     * Get income/expense by category
+     */
+    @GetMapping(&quot;/income-expense&quot;)
+    public Result&lt;List&lt;CategoryReportVO&gt;&gt; getIncomeExpenseReport(
+            @AuthenticationPrincipal UserPrincipal user,
+            @RequestParam(required = false) LocalDate startDate,
+            @RequestParam(required = false) LocalDate endDate) {
+<span class="nc" id="L51">        ReportQueryDTO request = ReportQueryDTO.builder()</span>
+<span class="nc bnc" id="L52" title="All 2 branches missed.">                .startDate(startDate != null ? startDate : LocalDate.now().withDayOfMonth(1))</span>
+<span class="nc bnc" id="L53" title="All 2 branches missed.">                .endDate(endDate != null ? endDate : LocalDate.now())</span>
+<span class="nc" id="L54">                .build();</span>
+<span class="nc" id="L55">        List&lt;CategoryReportVO&gt; report = reportService.getIncomeExpenseReport(user.userId(), request);</span>
+<span class="nc" id="L56">        return Result.success(report);</span>
+    }
+
+    /**
+     * Get monthly trend report
+     */
+    @GetMapping(&quot;/monthly&quot;)
+    public Result&lt;Map&lt;String, Object&gt;&gt; getMonthlyReport(
+            @AuthenticationPrincipal UserPrincipal user,
+            @RequestParam Integer year,
+            @RequestParam Integer month) {
+<span class="nc" id="L67">        Map&lt;String, Object&gt; report = reportService.getMonthlyTrend(user.userId(), year, month);</span>
+<span class="nc" id="L68">        return Result.success(report);</span>
+    }
+
+    /**
+     * Get balance sheet (assets and liabilities)
+     */
+    @GetMapping(&quot;/balance-sheet&quot;)
+    public Result&lt;Map&lt;String, Object&gt;&gt; getBalanceSheet(@AuthenticationPrincipal UserPrincipal user) {
+<span class="nc" id="L76">        Map&lt;String, Object&gt; report = reportService.getBalanceSheet(user.userId());</span>
+<span class="nc" id="L77">        return Result.success(report);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

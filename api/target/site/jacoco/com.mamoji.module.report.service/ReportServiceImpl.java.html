@@ -1,0 +1,247 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ReportServiceImpl.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">mamoji-api</a> &gt; <a href="index.source.html" class="el_package">com.mamoji.module.report.service</a> &gt; <span class="el_source">ReportServiceImpl.java</span></div><h1>ReportServiceImpl.java</h1><pre class="source lang-java linenums">package com.mamoji.module.report.service;
+
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.mamoji.module.account.entity.FinAccount;
+import com.mamoji.module.account.mapper.FinAccountMapper;
+import com.mamoji.module.category.entity.FinCategory;
+import com.mamoji.module.category.mapper.FinCategoryMapper;
+import com.mamoji.module.report.dto.CategoryReportVO;
+import com.mamoji.module.report.dto.ReportQueryDTO;
+import com.mamoji.module.report.dto.SummaryVO;
+import com.mamoji.module.transaction.entity.FinTransaction;
+import com.mamoji.module.transaction.mapper.FinTransactionMapper;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.time.LocalDate;
+import java.util.*;
+
+/**
+ * Report Service Implementation
+ */
+<span class="fc" id="L25">@Slf4j</span>
+@Service
+@RequiredArgsConstructor
+public class ReportServiceImpl implements ReportService {
+
+    private final FinTransactionMapper transactionMapper;
+    private final FinAccountMapper accountMapper;
+    private final FinCategoryMapper categoryMapper;
+
+    @Override
+    public SummaryVO getSummary(Long userId, ReportQueryDTO request) {
+<span class="pc bpc" id="L36" title="1 of 2 branches missed.">        LocalDate startDate = request.getStartDate() != null ? request.getStartDate() : LocalDate.now().withDayOfMonth(1);</span>
+<span class="pc bpc" id="L37" title="1 of 2 branches missed.">        LocalDate endDate = request.getEndDate() != null ? request.getEndDate() : LocalDate.now();</span>
+
+        // Calculate total income using custom query
+<span class="fc" id="L40">        BigDecimal totalIncome = transactionMapper.sumAmountByUserTypeAndDateRange(</span>
+<span class="fc" id="L41">                userId, &quot;income&quot;, startDate.atStartOfDay(), endDate.atTime(23, 59, 59)</span>
+        );
+<span class="pc bpc" id="L43" title="1 of 2 branches missed.">        if (totalIncome == null) {</span>
+<span class="nc" id="L44">            totalIncome = BigDecimal.ZERO;</span>
+        }
+
+        // Calculate total expense using custom query
+<span class="fc" id="L48">        BigDecimal totalExpense = transactionMapper.sumAmountByUserTypeAndDateRange(</span>
+<span class="fc" id="L49">                userId, &quot;expense&quot;, startDate.atStartOfDay(), endDate.atTime(23, 59, 59)</span>
+        );
+<span class="pc bpc" id="L51" title="1 of 2 branches missed.">        if (totalExpense == null) {</span>
+<span class="nc" id="L52">            totalExpense = BigDecimal.ZERO;</span>
+        }
+
+        // Get transaction count
+<span class="fc" id="L56">        Long transactionCount = transactionMapper.selectCount(</span>
+<span class="fc" id="L57">                new LambdaQueryWrapper&lt;FinTransaction&gt;()</span>
+<span class="fc" id="L58">                        .eq(FinTransaction::getUserId, userId)</span>
+<span class="fc" id="L59">                        .eq(FinTransaction::getStatus, 1)</span>
+<span class="fc" id="L60">                        .ge(FinTransaction::getOccurredAt, startDate.atStartOfDay())</span>
+<span class="fc" id="L61">                        .le(FinTransaction::getOccurredAt, endDate.atTime(23, 59, 59))</span>
+        );
+
+        // Get account count
+<span class="fc" id="L65">        Long accountCount = accountMapper.selectCount(</span>
+<span class="fc" id="L66">                new LambdaQueryWrapper&lt;FinAccount&gt;()</span>
+<span class="fc" id="L67">                        .eq(FinAccount::getUserId, userId)</span>
+<span class="fc" id="L68">                        .eq(FinAccount::getStatus, 1)</span>
+        );
+
+<span class="fc" id="L71">        return SummaryVO.builder()</span>
+<span class="fc" id="L72">                .totalIncome(totalIncome)</span>
+<span class="fc" id="L73">                .totalExpense(totalExpense)</span>
+<span class="fc" id="L74">                .netIncome(totalIncome.subtract(totalExpense))</span>
+<span class="pc bpc" id="L75" title="1 of 2 branches missed.">                .transactionCount(transactionCount != null ? transactionCount.intValue() : 0)</span>
+<span class="pc bpc" id="L76" title="1 of 2 branches missed.">                .accountCount(accountCount != null ? accountCount.intValue() : 0)</span>
+<span class="fc" id="L77">                .build();</span>
+    }
+
+    @Override
+    public List&lt;CategoryReportVO&gt; getIncomeExpenseReport(Long userId, ReportQueryDTO request) {
+<span class="pc bpc" id="L82" title="1 of 2 branches missed.">        LocalDate startDate = request.getStartDate() != null ? request.getStartDate() : LocalDate.now().withDayOfMonth(1);</span>
+<span class="pc bpc" id="L83" title="1 of 2 branches missed.">        LocalDate endDate = request.getEndDate() != null ? request.getEndDate() : LocalDate.now();</span>
+
+        // Get all transactions in the period
+<span class="fc" id="L86">        List&lt;FinTransaction&gt; transactions = transactionMapper.selectList(</span>
+<span class="fc" id="L87">                new LambdaQueryWrapper&lt;FinTransaction&gt;()</span>
+<span class="fc" id="L88">                        .eq(FinTransaction::getUserId, userId)</span>
+<span class="fc" id="L89">                        .eq(FinTransaction::getStatus, 1)</span>
+<span class="fc" id="L90">                        .ge(FinTransaction::getOccurredAt, startDate.atStartOfDay())</span>
+<span class="fc" id="L91">                        .le(FinTransaction::getOccurredAt, endDate.atTime(23, 59, 59))</span>
+        );
+
+        // Group by category
+<span class="fc" id="L95">        Map&lt;Long, CategoryReportVO&gt; categoryMap = new LinkedHashMap&lt;&gt;();</span>
+<span class="fc" id="L96">        BigDecimal totalIncome = BigDecimal.ZERO;</span>
+<span class="fc" id="L97">        BigDecimal totalExpense = BigDecimal.ZERO;</span>
+
+<span class="fc bfc" id="L99" title="All 2 branches covered.">        for (FinTransaction tx : transactions) {</span>
+<span class="fc" id="L100">            Long categoryId = tx.getCategoryId();</span>
+<span class="pc bpc" id="L101" title="1 of 2 branches missed.">            if (categoryId == null) {</span>
+<span class="nc" id="L102">                continue;</span>
+            }
+
+<span class="pc bpc" id="L105" title="1 of 2 branches missed.">            BigDecimal amount = tx.getAmount() != null ? tx.getAmount() : BigDecimal.ZERO;</span>
+
+<span class="fc" id="L107">            CategoryReportVO vo = categoryMap.computeIfAbsent(categoryId, k -&gt; {</span>
+<span class="fc" id="L108">                FinCategory category = categoryMapper.selectById(k);</span>
+<span class="fc" id="L109">                return CategoryReportVO.builder()</span>
+<span class="fc" id="L110">                        .categoryId(k)</span>
+<span class="pc bpc" id="L111" title="1 of 2 branches missed.">                        .categoryName(category != null ? category.getName() : &quot;未知&quot;)</span>
+<span class="fc" id="L112">                        .type(tx.getType())</span>
+<span class="fc" id="L113">                        .amount(BigDecimal.ZERO)</span>
+<span class="fc" id="L114">                        .count(0)</span>
+<span class="fc" id="L115">                        .build();</span>
+            });
+
+<span class="fc" id="L118">            vo.setAmount(vo.getAmount().add(amount));</span>
+<span class="fc" id="L119">            vo.setCount(vo.getCount() + 1);</span>
+
+<span class="fc bfc" id="L121" title="All 2 branches covered.">            if (&quot;income&quot;.equals(tx.getType())) {</span>
+<span class="fc" id="L122">                totalIncome = totalIncome.add(amount);</span>
+<span class="fc" id="L123">            } else {</span>
+<span class="fc" id="L124">                totalExpense = totalExpense.add(amount);</span>
+            }
+        }
+
+        // Calculate percentage
+<span class="fc bfc" id="L129" title="All 2 branches covered.">        for (CategoryReportVO vo : categoryMap.values()) {</span>
+<span class="fc bfc" id="L130" title="All 2 branches covered.">            BigDecimal total = &quot;income&quot;.equals(vo.getType()) ? totalIncome : totalExpense;</span>
+<span class="pc bpc" id="L131" title="1 of 2 branches missed.">            if (total.compareTo(BigDecimal.ZERO) &gt; 0) {</span>
+<span class="fc" id="L132">                Double percentage = vo.getAmount()</span>
+<span class="fc" id="L133">                        .multiply(BigDecimal.valueOf(100))</span>
+<span class="fc" id="L134">                        .divide(total, 2, RoundingMode.HALF_UP)</span>
+<span class="fc" id="L135">                        .doubleValue();</span>
+<span class="fc" id="L136">                vo.setPercentage(percentage);</span>
+<span class="fc" id="L137">            } else {</span>
+<span class="nc" id="L138">                vo.setPercentage(0.0);</span>
+            }
+        }
+
+<span class="fc" id="L142">        return new ArrayList&lt;&gt;(categoryMap.values());</span>
+    }
+
+    @Override
+    public Map&lt;String, Object&gt; getMonthlyTrend(Long userId, Integer year, Integer month) {
+<span class="fc" id="L147">        LocalDate startDate = LocalDate.of(year, month, 1);</span>
+<span class="fc" id="L148">        LocalDate endDate = startDate.plusMonths(1).minusDays(1);</span>
+
+<span class="fc" id="L150">        List&lt;FinTransaction&gt; transactions = transactionMapper.selectList(</span>
+<span class="fc" id="L151">                new LambdaQueryWrapper&lt;FinTransaction&gt;()</span>
+<span class="fc" id="L152">                        .eq(FinTransaction::getUserId, userId)</span>
+<span class="fc" id="L153">                        .eq(FinTransaction::getStatus, 1)</span>
+<span class="fc" id="L154">                        .ge(FinTransaction::getOccurredAt, startDate.atStartOfDay())</span>
+<span class="fc" id="L155">                        .le(FinTransaction::getOccurredAt, endDate.atTime(23, 59, 59))</span>
+        );
+
+        // Group by day
+<span class="fc" id="L159">        Map&lt;Integer, Map&lt;String, BigDecimal&gt;&gt; dailyMap = new LinkedHashMap&lt;&gt;();</span>
+<span class="fc" id="L160">        BigDecimal totalIncome = BigDecimal.ZERO;</span>
+<span class="fc" id="L161">        BigDecimal totalExpense = BigDecimal.ZERO;</span>
+
+<span class="fc bfc" id="L163" title="All 2 branches covered.">        for (FinTransaction tx : transactions) {</span>
+<span class="fc" id="L164">            int day = tx.getOccurredAt().getDayOfMonth();</span>
+<span class="pc bpc" id="L165" title="1 of 2 branches missed.">            BigDecimal amount = tx.getAmount() != null ? tx.getAmount() : BigDecimal.ZERO;</span>
+
+<span class="fc" id="L167">            dailyMap.computeIfAbsent(day, k -&gt; new HashMap&lt;&gt;())</span>
+<span class="fc" id="L168">                    .merge(tx.getType(), amount, BigDecimal::add);</span>
+
+<span class="fc bfc" id="L170" title="All 2 branches covered.">            if (&quot;income&quot;.equals(tx.getType())) {</span>
+<span class="fc" id="L171">                totalIncome = totalIncome.add(amount);</span>
+<span class="fc" id="L172">            } else {</span>
+<span class="fc" id="L173">                totalExpense = totalExpense.add(amount);</span>
+            }
+        }
+
+        // Build result
+<span class="fc" id="L178">        List&lt;Map&lt;String, Object&gt;&gt; dailyData = new ArrayList&lt;&gt;();</span>
+<span class="fc bfc" id="L179" title="All 2 branches covered.">        for (int day = 1; day &lt;= endDate.getDayOfMonth(); day++) {</span>
+<span class="fc" id="L180">            Map&lt;String, BigDecimal&gt; dayData = dailyMap.getOrDefault(day, Map.of(&quot;income&quot;, BigDecimal.ZERO, &quot;expense&quot;, BigDecimal.ZERO));</span>
+<span class="fc" id="L181">            dailyData.add(Map.of(</span>
+<span class="fc" id="L182">                    &quot;day&quot;, day,</span>
+<span class="fc" id="L183">                    &quot;income&quot;, dayData.getOrDefault(&quot;income&quot;, BigDecimal.ZERO),</span>
+<span class="fc" id="L184">                    &quot;expense&quot;, dayData.getOrDefault(&quot;expense&quot;, BigDecimal.ZERO)</span>
+            ));
+        }
+
+<span class="fc" id="L188">        return Map.of(</span>
+<span class="fc" id="L189">                &quot;year&quot;, year,</span>
+<span class="fc" id="L190">                &quot;month&quot;, month,</span>
+<span class="fc" id="L191">                &quot;totalIncome&quot;, totalIncome,</span>
+<span class="fc" id="L192">                &quot;totalExpense&quot;, totalExpense,</span>
+<span class="fc" id="L193">                &quot;netIncome&quot;, totalIncome.subtract(totalExpense),</span>
+<span class="fc" id="L194">                &quot;dailyData&quot;, dailyData</span>
+        );
+    }
+
+    @Override
+    public Map&lt;String, Object&gt; getBalanceSheet(Long userId) {
+<span class="fc" id="L200">        List&lt;FinAccount&gt; accounts = accountMapper.selectList(</span>
+<span class="fc" id="L201">                new LambdaQueryWrapper&lt;FinAccount&gt;()</span>
+<span class="fc" id="L202">                        .eq(FinAccount::getUserId, userId)</span>
+<span class="fc" id="L203">                        .eq(FinAccount::getStatus, 1)</span>
+        );
+
+<span class="fc" id="L206">        BigDecimal totalAssets = BigDecimal.ZERO;</span>
+<span class="fc" id="L207">        BigDecimal totalLiabilities = BigDecimal.ZERO;</span>
+
+<span class="fc" id="L209">        List&lt;Map&lt;String, Object&gt;&gt; assetList = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L210">        List&lt;Map&lt;String, Object&gt;&gt; liabilityList = new ArrayList&lt;&gt;();</span>
+
+<span class="fc bfc" id="L212" title="All 2 branches covered.">        for (FinAccount account : accounts) {</span>
+<span class="pc bpc" id="L213" title="1 of 2 branches missed.">            BigDecimal balance = account.getBalance() != null ? account.getBalance().abs() : BigDecimal.ZERO;</span>
+<span class="pc bpc" id="L214" title="1 of 2 branches missed.">            Integer includeInTotal = account.getIncludeInTotal() != null ? account.getIncludeInTotal() : 1;</span>
+
+<span class="pc bpc" id="L216" title="1 of 2 branches missed.">            if (includeInTotal == 0) {</span>
+<span class="nc" id="L217">                continue;</span>
+            }
+
+<span class="fc" id="L220">            String type = account.getAccountType();</span>
+<span class="fc" id="L221">            Map&lt;String, Object&gt; item = Map.of(</span>
+<span class="fc" id="L222">                    &quot;accountId&quot;, account.getAccountId(),</span>
+<span class="fc" id="L223">                    &quot;name&quot;, account.getName(),</span>
+<span class="fc" id="L224">                    &quot;type&quot;, type,</span>
+<span class="pc bpc" id="L225" title="1 of 2 branches missed.">                    &quot;subType&quot;, account.getAccountSubType() != null ? account.getAccountSubType() : &quot;&quot;,</span>
+<span class="fc" id="L226">                    &quot;balance&quot;, balance</span>
+            );
+
+<span class="pc bpc" id="L229" title="1 of 4 branches missed.">            if (&quot;credit&quot;.equals(type) || &quot;debt&quot;.equals(type)) {</span>
+<span class="fc" id="L230">                totalLiabilities = totalLiabilities.add(balance);</span>
+<span class="fc" id="L231">                liabilityList.add(item);</span>
+<span class="fc" id="L232">            } else {</span>
+<span class="fc" id="L233">                totalAssets = totalAssets.add(balance);</span>
+<span class="fc" id="L234">                assetList.add(item);</span>
+            }
+        }
+
+<span class="fc" id="L238">        return Map.of(</span>
+<span class="fc" id="L239">                &quot;totalAssets&quot;, totalAssets,</span>
+<span class="fc" id="L240">                &quot;totalLiabilities&quot;, totalLiabilities,</span>
+<span class="fc" id="L241">                &quot;netAssets&quot;, totalAssets.subtract(totalLiabilities),</span>
+<span class="fc" id="L242">                &quot;assets&quot;, assetList,</span>
+<span class="fc" id="L243">                &quot;liabilities&quot;, liabilityList</span>
+        );
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>PageResult.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">mamoji-api</a> &gt; <a href="index.source.html" class="el_package">com.mamoji.common.result</a> &gt; <span class="el_source">PageResult.java</span></div><h1>PageResult.java</h1><pre class="source lang-java linenums">package com.mamoji.common.result;
+
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+import java.io.Serial;
+import java.io.Serializable;
+import java.util.List;
+
+/**
+ * Pagination Result
+ */
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+public class PageResult&lt;T&gt; implements Serializable {
+
+    @Serial
+    private static final long serialVersionUID = 1L;
+
+    /**
+     * Current page number
+     */
+    private Long current;
+
+    /**
+     * Page size
+     */
+    private Long size;
+
+    /**
+     * Total records
+     */
+    private Long total;
+
+    /**
+     * Total pages
+     */
+    private Long pages;
+
+    /**
+     * Data list
+     */
+    private List&lt;T&gt; records;
+
+    /**
+     * Create a page result
+     */
+    public static &lt;T&gt; PageResult&lt;T&gt; of(Long current, Long size, Long total, List&lt;T&gt; records) {
+<span class="fc" id="L53">        Long pages = (total + size - 1) / size;</span>
+<span class="fc" id="L54">        return PageResult.&lt;T&gt;builder()</span>
+<span class="fc" id="L55">                .current(current)</span>
+<span class="fc" id="L56">                .size(size)</span>
+<span class="fc" id="L57">                .total(total)</span>
+<span class="fc" id="L58">                .pages(pages)</span>
+<span class="fc" id="L59">                .records(records)</span>
+<span class="fc" id="L60">                .build();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

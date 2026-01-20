@@ -1,0 +1,257 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>TransactionServiceImpl.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">mamoji-api</a> &gt; <a href="index.source.html" class="el_package">com.mamoji.module.transaction.service</a> &gt; <span class="el_source">TransactionServiceImpl.java</span></div><h1>TransactionServiceImpl.java</h1><pre class="source lang-java linenums">package com.mamoji.module.transaction.service;
+
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.mamoji.common.exception.BusinessException;
+import com.mamoji.common.result.PageResult;
+import com.mamoji.common.result.ResultCode;
+import com.mamoji.module.account.entity.FinAccount;
+import com.mamoji.module.account.service.AccountService;
+import com.mamoji.module.budget.service.BudgetService;
+import com.mamoji.module.category.entity.FinCategory;
+import com.mamoji.module.category.mapper.FinCategoryMapper;
+import com.mamoji.module.transaction.dto.TransactionDTO;
+import com.mamoji.module.transaction.dto.TransactionQueryDTO;
+import com.mamoji.module.transaction.dto.TransactionVO;
+import com.mamoji.module.transaction.entity.FinTransaction;
+import com.mamoji.module.transaction.mapper.FinTransactionMapper;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.BeanUtils;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.List;
+
+/**
+ * Transaction Service Implementation
+ */
+<span class="fc" id="L35">@Slf4j</span>
+@Service
+@RequiredArgsConstructor
+public class TransactionServiceImpl extends ServiceImpl&lt;FinTransactionMapper, FinTransaction&gt;
+        implements TransactionService {
+
+    private final FinCategoryMapper categoryMapper;
+    private final AccountService accountService;
+    private final BudgetService budgetService;
+
+    @Override
+    public PageResult&lt;TransactionVO&gt; listTransactions(Long userId, TransactionQueryDTO request) {
+<span class="fc" id="L47">        Page&lt;FinTransaction&gt; page = new Page&lt;&gt;(</span>
+<span class="pc bpc" id="L48" title="1 of 2 branches missed.">                request.getCurrent() != null ? request.getCurrent() : 1L,</span>
+<span class="pc bpc" id="L49" title="1 of 2 branches missed.">                request.getSize() != null ? request.getSize() : 20L</span>
+        );
+
+<span class="fc" id="L52">        LambdaQueryWrapper&lt;FinTransaction&gt; wrapper = new LambdaQueryWrapper&lt;FinTransaction&gt;()</span>
+<span class="fc" id="L53">                .eq(FinTransaction::getUserId, userId)</span>
+<span class="fc" id="L54">                .eq(FinTransaction::getStatus, 1);</span>
+
+        // Apply filters
+<span class="pc bpc" id="L57" title="3 of 4 branches missed.">        if (request.getType() != null &amp;&amp; !request.getType().isEmpty()) {</span>
+<span class="nc" id="L58">            wrapper.eq(FinTransaction::getType, request.getType());</span>
+        }
+<span class="pc bpc" id="L60" title="1 of 2 branches missed.">        if (request.getAccountId() != null) {</span>
+<span class="nc" id="L61">            wrapper.eq(FinTransaction::getAccountId, request.getAccountId());</span>
+        }
+<span class="pc bpc" id="L63" title="1 of 2 branches missed.">        if (request.getCategoryId() != null) {</span>
+<span class="nc" id="L64">            wrapper.eq(FinTransaction::getCategoryId, request.getCategoryId());</span>
+        }
+<span class="pc bpc" id="L66" title="3 of 4 branches missed.">        if (request.getStartDate() != null &amp;&amp; request.getEndDate() != null) {</span>
+<span class="nc" id="L67">            wrapper.ge(FinTransaction::getOccurredAt, request.getStartDate().atStartOfDay())</span>
+<span class="nc" id="L68">                    .le(FinTransaction::getOccurredAt, request.getEndDate().atTime(23, 59, 59));</span>
+        }
+
+<span class="fc" id="L71">        wrapper.orderByDesc(FinTransaction::getOccurredAt);</span>
+
+<span class="fc" id="L73">        IPage&lt;FinTransaction&gt; result = this.page(page, wrapper);</span>
+
+<span class="fc" id="L75">        List&lt;TransactionVO&gt; voList = result.getRecords().stream()</span>
+<span class="fc" id="L76">                .map(this::toVO)</span>
+<span class="fc" id="L77">                .toList();</span>
+
+<span class="fc" id="L79">        return PageResult.of(result.getCurrent(), result.getSize(), result.getTotal(), voList);</span>
+    }
+
+    @Override
+    public TransactionVO getTransaction(Long userId, Long transactionId) {
+<span class="fc" id="L84">        FinTransaction transaction = this.getById(transactionId);</span>
+<span class="pc bpc" id="L85" title="3 of 6 branches missed.">        if (transaction == null || !transaction.getUserId().equals(userId) || transaction.getStatus() != 1) {</span>
+<span class="nc" id="L86">            throw new BusinessException(ResultCode.TRANSACTION_NOT_FOUND);</span>
+        }
+<span class="fc" id="L88">        return toVO(transaction);</span>
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public Long createTransaction(Long userId, TransactionDTO request) {
+        // Verify account exists and belongs to user
+<span class="fc" id="L95">        FinAccount account = accountService.listAccounts(userId).stream()</span>
+<span class="fc" id="L96">                .filter(a -&gt; a.getAccountId().equals(request.getAccountId()))</span>
+<span class="fc" id="L97">                .findFirst()</span>
+<span class="fc" id="L98">                .map(a -&gt; {</span>
+<span class="fc" id="L99">                    FinAccount entity = new FinAccount();</span>
+<span class="fc" id="L100">                    BeanUtils.copyProperties(a, entity);</span>
+<span class="fc" id="L101">                    return entity;</span>
+                })
+<span class="pc" id="L103">                .orElseThrow(() -&gt; new BusinessException(ResultCode.ACCOUNT_NOT_FOUND));</span>
+
+        // Verify category exists
+<span class="fc" id="L106">        FinCategory category = categoryMapper.selectById(request.getCategoryId());</span>
+<span class="pc bpc" id="L107" title="2 of 4 branches missed.">        if (category == null || category.getStatus() != 1) {</span>
+<span class="nc" id="L108">            throw new BusinessException(ResultCode.CATEGORY_NOT_FOUND);</span>
+        }
+
+        // Create transaction
+<span class="fc" id="L112">        FinTransaction transaction = FinTransaction.builder()</span>
+<span class="fc" id="L113">                .userId(userId)</span>
+<span class="fc" id="L114">                .accountId(request.getAccountId())</span>
+<span class="fc" id="L115">                .categoryId(request.getCategoryId())</span>
+<span class="fc" id="L116">                .budgetId(request.getBudgetId())</span>
+<span class="fc" id="L117">                .type(request.getType())</span>
+<span class="fc" id="L118">                .amount(request.getAmount())</span>
+<span class="pc bpc" id="L119" title="1 of 2 branches missed.">                .currency(request.getCurrency() != null ? request.getCurrency() : &quot;CNY&quot;)</span>
+<span class="pc bpc" id="L120" title="1 of 2 branches missed.">                .occurredAt(request.getOccurredAt() != null ? request.getOccurredAt() : LocalDateTime.now())</span>
+<span class="fc" id="L121">                .note(request.getNote())</span>
+<span class="fc" id="L122">                .status(1)</span>
+<span class="fc" id="L123">                .build();</span>
+
+<span class="fc" id="L125">        this.save(transaction);</span>
+
+        // Update account balance
+<span class="pc bpc" id="L128" title="1 of 2 branches missed.">        BigDecimal balanceChange = &quot;income&quot;.equals(request.getType())</span>
+<span class="nc" id="L129">                ? request.getAmount()</span>
+<span class="fc" id="L130">                : request.getAmount().negate();</span>
+<span class="fc" id="L131">        accountService.updateBalance(request.getAccountId(), balanceChange);</span>
+
+        // Recalculate budget spent if expense transaction linked to budget
+<span class="pc bpc" id="L134" title="3 of 4 branches missed.">        if (request.getBudgetId() != null &amp;&amp; &quot;expense&quot;.equals(request.getType())) {</span>
+<span class="nc" id="L135">            budgetService.recalculateSpent(request.getBudgetId());</span>
+        }
+
+<span class="fc" id="L138">        log.info(&quot;Transaction created: userId={}, type={}, amount={}&quot;, userId, request.getType(), request.getAmount());</span>
+
+<span class="fc" id="L140">        return transaction.getTransactionId();</span>
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void updateTransaction(Long userId, Long transactionId, TransactionDTO request) {
+<span class="fc" id="L146">        FinTransaction transaction = this.getById(transactionId);</span>
+<span class="pc bpc" id="L147" title="2 of 4 branches missed.">        if (transaction == null || !transaction.getUserId().equals(userId)) {</span>
+<span class="nc" id="L148">            throw new BusinessException(ResultCode.TRANSACTION_NOT_FOUND);</span>
+        }
+
+        // If account changed, need to adjust balances
+<span class="pc bpc" id="L152" title="1 of 2 branches missed.">        if (!transaction.getAccountId().equals(request.getAccountId())) {</span>
+            // Revert old account balance
+<span class="nc bnc" id="L154" title="All 2 branches missed.">            BigDecimal oldChange = &quot;income&quot;.equals(transaction.getType())</span>
+<span class="nc" id="L155">                    ? transaction.getAmount()</span>
+<span class="nc" id="L156">                    : transaction.getAmount().negate();</span>
+<span class="nc" id="L157">            accountService.updateBalance(transaction.getAccountId(), oldChange.negate());</span>
+
+            // Update new account balance
+<span class="nc bnc" id="L160" title="All 2 branches missed.">            BigDecimal newChange = &quot;income&quot;.equals(request.getType())</span>
+<span class="nc" id="L161">                    ? request.getAmount()</span>
+<span class="nc" id="L162">                    : request.getAmount().negate();</span>
+<span class="nc" id="L163">            accountService.updateBalance(request.getAccountId(), newChange);</span>
+<span class="pc bpc" id="L164" title="1 of 2 branches missed.">        } else if (!transaction.getAmount().equals(request.getAmount())</span>
+<span class="nc bnc" id="L165" title="All 2 branches missed.">                || !transaction.getType().equals(request.getType())) {</span>
+            // Same account but amount/type changed
+<span class="pc bpc" id="L167" title="1 of 2 branches missed.">            BigDecimal oldChange = &quot;income&quot;.equals(transaction.getType())</span>
+<span class="nc" id="L168">                    ? transaction.getAmount()</span>
+<span class="fc" id="L169">                    : transaction.getAmount().negate();</span>
+<span class="pc bpc" id="L170" title="1 of 2 branches missed.">            BigDecimal newChange = &quot;income&quot;.equals(request.getType())</span>
+<span class="nc" id="L171">                    ? request.getAmount()</span>
+<span class="fc" id="L172">                    : request.getAmount().negate();</span>
+
+<span class="fc" id="L174">            accountService.updateBalance(request.getAccountId(), newChange.subtract(oldChange));</span>
+        }
+
+<span class="fc" id="L177">        this.update(</span>
+<span class="fc" id="L178">                new LambdaUpdateWrapper&lt;FinTransaction&gt;()</span>
+<span class="fc" id="L179">                        .eq(FinTransaction::getTransactionId, transactionId)</span>
+<span class="fc" id="L180">                        .set(FinTransaction::getAccountId, request.getAccountId())</span>
+<span class="fc" id="L181">                        .set(FinTransaction::getCategoryId, request.getCategoryId())</span>
+<span class="fc" id="L182">                        .set(FinTransaction::getBudgetId, request.getBudgetId())</span>
+<span class="fc" id="L183">                        .set(FinTransaction::getType, request.getType())</span>
+<span class="fc" id="L184">                        .set(FinTransaction::getAmount, request.getAmount())</span>
+<span class="pc bpc" id="L185" title="1 of 2 branches missed.">                        .set(request.getOccurredAt() != null, FinTransaction::getOccurredAt, request.getOccurredAt())</span>
+<span class="fc" id="L186">                        .set(FinTransaction::getNote, request.getNote())</span>
+        );
+
+<span class="fc" id="L189">        log.info(&quot;Transaction updated: transactionId={}&quot;, transactionId);</span>
+<span class="fc" id="L190">    }</span>
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void deleteTransaction(Long userId, Long transactionId) {
+<span class="fc" id="L195">        FinTransaction transaction = this.getById(transactionId);</span>
+<span class="pc bpc" id="L196" title="2 of 4 branches missed.">        if (transaction == null || !transaction.getUserId().equals(userId)) {</span>
+<span class="nc" id="L197">            throw new BusinessException(ResultCode.TRANSACTION_NOT_FOUND);</span>
+        }
+
+        // Revert account balance
+<span class="pc bpc" id="L201" title="1 of 2 branches missed.">        BigDecimal balanceChange = &quot;income&quot;.equals(transaction.getType())</span>
+<span class="nc" id="L202">                ? transaction.getAmount().negate()</span>
+<span class="fc" id="L203">                : transaction.getAmount();</span>
+<span class="fc" id="L204">        accountService.updateBalance(transaction.getAccountId(), balanceChange);</span>
+
+        // Recalculate budget spent if expense transaction was linked to budget
+<span class="pc bpc" id="L207" title="3 of 4 branches missed.">        if (transaction.getBudgetId() != null &amp;&amp; &quot;expense&quot;.equals(transaction.getType())) {</span>
+<span class="nc" id="L208">            budgetService.recalculateSpent(transaction.getBudgetId());</span>
+        }
+
+        // Soft delete
+<span class="fc" id="L212">        this.update(</span>
+<span class="fc" id="L213">                new LambdaUpdateWrapper&lt;FinTransaction&gt;()</span>
+<span class="fc" id="L214">                        .eq(FinTransaction::getTransactionId, transactionId)</span>
+<span class="fc" id="L215">                        .set(FinTransaction::getStatus, 0)</span>
+        );
+
+<span class="fc" id="L218">        log.info(&quot;Transaction deleted: transactionId={}&quot;, transactionId);</span>
+<span class="fc" id="L219">    }</span>
+
+    @Override
+    public List&lt;TransactionVO&gt; getRecentTransactions(Long userId, Long accountId, Integer limit) {
+<span class="fc" id="L223">        List&lt;FinTransaction&gt; transactions = this.list(</span>
+<span class="fc" id="L224">                new LambdaQueryWrapper&lt;FinTransaction&gt;()</span>
+<span class="fc" id="L225">                        .eq(FinTransaction::getUserId, userId)</span>
+<span class="fc" id="L226">                        .eq(FinTransaction::getAccountId, accountId)</span>
+<span class="fc" id="L227">                        .eq(FinTransaction::getStatus, 1)</span>
+<span class="fc" id="L228">                        .orderByDesc(FinTransaction::getOccurredAt)</span>
+<span class="pc bpc" id="L229" title="1 of 2 branches missed.">                        .last(&quot;LIMIT &quot; + (limit != null ? limit : 10))</span>
+        );
+
+<span class="fc" id="L232">        return transactions.stream().map(this::toVO).toList();</span>
+    }
+
+    /**
+     * Convert entity to VO
+     */
+    private TransactionVO toVO(FinTransaction transaction) {
+<span class="fc" id="L239">        TransactionVO vo = new TransactionVO();</span>
+<span class="fc" id="L240">        BeanUtils.copyProperties(transaction, vo);</span>
+
+        // Get account name
+<span class="fc" id="L243">        accountService.listAccounts(transaction.getUserId()).stream()</span>
+<span class="fc" id="L244">                .filter(a -&gt; a.getAccountId().equals(transaction.getAccountId()))</span>
+<span class="fc" id="L245">                .findFirst()</span>
+<span class="fc" id="L246">                .ifPresent(a -&gt; vo.setAccountName(a.getName()));</span>
+
+        // Get category name
+<span class="fc" id="L249">        FinCategory category = categoryMapper.selectById(transaction.getCategoryId());</span>
+<span class="pc bpc" id="L250" title="1 of 2 branches missed.">        if (category != null) {</span>
+<span class="fc" id="L251">            vo.setCategoryName(category.getName());</span>
+        }
+
+<span class="fc" id="L254">        return vo;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

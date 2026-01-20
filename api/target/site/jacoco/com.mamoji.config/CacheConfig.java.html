@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CacheConfig.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">mamoji-api</a> &gt; <a href="index.source.html" class="el_package">com.mamoji.config</a> &gt; <span class="el_source">CacheConfig.java</span></div><h1>CacheConfig.java</h1><pre class="source lang-java linenums">package com.mamoji.config;
+
+import com.github.benmanes.caffeine.cache.Caffeine;
+import org.springframework.cache.CacheManager;
+import org.springframework.cache.annotation.EnableCaching;
+import org.springframework.cache.caffeine.CaffeineCacheManager;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
+import org.springframework.context.annotation.Primary;
+
+import java.util.concurrent.TimeUnit;
+
+/**
+ * Caffeine Cache Configuration
+ * Provides high-performance local caching for budget queries
+ * Only enabled in non-test profiles
+ */
+@Configuration
+@EnableCaching
+@Profile(&quot;!test&quot;)
+<span class="nc" id="L22">public class CacheConfig {</span>
+
+    /**
+     * Primary Cache Manager - Caffeine
+     * Used for application caching
+     */
+    @Bean
+    @Primary
+    public CacheManager cacheManager() {
+<span class="nc" id="L31">        CaffeineCacheManager cacheManager = new CaffeineCacheManager();</span>
+
+        // Configure Caffeine
+<span class="nc" id="L34">        cacheManager.setCaffeine(Caffeine.newBuilder()</span>
+                // Maximum number of entries
+<span class="nc" id="L36">                .maximumSize(1000)</span>
+                // Expire after 10 minutes of inactivity
+<span class="nc" id="L38">                .expireAfterAccess(10, TimeUnit.MINUTES)</span>
+                // Record statistics for monitoring
+<span class="nc" id="L40">                .recordStats());</span>
+
+        // Register specific cache names
+<span class="nc" id="L43">        cacheManager.setCacheNames(java.util.List.of(</span>
+<span class="nc" id="L44">                &quot;budgets&quot;,</span>
+<span class="nc" id="L45">                &quot;accounts&quot;,</span>
+<span class="nc" id="L46">                &quot;transactions&quot;,</span>
+<span class="nc" id="L47">                &quot;categories&quot;</span>
+        ));
+
+<span class="nc" id="L50">        return cacheManager;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

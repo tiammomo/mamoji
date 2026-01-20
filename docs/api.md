@@ -232,8 +232,8 @@
     {
       "accountId": 1,
       "name": "工商银行储蓄卡",
-      "type": "bank",
-      "assetCategory": "fund",
+      "accountType": "bank",
+      "accountSubType": "bank_primary",
       "balance": 10000.00,
       "currency": "CNY",
       "includeInTotal": 1,
@@ -273,29 +273,27 @@
 
 | 字段 | 说明 |
 |------|------|
-| totalBalance | 总余额（资金 - 信用 - 负债） |
-| totalFund | 资金账户总额（cash/bank/alipay/wechat） |
-| totalCredit | 信用账户总额（负数表示欠款） |
-| totalDebt | 负债总额 |
+| totalBalance | 总余额（资金 + 资产 - 负债） |
+| totalFund | 资金账户总额（bank + cash + alipay + wechat + gold + fund） |
+| totalCredit | 信用账户总额（credit 为负数） |
+| totalDebt | 负债总额（debt） |
 
-**账户类型（type）：**
+**账户类型（accountType / accountSubType）：**
 
-| 值 | 说明 |
-|----|------|
-| cash | 现金 |
-| bank | 银行卡 |
-| credit | 信用卡 |
-| alipay | 支付宝 |
-| wechat | 微信 |
-
-**资产类别（assetCategory）：**
-
-| 值 | 说明 | 典型场景 |
-|----|------|----------|
-| fund | 资金账户 | 现金、储蓄卡、支付宝余额、微信零钱 |
-| credit | 信用账户 | 信用卡（额度显示为负数） |
-| topup | 充值账户 | 游戏点卡、会员充值 |
-| debt | 负债账户 | 贷款、借款 |
+| accountType | accountSubType | 说明 |
+|-------------|----------------|------|
+| bank | bank_primary | 一类银行卡 |
+| bank | bank_secondary | 二类银行卡 |
+| credit | credit_card | 信用卡 |
+| cash | - | 现金 |
+| alipay | - | 支付宝 |
+| wechat | - | 微信 |
+| gold | - | 黄金 |
+| fund_accumulation | - | 公积金 |
+| fund | - | 基金 |
+| stock | - | 股票 |
+| topup | - | 充值卡 |
+| debt | - | 借款 |
 
 **includeInTotal：**
 
@@ -317,8 +315,8 @@
 | 参数 | 类型 | 必填 | 说明 |
 |------|------|------|------|
 | name | string | 是 | 账户名称 |
-| type | string | 是 | 类型：cash/bank/credit/alipay/wechat |
-| assetCategory | string | 是 | 资产类别：fund/credit/topup/debt |
+| accountType | string | 是 | 类型：bank/credit/cash/alipay/wechat/gold/fund_accumulation/fund/stock/topup/debt |
+| accountSubType | string | 否 | 子类型：bank_primary/bank_secondary/credit_card |
 | balance | number | 否 | 初始余额，默认 0 |
 | currency | string | 否 | 币种，默认 CNY |
 | includeInTotal | int | 否 | 是否计入总资产，默认 1 |
@@ -332,8 +330,8 @@
   "data": {
     "accountId": 2,
     "name": "新账户",
-    "type": "bank",
-    "assetCategory": "fund",
+    "accountType": "bank",
+    "accountSubType": "bank_primary",
     "balance": 0.00,
     "status": 1
   }
@@ -356,8 +354,8 @@
   "data": {
     "accountId": 1,
     "name": "工商银行储蓄卡",
-    "type": "bank",
-    "assetCategory": "fund",
+    "accountType": "bank",
+    "accountSubType": "bank_primary",
     "balance": 10000.00,
     "currency": "CNY",
     "includeInTotal": 1,
@@ -382,7 +380,7 @@
 |------|------|------|
 | name | string | 账户名称 |
 | balance | number | 余额 |
-| includeInTotal | int | 是否计入总资产 |
+| includeInTotal | int | 是否计入总资产 | |
 | status | int | 状态 |
 
 **响应：**
@@ -694,8 +692,7 @@
 
 | 参数 | 类型 | 说明 |
 |------|------|------|
-| status | int | 状态：0取消，1进行中，2已完成 |
-| periodType | string | 周期：monthly/yearly |
+| status | int | 状态：0取消，1进行中，2已完成，3超支 |
 | startDate | string | 开始日期 |
 | endDate | string | 结束日期 |
 
@@ -712,7 +709,6 @@
       "spent": 1500.00,
       "remaining": 3500.00,
       "usagePercent": 30.00,
-      "periodType": "monthly",
       "startDate": "2026-01-01",
       "endDate": "2026-01-31",
       "status": 1,
@@ -736,7 +732,6 @@
 |------|------|------|------|
 | name | string | 是 | 预算名称 |
 | amount | number | 是 | 预算金额 |
-| periodType | string | 是 | 周期：monthly/yearly |
 | startDate | string | 是 | 开始日期 (YYYY-MM-DD) |
 | endDate | string | 是 | 结束日期 (YYYY-MM-DD) |
 
@@ -753,7 +748,6 @@
     "spent": 0.00,
     "remaining": 5000.00,
     "usagePercent": 0,
-    "periodType": "monthly",
     "startDate": "2026-01-01",
     "endDate": "2026-01-31",
     "status": 1
@@ -781,7 +775,6 @@
     "spent": 1500.00,
     "remaining": 3500.00,
     "usagePercent": 30.00,
-    "periodType": "monthly",
     "startDate": "2026-01-01",
     "endDate": "2026-01-31",
     "status": 1,

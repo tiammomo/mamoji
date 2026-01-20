@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AuthServiceImpl.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">mamoji-api</a> &gt; <a href="index.source.html" class="el_package">com.mamoji.module.auth.service</a> &gt; <span class="el_source">AuthServiceImpl.java</span></div><h1>AuthServiceImpl.java</h1><pre class="source lang-java linenums">package com.mamoji.module.auth.service;
+
+import cn.hutool.crypto.SecureUtil;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.mamoji.common.exception.BusinessException;
+import com.mamoji.common.result.ResultCode;
+import com.mamoji.config.JwtConfig;
+import com.mamoji.module.auth.dto.LoginRequest;
+import com.mamoji.module.auth.dto.LoginResponse;
+import com.mamoji.module.auth.dto.RegisterRequest;
+import com.mamoji.module.auth.entity.SysUser;
+import com.mamoji.module.auth.mapper.SysUserMapper;
+import com.mamoji.security.JwtTokenProvider;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+
+/**
+ * Authentication Service Implementation
+ */
+<span class="fc" id="L22">@Slf4j</span>
+@Service
+@RequiredArgsConstructor
+public class AuthServiceImpl implements AuthService {
+
+    private final SysUserMapper userMapper;
+    private final JwtTokenProvider jwtTokenProvider;
+    private final JwtConfig jwtConfig;
+    private final PasswordEncoder passwordEncoder;
+
+    @Override
+    public LoginResponse login(LoginRequest request) {
+<span class="fc" id="L34">        String username = request.getUsername();</span>
+
+        // Check if account is locked
+<span class="pc bpc" id="L37" title="1 of 2 branches missed.">        if (jwtTokenProvider.isAccountLocked(username)) {</span>
+<span class="nc" id="L38">            throw new BusinessException(ResultCode.ACCOUNT_LOCKED);</span>
+        }
+
+        // Find user by username
+<span class="fc" id="L42">        SysUser user = userMapper.selectOne(</span>
+<span class="fc" id="L43">                new LambdaQueryWrapper&lt;SysUser&gt;()</span>
+<span class="fc" id="L44">                        .eq(SysUser::getUsername, username)</span>
+<span class="fc" id="L45">                        .eq(SysUser::getStatus, 1)</span>
+        );
+
+<span class="fc bfc" id="L48" title="All 2 branches covered.">        if (user == null) {</span>
+<span class="fc" id="L49">            jwtTokenProvider.recordLoginFailure(username);</span>
+<span class="fc" id="L50">            throw new BusinessException(ResultCode.INVALID_CREDENTIALS);</span>
+        }
+
+        // Verify password
+<span class="fc bfc" id="L54" title="All 2 branches covered.">        if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {</span>
+<span class="fc" id="L55">            jwtTokenProvider.recordLoginFailure(username);</span>
+<span class="fc" id="L56">            throw new BusinessException(ResultCode.INVALID_CREDENTIALS);</span>
+        }
+
+        // Clear login failure count
+<span class="fc" id="L60">        jwtTokenProvider.clearLoginFailure(username);</span>
+
+        // Generate JWT token
+<span class="fc" id="L63">        String token = jwtTokenProvider.generateToken(user.getUserId(), user.getUsername());</span>
+
+<span class="fc" id="L65">        log.info(&quot;User logged in: {}&quot;, username);</span>
+
+<span class="fc" id="L67">        return LoginResponse.builder()</span>
+<span class="fc" id="L68">                .userId(user.getUserId())</span>
+<span class="fc" id="L69">                .username(user.getUsername())</span>
+<span class="fc" id="L70">                .token(token)</span>
+<span class="fc" id="L71">                .tokenType(&quot;Bearer&quot;)</span>
+<span class="fc" id="L72">                .expiresIn(jwtConfig.getExpiration() / 1000)</span>
+<span class="fc" id="L73">                .build();</span>
+    }
+
+    @Override
+    public void register(RegisterRequest request) {
+        // Check if username already exists
+<span class="pc bpc" id="L79" title="1 of 2 branches missed.">        if (existsByUsername(request.getUsername())) {</span>
+<span class="nc" id="L80">            throw new BusinessException(ResultCode.USERNAME_EXISTS);</span>
+        }
+
+        // Create new user
+<span class="fc" id="L84">        SysUser user = SysUser.builder()</span>
+<span class="fc" id="L85">                .username(request.getUsername())</span>
+<span class="fc" id="L86">                .password(passwordEncoder.encode(request.getPassword()))</span>
+<span class="fc" id="L87">                .phone(request.getPhone())</span>
+<span class="fc" id="L88">                .email(request.getEmail())</span>
+<span class="fc" id="L89">                .role(&quot;normal&quot;)</span>
+<span class="fc" id="L90">                .status(1)</span>
+<span class="fc" id="L91">                .build();</span>
+
+<span class="fc" id="L93">        userMapper.insert(user);</span>
+
+<span class="fc" id="L95">        log.info(&quot;User registered: {}&quot;, request.getUsername());</span>
+<span class="fc" id="L96">    }</span>
+
+    @Override
+    public void logout(String token) {
+<span class="pc bpc" id="L100" title="2 of 4 branches missed.">        if (token != null &amp;&amp; jwtTokenProvider.validateToken(token)) {</span>
+<span class="fc" id="L101">            jwtTokenProvider.addToBlacklist(token);</span>
+<span class="fc" id="L102">            log.info(&quot;User logged out&quot;);</span>
+        }
+<span class="fc" id="L104">    }</span>
+
+    @Override
+    public Object getProfile(Long userId) {
+<span class="fc" id="L108">        SysUser user = userMapper.selectById(userId);</span>
+<span class="fc bfc" id="L109" title="All 2 branches covered.">        if (user == null) {</span>
+<span class="fc" id="L110">            throw new BusinessException(ResultCode.USER_NOT_FOUND);</span>
+        }
+
+        // Return user info without password
+<span class="fc" id="L114">        return java.util.Map.of(</span>
+<span class="fc" id="L115">                &quot;userId&quot;, user.getUserId(),</span>
+<span class="fc" id="L116">                &quot;username&quot;, user.getUsername(),</span>
+<span class="pc bpc" id="L117" title="1 of 2 branches missed.">                &quot;phone&quot;, user.getPhone() != null ? user.getPhone() : &quot;&quot;,</span>
+<span class="pc bpc" id="L118" title="1 of 2 branches missed.">                &quot;email&quot;, user.getEmail() != null ? user.getEmail() : &quot;&quot;,</span>
+<span class="fc" id="L119">                &quot;role&quot;, user.getRole(),</span>
+<span class="fc" id="L120">                &quot;status&quot;, user.getStatus(),</span>
+<span class="fc" id="L121">                &quot;createdAt&quot;, user.getCreatedAt()</span>
+        );
+    }
+
+    @Override
+    public boolean existsByUsername(String username) {
+<span class="fc bfc" id="L127" title="All 2 branches covered.">        return userMapper.selectCount(</span>
+<span class="fc" id="L128">                new LambdaQueryWrapper&lt;SysUser&gt;()</span>
+<span class="fc" id="L129">                        .eq(SysUser::getUsername, username)</span>
+<span class="fc" id="L130">        ) &gt; 0;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

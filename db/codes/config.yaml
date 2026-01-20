@@ -1,0 +1,14 @@
+# 数据库配置
+database:
+  host: rm-bp14vg2ya3u8067d0ko.mysql.rds.aliyuncs.com
+  port: 3306
+  username: mamoji
+  password: ${MYSQL_PASSWORD}
+  name: mamoji
+
+# Redis 配置
+redis:
+  host: r-bp17r86g9eu9urg5wepd.redis.rds.aliyuncs.com
+  port: 6379
+  password: ${REDIS_PASSWORD}
+  db: 0
