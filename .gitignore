@@ -165,6 +165,12 @@ $GOPATH/pkg/mod/
 api/config/*.yaml
 api/config/*.yml
 
+# Spring Boot 配置文件（生产环境包含敏感信息）
+api/src/main/resources/application-prod.yml
+api/src/main/resources/application-local.yml
+!api/src/main/resources/application-prod.example.yml
+!api/src/main/resources/application-local.example.yml
+
 # Scripts 目录（包含敏感信息）
 scripts/*.sh
 !scripts/*.example.sh
