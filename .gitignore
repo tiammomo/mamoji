@@ -2,9 +2,10 @@
 # Mamoji - 企业级财务记账系统 .gitignore
 # ===========================================
 #
-# 版本: 2.0.0
-# 更新: 2025-12-31
+# 版本: 3.0.0
+# 更新: 2026-01-21
 #
+# 技术栈: Java + Spring Boot / MySQL / Redis / Next.js
 
 # ===========================================
 # 第一部分：操作系统文件
@@ -40,7 +41,7 @@ Thumbs.db
 *.swp
 *.swo
 
-# JetBrains (IntelliJ IDEA, GoLand, WebStorm, etc.)
+# JetBrains (IntelliJ IDEA, WebStorm, etc.)
 .idea/
 .idea/workspace.xml
 .idea/tasks.xml
@@ -129,7 +130,7 @@ dist-ssr/
 .turbo/
 
 # ===========================================
-# 第三部分（附加）：Maven / Java 构建产物
+# 第四部分：Java / Spring Boot
 # ===========================================
 # Maven 构建输出
 target/
@@ -148,53 +149,6 @@ jacoco/
 # Maven 测试报告
 surefire-reports/
 failsafe-reports/
-
-# ===========================================
-# 第四部分：Go / 后端
-# ===========================================
-# 编译产物
-*.exe
-*.exe~
-*.dll
-*.so
-*.so.*
-*.dylib
-*.test
-*.out
-/main
-/mamoji
-mamoji.exe
-
-# Go 工作区
-go.work
-go.work.sum
-
-# Vendor (如果使用 Go Modules 则不需要)
-vendor/
-
-# 测试覆盖率
-coverage.out
-cover.out
-
-# Go 代理缓存
-$GOPATH/pkg/mod/
-
-# Go 构建缓存
-~/.cache/go-build/
-
-# API 配置目录（包含敏感信息）
-api/config/*.yaml
-api/config/*.yml
-
-# Spring Boot 配置文件（生产环境包含敏感信息）
-api/src/main/resources/application-prod.yml
-api/src/main/resources/application-local.yml
-!api/src/main/resources/application-prod.example.yml
-!api/src/main/resources/application-local.example.yml
-
-# Scripts 目录（包含敏感信息）
-scripts/*.sh
-!scripts/*.example.sh
 
 # ===========================================
 # 第五部分：Python (可选)
@@ -244,6 +198,20 @@ env.example
 *.local
 *.secret
 *.pem
+
+# API 配置目录（包含敏感信息）
+api/config/*.yaml
+api/config/*.yml
+
+# Spring Boot 配置文件（生产环境包含敏感信息）
+api/src/main/resources/application-prod.yml
+api/src/main/resources/application-local.yml
+!api/src/main/resources/application-prod.example.yml
+!api/src/main/resources/application-local.example.yml
+
+# Scripts 目录（包含敏感信息）
+scripts/*.sh
+!scripts/*.example.sh
 
 # Nginx 配置（如果包含敏感信息）
 nginx/conf.d/*.conf
@@ -376,7 +344,6 @@ storybook-static/
 # ===========================================
 # 第十三部分：强制保留的文件（白名单）
 # ===========================================
-# 这些文件必须保留在版本控制中
 
 # 项目文档
 !README.md
@@ -394,7 +361,3 @@ storybook-static/
 
 # 示例配置（不包含敏感信息）
 !api/config/config.example.yaml
-
-# Go 模块文件
-!go.mod
-!go.sum
