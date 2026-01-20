@@ -1,4 +1,0 @@
--------------------------------------------------------------------------------
-Test set: com.mamoji.module.budget.controller.BudgetControllerTest
--------------------------------------------------------------------------------
-Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 2.183 s -- in com.mamoji.module.budget.controller.BudgetControllerTest

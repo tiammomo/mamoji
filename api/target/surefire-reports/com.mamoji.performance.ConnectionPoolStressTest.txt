@@ -1,4 +1,0 @@
--------------------------------------------------------------------------------
-Test set: com.mamoji.performance.ConnectionPoolStressTest
--------------------------------------------------------------------------------
-Tests run: 8, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 6.571 s -- in com.mamoji.performance.ConnectionPoolStressTest
