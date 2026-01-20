@@ -161,8 +161,8 @@ failsafe-reports/
 *.dylib
 *.test
 *.out
-main
-mamoji
+/main
+/mamoji
 mamoji.exe
 
 # Go 工作区

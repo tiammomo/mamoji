@@ -1,0 +1,51 @@
+server:
+  port: 48080
+  servlet:
+    context-path: /
+
+spring:
+  application:
+    name: mamoji-api
+
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:dev}
+
+# Common Configuration
+# Environment-specific settings are in:
+# - application-dev.yml (Development - local MySQL & Redis)
+# - application-test.yml (Test - Docker containers)
+# - application-prod.yml (Production - Alibaba Cloud RDS)
+
+# MyBatis-Plus Configuration (shared across all environments)
+mybatis-plus:
+  mapper-locations: classpath*:/mapper/**/*.xml
+  type-aliases-package: com.mamoji.module.*.entity
+  global-config:
+    db-config:
+      id-type: auto
+      logic-delete-field: status
+      logic-delete-value: 0
+      logic-not-delete-value: 1
+    banner: false
+
+# JWT Configuration (shared across all environments)
+jwt:
+  secret: ${JWT_SECRET:mamoji-secret-key-for-jwt-token-generation-min-256-bits-required}
+  expiration: 86400000
+  header: Authorization
+  prefix: "Bearer "
+
+# Logging Configuration (shared across all environments)
+logging:
+  level:
+    com.mamoji: info
+    com.mamoji.module: info
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
+
+  # Jackson Configuration (shared across all environments)
+  jackson:
+    date-format: yyyy-MM-dd HH:mm:ss
+    time-zone: Asia/Shanghai
+    serialization:
+      write-dates-as-timestamps: false
