@@ -10,14 +10,9 @@ import {
   PieChart,
   Target,
   Tags,
-  Settings,
-  LogOut,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { Button } from '@/components/ui/button';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
-import { useAuthStore } from '@/hooks/useAuth';
 
 const navigation = [
   { name: '仪表盘', href: '/dashboard', icon: LayoutDashboard },
@@ -30,7 +25,6 @@ const navigation = [
 
 export function Sidebar() {
   const pathname = usePathname();
-  const { user, logout } = useAuthStore();
 
   return (
     <div className="flex h-screen w-64 flex-col border-r bg-card">
@@ -62,42 +56,6 @@ export function Sidebar() {
           );
         })}
       </nav>
-
-      <Separator />
-
-      {/* User section */}
-      <div className="p-4">
-        <div className="flex items-center gap-3 mb-3">
-          <Avatar>
-            <AvatarFallback>
-              {user?.username?.charAt(0).toUpperCase() || 'U'}
-            </AvatarFallback>
-          </Avatar>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium truncate">{user?.username || '用户'}</p>
-            <p className="text-xs text-muted-foreground truncate">
-              {user?.role === 'super_admin' ? '超级管理员' : '普通用户'}
-            </p>
-          </div>
-        </div>
-        <div className="grid grid-cols-2 gap-2">
-          <Link href="/settings">
-            <Button variant="outline" size="sm" className="w-full">
-              <Settings className="h-4 w-4 mr-1" />
-              设置
-            </Button>
-          </Link>
-          <Button
-            variant="outline"
-            size="sm"
-            className="w-full"
-            onClick={logout}
-          >
-            <LogOut className="h-4 w-4 mr-1" />
-            退出
-          </Button>
-        </div>
-      </div>
     </div>
   );
 }

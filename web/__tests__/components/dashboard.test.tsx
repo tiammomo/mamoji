@@ -43,8 +43,8 @@ describe('DashboardPage', () => {
 
   it('displays error state when API fails', async () => {
     (accountApi.getSummary as jest.Mock).mockRejectedValue(new Error('API Error'));
-    (transactionApi.getRecent as jest.Mock).mockResolvedValue({ code: 0, data: [] });
-    (budgetApi.listActive as jest.Mock).mockResolvedValue({ code: 0, data: [] });
+    (transactionApi.getRecent as jest.Mock).mockResolvedValue({ code: 200, data: [] });
+    (budgetApi.listActive as jest.Mock).mockResolvedValue({ code: 200, data: [] });
 
     render(<DashboardPage />);
 
@@ -56,7 +56,7 @@ describe('DashboardPage', () => {
 
   it('displays summary cards when data loads', async () => {
     (accountApi.getSummary as jest.Mock).mockResolvedValue({
-      code: 0,
+      code: 200,
       data: {
         totalAssets: 50000,
         totalLiabilities: 5000,
@@ -64,8 +64,8 @@ describe('DashboardPage', () => {
         accountsCount: 3,
       },
     });
-    (transactionApi.getRecent as jest.Mock).mockResolvedValue({ code: 0, data: [] });
-    (budgetApi.listActive as jest.Mock).mockResolvedValue({ code: 0, data: [] });
+    (transactionApi.getRecent as jest.Mock).mockResolvedValue({ code: 200, data: [] });
+    (budgetApi.listActive as jest.Mock).mockResolvedValue({ code: 200, data: [] });
 
     render(<DashboardPage />);
 
@@ -97,7 +97,7 @@ describe('DashboardPage', () => {
     ];
 
     (accountApi.getSummary as jest.Mock).mockResolvedValue({
-      code: 0,
+      code: 200,
       data: {
         totalAssets: 50000,
         totalLiabilities: 5000,
@@ -105,8 +105,8 @@ describe('DashboardPage', () => {
         accountsCount: 3,
       },
     });
-    (transactionApi.getRecent as jest.Mock).mockResolvedValue({ code: 0, data: mockTransactions });
-    (budgetApi.listActive as jest.Mock).mockResolvedValue({ code: 0, data: [] });
+    (transactionApi.getRecent as jest.Mock).mockResolvedValue({ code: 200, data: mockTransactions });
+    (budgetApi.listActive as jest.Mock).mockResolvedValue({ code: 200, data: [] });
 
     render(<DashboardPage />);
 
@@ -118,7 +118,7 @@ describe('DashboardPage', () => {
 
   it('displays empty state when no transactions', async () => {
     (accountApi.getSummary as jest.Mock).mockResolvedValue({
-      code: 0,
+      code: 200,
       data: {
         totalAssets: 0,
         totalLiabilities: 0,
@@ -126,8 +126,8 @@ describe('DashboardPage', () => {
         accountsCount: 0,
       },
     });
-    (transactionApi.getRecent as jest.Mock).mockResolvedValue({ code: 0, data: [] });
-    (budgetApi.listActive as jest.Mock).mockResolvedValue({ code: 0, data: [] });
+    (transactionApi.getRecent as jest.Mock).mockResolvedValue({ code: 200, data: [] });
+    (budgetApi.listActive as jest.Mock).mockResolvedValue({ code: 200, data: [] });
 
     render(<DashboardPage />);
 
@@ -148,7 +148,7 @@ describe('DashboardPage', () => {
     ];
 
     (accountApi.getSummary as jest.Mock).mockResolvedValue({
-      code: 0,
+      code: 200,
       data: {
         totalAssets: 50000,
         totalLiabilities: 5000,
@@ -156,8 +156,8 @@ describe('DashboardPage', () => {
         accountsCount: 3,
       },
     });
-    (transactionApi.getRecent as jest.Mock).mockResolvedValue({ code: 0, data: [] });
-    (budgetApi.listActive as jest.Mock).mockResolvedValue({ code: 0, data: mockBudgets });
+    (transactionApi.getRecent as jest.Mock).mockResolvedValue({ code: 200, data: [] });
+    (budgetApi.listActive as jest.Mock).mockResolvedValue({ code: 200, data: mockBudgets });
 
     render(<DashboardPage />);
 
@@ -168,7 +168,7 @@ describe('DashboardPage', () => {
 
   it('displays account count correctly', async () => {
     (accountApi.getSummary as jest.Mock).mockResolvedValue({
-      code: 0,
+      code: 200,
       data: {
         totalAssets: 10000,
         totalLiabilities: 2000,
@@ -176,8 +176,8 @@ describe('DashboardPage', () => {
         accountsCount: 5,
       },
     });
-    (transactionApi.getRecent as jest.Mock).mockResolvedValue({ code: 0, data: [] });
-    (budgetApi.listActive as jest.Mock).mockResolvedValue({ code: 0, data: [] });
+    (transactionApi.getRecent as jest.Mock).mockResolvedValue({ code: 200, data: [] });
+    (budgetApi.listActive as jest.Mock).mockResolvedValue({ code: 200, data: [] });
 
     render(<DashboardPage />);
 

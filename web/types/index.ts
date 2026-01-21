@@ -165,9 +165,11 @@ export interface LoginRequest {
 }
 
 export interface LoginResponse {
+  userId: number;
+  username: string;
   token: string;
-  user: User;
-  expiresAt: string;
+  tokenType: string;
+  expiresIn: number;
 }
 
 export interface RegisterRequest {

@@ -88,13 +88,13 @@ describe('TransactionsPage', () => {
 
   it('displays page title', async () => {
     (transactionApi.list as jest.Mock).mockResolvedValue({
-      code: 0,
+      code: 200,
       data: { list: mockTransactions, total: 2 },
     });
-    (accountApi.list as jest.Mock).mockResolvedValue({ code: 0, data: mockAccounts });
-    (categoryApi.list as jest.Mock).mockResolvedValue({ code: 0, data: mockCategories });
+    (accountApi.list as jest.Mock).mockResolvedValue({ code: 200, data: mockAccounts });
+    (categoryApi.list as jest.Mock).mockResolvedValue({ code: 200, data: mockCategories });
     (accountApi.getSummary as jest.Mock).mockResolvedValue({
-      code: 0,
+      code: 200,
       data: { totalAssets: 8000, totalLiabilities: 2000, netAssets: 6000 },
     });
 
@@ -107,13 +107,13 @@ describe('TransactionsPage', () => {
 
   it('displays transactions list when data loads', async () => {
     (transactionApi.list as jest.Mock).mockResolvedValue({
-      code: 0,
+      code: 200,
       data: { list: mockTransactions, total: 2 },
     });
-    (accountApi.list as jest.Mock).mockResolvedValue({ code: 0, data: mockAccounts });
-    (categoryApi.list as jest.Mock).mockResolvedValue({ code: 0, data: mockCategories });
+    (accountApi.list as jest.Mock).mockResolvedValue({ code: 200, data: mockAccounts });
+    (categoryApi.list as jest.Mock).mockResolvedValue({ code: 200, data: mockCategories });
     (accountApi.getSummary as jest.Mock).mockResolvedValue({
-      code: 0,
+      code: 200,
       data: { totalAssets: 8000, totalLiabilities: 2000, netAssets: 6000 },
     });
 
@@ -128,13 +128,13 @@ describe('TransactionsPage', () => {
 
   it('displays empty state when no transactions', async () => {
     (transactionApi.list as jest.Mock).mockResolvedValue({
-      code: 0,
+      code: 200,
       data: { list: [], total: 0 },
     });
-    (accountApi.list as jest.Mock).mockResolvedValue({ code: 0, data: [] });
-    (categoryApi.list as jest.Mock).mockResolvedValue({ code: 0, data: [] });
+    (accountApi.list as jest.Mock).mockResolvedValue({ code: 200, data: [] });
+    (categoryApi.list as jest.Mock).mockResolvedValue({ code: 200, data: [] });
     (accountApi.getSummary as jest.Mock).mockResolvedValue({
-      code: 0,
+      code: 200,
       data: { totalAssets: 0, totalLiabilities: 0, netAssets: 0 },
     });
 
@@ -147,10 +147,10 @@ describe('TransactionsPage', () => {
 
   it('handles API error gracefully', async () => {
     (transactionApi.list as jest.Mock).mockRejectedValue(new Error('API Error'));
-    (accountApi.list as jest.Mock).mockResolvedValue({ code: 0, data: [] });
-    (categoryApi.list as jest.Mock).mockResolvedValue({ code: 0, data: [] });
+    (accountApi.list as jest.Mock).mockResolvedValue({ code: 200, data: [] });
+    (categoryApi.list as jest.Mock).mockResolvedValue({ code: 200, data: [] });
     (accountApi.getSummary as jest.Mock).mockResolvedValue({
-      code: 0,
+      code: 200,
       data: { totalAssets: 0, totalLiabilities: 0, netAssets: 0 },
     });
 

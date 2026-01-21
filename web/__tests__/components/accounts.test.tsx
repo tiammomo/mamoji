@@ -69,9 +69,9 @@ describe('AccountsPage', () => {
   });
 
   it('displays page title', async () => {
-    (accountApi.list as jest.Mock).mockResolvedValue({ code: 0, data: mockAccounts });
+    (accountApi.list as jest.Mock).mockResolvedValue({ code: 200, data: mockAccounts });
     (accountApi.getSummary as jest.Mock).mockResolvedValue({
-      code: 0,
+      code: 200,
       data: { totalAssets: 8000, totalLiabilities: 2000, netAssets: 6000 },
     });
 
@@ -83,9 +83,9 @@ describe('AccountsPage', () => {
   });
 
   it('displays accounts list when data loads', async () => {
-    (accountApi.list as jest.Mock).mockResolvedValue({ code: 0, data: mockAccounts });
+    (accountApi.list as jest.Mock).mockResolvedValue({ code: 200, data: mockAccounts });
     (accountApi.getSummary as jest.Mock).mockResolvedValue({
-      code: 0,
+      code: 200,
       data: { totalAssets: 8000, totalLiabilities: 2000, netAssets: 6000 },
     });
 
@@ -100,9 +100,9 @@ describe('AccountsPage', () => {
   });
 
   it('displays account count', async () => {
-    (accountApi.list as jest.Mock).mockResolvedValue({ code: 0, data: mockAccounts });
+    (accountApi.list as jest.Mock).mockResolvedValue({ code: 200, data: mockAccounts });
     (accountApi.getSummary as jest.Mock).mockResolvedValue({
-      code: 0,
+      code: 200,
       data: { totalAssets: 8000, totalLiabilities: 2000, netAssets: 6000 },
     });
 
@@ -114,9 +114,9 @@ describe('AccountsPage', () => {
   });
 
   it('displays empty state when no accounts', async () => {
-    (accountApi.list as jest.Mock).mockResolvedValue({ code: 0, data: [] });
+    (accountApi.list as jest.Mock).mockResolvedValue({ code: 200, data: [] });
     (accountApi.getSummary as jest.Mock).mockResolvedValue({
-      code: 0,
+      code: 200,
       data: { totalAssets: 0, totalLiabilities: 0, netAssets: 0 },
     });
 
@@ -130,7 +130,7 @@ describe('AccountsPage', () => {
   it('handles API error gracefully', async () => {
     (accountApi.list as jest.Mock).mockRejectedValue(new Error('API Error'));
     (accountApi.getSummary as jest.Mock).mockResolvedValue({
-      code: 0,
+      code: 200,
       data: { totalAssets: 0, totalLiabilities: 0, netAssets: 0 },
     });
 
