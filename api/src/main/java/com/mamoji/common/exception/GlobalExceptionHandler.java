@@ -115,6 +115,15 @@ public class GlobalExceptionHandler {
     }
 
     /**
+     * Runtime exception handler
+     */
+    @ExceptionHandler(RuntimeException.class)
+    public Result<Void> handleRuntimeException(RuntimeException ex) {
+        log.error("Runtime exception: {}", ex.getMessage());
+        return Result.fail(ResultCode.FAIL.getCode(), ex.getMessage());
+    }
+
+    /**
      * Generic exception handler
      */
     @ExceptionHandler(Exception.class)

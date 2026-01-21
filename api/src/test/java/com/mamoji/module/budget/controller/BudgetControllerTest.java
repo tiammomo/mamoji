@@ -9,16 +9,19 @@ import com.mamoji.security.UserPrincipal;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.MediaType;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.core.MethodParameter;
+import org.springframework.web.bind.support.WebDataBinderFactory;
+import org.springframework.web.context.request.NativeWebRequest;
+import org.springframework.web.method.support.HandlerMethodArgumentResolver;
+import org.springframework.web.method.support.ModelAndViewContainer;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -32,35 +35,45 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 /**
- * Budget Controller Integration Tests
+ * Budget Controller Unit Tests
+ * Tests endpoints without Spring context
  */
-@SpringBootTest
-@AutoConfigureMockMvc
-@ActiveProfiles("test")
+@ExtendWith(MockitoExtension.class)
 public class BudgetControllerTest {
 
-    @Autowired
     private MockMvc mockMvc;
 
-    @MockBean
+    @Mock
     private BudgetService budgetService;
+
+    @InjectMocks
+    private BudgetController budgetController;
 
     private ObjectMapper objectMapper;
     private final Long testUserId = 999L;
 
     @BeforeEach
     void setUp() {
+        // Create custom argument resolver for UserPrincipal
+        HandlerMethodArgumentResolver userPrincipalResolver = new HandlerMethodArgumentResolver() {
+            @Override
+            public boolean supportsParameter(MethodParameter parameter) {
+                return parameter.getParameterType().equals(UserPrincipal.class);
+            }
+
+            @Override
+            public Object resolveArgument(MethodParameter parameter, ModelAndViewContainer mavContainer,
+                                          NativeWebRequest webRequest, WebDataBinderFactory binderFactory) {
+                return new UserPrincipal(testUserId, "testuser");
+            }
+        };
+
+        mockMvc = MockMvcBuilders.standaloneSetup(budgetController)
+                .setControllerAdvice(new com.mamoji.common.exception.GlobalExceptionHandler())
+                .setCustomArgumentResolvers(userPrincipalResolver)
+                .build();
         objectMapper = new ObjectMapper();
         objectMapper.registerModule(new JavaTimeModule());
-
-        // Set up security context with mock user
-        UserPrincipal userPrincipal = new UserPrincipal(testUserId, "testuser");
-        UsernamePasswordAuthenticationToken authentication =
-                new UsernamePasswordAuthenticationToken(
-                        userPrincipal,
-                        null,
-                        List.of(new SimpleGrantedAuthority("ROLE_USER")));
-        SecurityContextHolder.getContext().setAuthentication(authentication);
     }
 
     @Test
@@ -69,8 +82,7 @@ public class BudgetControllerTest {
         BudgetVO budget = createBudgetVO(1L, "Test Budget", new BigDecimal("1000.00"), new BigDecimal("200.00"));
         when(budgetService.listBudgets(testUserId)).thenReturn(List.of(budget));
 
-        mockMvc.perform(get("/api/v1/budgets")
-                        .principal(SecurityContextHolder.getContext().getAuthentication()))
+        mockMvc.perform(get("/api/v1/budgets"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(200))
                 .andExpect(jsonPath("$.data").isArray())
@@ -85,8 +97,7 @@ public class BudgetControllerTest {
         when(budgetService.listActiveBudgets(testUserId)).thenReturn(List.of(budget));
 
         mockMvc.perform(get("/api/v1/budgets")
-                        .param("activeOnly", "true")
-                        .principal(SecurityContextHolder.getContext().getAuthentication()))
+                        .param("activeOnly", "true"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(200))
                 .andExpect(jsonPath("$.data[0].status").value(1));
@@ -98,8 +109,7 @@ public class BudgetControllerTest {
         BudgetVO budget = createBudgetVO(1L, "Test Budget", new BigDecimal("1000.00"), new BigDecimal("200.00"));
         when(budgetService.getBudget(testUserId, 1L)).thenReturn(budget);
 
-        mockMvc.perform(get("/api/v1/budgets/1")
-                        .principal(SecurityContextHolder.getContext().getAuthentication()))
+        mockMvc.perform(get("/api/v1/budgets/1"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(200))
                 .andExpect(jsonPath("$.data.budgetId").value(1))
@@ -114,8 +124,7 @@ public class BudgetControllerTest {
 
         mockMvc.perform(post("/api/v1/budgets")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request))
-                        .principal(SecurityContextHolder.getContext().getAuthentication()))
+                        .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(200))
                 .andExpect(jsonPath("$.data").value(1));
@@ -128,8 +137,7 @@ public class BudgetControllerTest {
 
         mockMvc.perform(put("/api/v1/budgets/1")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request))
-                        .principal(SecurityContextHolder.getContext().getAuthentication()))
+                        .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(200));
     }
@@ -137,8 +145,7 @@ public class BudgetControllerTest {
     @Test
     @DisplayName("DELETE /api/v1/budgets/{id} - Delete budget")
     public void testDeleteBudget() throws Exception {
-        mockMvc.perform(delete("/api/v1/budgets/1")
-                        .principal(SecurityContextHolder.getContext().getAuthentication()))
+        mockMvc.perform(delete("/api/v1/budgets/1"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(200));
     }
