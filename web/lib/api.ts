@@ -1,8 +1,8 @@
-import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
+import axios, { AxiosError, InternalAxiosRequestConfig, AxiosResponse } from 'axios';
 import { useAuthStore } from '@/hooks/useAuth';
 
 // API Base URL - can be overridden via environment variable
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api/v1';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:48080/api/v1';
 
 // Create axios instance
 const api = axios.create({
@@ -27,10 +27,10 @@ api.interceptors.request.use(
   }
 );
 
-// Response interceptor - handle errors
+// Response interceptor - return full response (not extracting data)
 api.interceptors.response.use(
-  (response) => {
-    return response.data;
+  (response: AxiosResponse) => {
+    return response;
   },
   (error: AxiosError<{ message: string; code: number }>) => {
     if (error.response?.status === 401) {
@@ -46,15 +46,15 @@ api.interceptors.response.use(
 
 export default api;
 
-// Helper methods
+// Helper methods - return full response, frontend accesses response.data
 export const get = <T>(url: string, params?: object) =>
-  api.get<T>(url, { params }).then((res) => res.data);
+  api.get<{ code: number; message: string; data: T }>(url, { params }).then((res) => res.data);
 
 export const post = <T>(url: string, data?: object) =>
-  api.post<T>(url, data).then((res) => res.data);
+  api.post<{ code: number; message: string; data: T }>(url, data).then((res) => res.data);
 
 export const put = <T>(url: string, data?: object) =>
-  api.put<T>(url, data).then((res) => res.data);
+  api.put<{ code: number; message: string; data: T }>(url, data).then((res) => res.data);
 
 export const del = <T>(url: string) =>
-  api.delete<T>(url).then((res) => res.data);
+  api.delete<{ code: number; message: string; data: T }>(url).then((res) => res.data);

@@ -27,18 +27,29 @@ export const useAuthStore = create<AuthState>()(
       login: async (data: LoginRequest) => {
         set({ isLoading: true, error: null });
         try {
+          console.log('[Auth] 发送登录请求:', data);
           const response = await authApi.login(data);
-          if (response.code === 0 && response.data) {
+          console.log('[Auth] 收到响应:', response);
+          // response 是包装对象: {code, data, message, success}
+          if (response && response.code === 200 && response.data) {
             set({
               token: response.data.token,
-              user: response.data.user,
+              user: {
+                userId: response.data.userId,
+                username: response.data.username,
+                role: 'normal',
+                status: 1,
+              },
               isAuthenticated: true,
               isLoading: false,
             });
+            console.log('[Auth] 登录成功');
           } else {
-            throw new Error(response.message || '登录失败');
+            console.log('[Auth] 登录失败:', response?.message || '未知错误');
+            throw new Error(response?.message || '登录失败');
           }
         } catch (error) {
+          console.error('[Auth] 登录异常:', error);
           set({
             error: error instanceof Error ? error.message : '登录失败',
             isLoading: false,
@@ -59,7 +70,7 @@ export const useAuthStore = create<AuthState>()(
       },
 
       checkAuth: async () => {
-        const { token, isAuthenticated } = get();
+        const { token } = get();
         if (!token) {
           set({ isAuthenticated: false });
           return;
@@ -67,7 +78,7 @@ export const useAuthStore = create<AuthState>()(
 
         try {
           const response = await authApi.profile();
-          if (response.code === 0 && response.data) {
+          if (response && response.code === 200 && response.data) {
             set({
               user: response.data,
               isAuthenticated: true,

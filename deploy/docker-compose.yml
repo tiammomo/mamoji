@@ -1,0 +1,100 @@
+# ===========================================
+# Mamoji Development Environment
+# Docker Compose Configuration
+# ===========================================
+
+services:
+  # MySQL Database
+  mysql:
+    image: mysql:8.0
+    container_name: mamoji-mysql
+    hostname: mysql
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: mamoji
+      MYSQL_CHARSET: utf8mb4
+      MYSQL_COLLATION: utf8mb4_unicode_ci
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./mysql/init:/docker-entrypoint-initdb.d
+    networks:
+      - mamoji-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-proot"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: mamoji-redis
+    hostname: redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - mamoji-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # Backend API (Spring Boot)
+  api:
+    build:
+      context: ../api
+      dockerfile: Dockerfile
+    container_name: mamoji-api
+    hostname: api
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+      MYSQL_HOST: mysql
+      MYSQL_PORT: 3306
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - mamoji-network
+    restart: unless-stopped
+
+  # Frontend (Next.js)
+  web:
+    build:
+      context: ../web
+      dockerfile: Dockerfile
+    container_name: mamoji-web
+    hostname: web
+    ports:
+      - "3000:3000"
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:8080/api/v1
+    depends_on:
+      - api
+    networks:
+      - mamoji-network
+    restart: unless-stopped
+
+# Networks
+networks:
+  mamoji-network:
+    driver: bridge
+
+# Volumes
+volumes:
+  mysql_data:
+    driver: local
+  redis_data:
+    driver: local

@@ -2,14 +2,14 @@
 
 import React, { useEffect, useState } from 'react';
 import { DashboardLayout } from '@/components/layout/dashboard-layout';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { formatCurrency } from '@/lib/utils';
+import { formatCurrency, formatDate, getTransactionTypeLabel } from '@/lib/utils';
 import { accountApi, transactionApi, budgetApi } from '@/api';
 import type { AccountSummary, Transaction, Budget } from '@/types';
-import { TrendingUp, TrendingDown, Wallet, CreditCard, PiggyBank, ArrowRight } from 'lucide-react';
+import { TrendingUp, TrendingDown, Wallet, CreditCard, PiggyBank, ArrowRight, TrendingUp as TrendingUpIcon, DollarSign, Target, Activity } from 'lucide-react';
 import Link from 'next/link';
 
 export default function DashboardPage() {
@@ -30,9 +30,9 @@ export default function DashboardPage() {
         budgetApi.listActive(),
       ]);
 
-      if (summaryRes.code === 0) setSummary(summaryRes.data);
-      if (transactionsRes.code === 0) setRecentTransactions(transactionsRes.data || []);
-      if (budgetsRes.code === 0) setBudgets(budgetsRes.data || []);
+      if (summaryRes.code === 200) setSummary(summaryRes.data);
+      if (transactionsRes.code === 200) setRecentTransactions(transactionsRes.data || []);
+      if (budgetsRes.code === 200) setBudgets(budgetsRes.data || []);
     } catch (error) {
       console.error('Failed to load dashboard data:', error);
     } finally {
@@ -40,11 +40,23 @@ export default function DashboardPage() {
     }
   };
 
+  // Calculate monthly net income (mock for now - would need backend support)
+  const monthlyIncome = recentTransactions
+    .filter(tx => tx.type === 'income')
+    .reduce((sum, tx) => sum + tx.amount, 0);
+  const monthlyExpense = recentTransactions
+    .filter(tx => tx.type === 'expense')
+    .reduce((sum, tx) => sum + tx.amount, 0);
+  const monthlyNet = monthlyIncome - monthlyExpense;
+
   if (loading) {
     return (
       <DashboardLayout title="仪表盘">
-        <div className="flex items-center justify-center h-64">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        <div className="flex items-center justify-center h-96">
+          <div className="flex flex-col items-center gap-4">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+            <p className="text-muted-foreground">加载中...</p>
+          </div>
         </div>
       </DashboardLayout>
     );
@@ -53,58 +65,92 @@ export default function DashboardPage() {
   return (
     <DashboardLayout title="仪表盘">
       <div className="space-y-6">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div>
+            <h2 className="text-2xl font-bold tracking-tight">仪表盘</h2>
+            <p className="text-muted-foreground">欢迎回来，这是您的财务概览</p>
+          </div>
+          <div className="text-sm text-muted-foreground">
+            {new Date().toLocaleDateString('zh-CN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+          </div>
+        </div>
+
         {/* Summary Cards */}
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">总资产</CardTitle>
-              <Wallet className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {formatCurrency(summary?.totalAssets || 0)}
+          <Card className="bg-gradient-to-br from-green-50 to-green-100 border-green-200">
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-green-700 font-medium">总资产</p>
+                  <p className="text-2xl font-bold text-green-800">{formatCurrency(summary?.totalAssets || 0)}</p>
+                  <p className="text-xs text-green-600 mt-1">{summary?.accountsCount || 0} 个账户</p>
+                </div>
+                <div className="p-3 bg-green-200 rounded-full">
+                  <Wallet className="h-6 w-6 text-green-700" />
+                </div>
               </div>
-              <p className="text-xs text-muted-foreground">
-                {summary?.accountsCount || 0} 个账户
-              </p>
             </CardContent>
           </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">总负债</CardTitle>
-              <CreditCard className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-destructive">
-                {formatCurrency(summary?.totalLiabilities || 0)}
+
+          <Card className="bg-gradient-to-br from-red-50 to-red-100 border-red-200">
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-red-700 font-medium">总负债</p>
+                  <p className="text-2xl font-bold text-red-800">{formatCurrency(summary?.totalLiabilities || 0)}</p>
+                  <p className="text-xs text-red-600 mt-1">信用卡+贷款</p>
+                </div>
+                <div className="p-3 bg-red-200 rounded-full">
+                  <CreditCard className="h-6 w-6 text-red-700" />
+                </div>
               </div>
-              <p className="text-xs text-muted-foreground">信用卡+贷款</p>
             </CardContent>
           </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">净资产</CardTitle>
-              <PiggyBank className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {formatCurrency(summary?.netAssets || 0)}
+
+          <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-blue-700 font-medium">净资产</p>
+                  <p className="text-2xl font-bold text-blue-800">{formatCurrency(summary?.netAssets || 0)}</p>
+                  <p className="text-xs text-blue-600 mt-1">
+                    负债率 {summary ? ((summary.totalLiabilities / (summary.totalAssets || 1)) * 100).toFixed(1) : 0}%
+                  </p>
+                </div>
+                <div className="p-3 bg-blue-200 rounded-full">
+                  <PiggyBank className="h-6 w-6 text-blue-700" />
+                </div>
               </div>
-              <p className="text-xs text-muted-foreground">
-                {summary ? ((summary.totalAssets - summary.totalLiabilities) / summary.totalAssets * 100).toFixed(1) : 0}% 负债率
-              </p>
             </CardContent>
           </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">本月净收入</CardTitle>
-              <TrendingUp className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-green-600">
-                +{formatCurrency(3250)}
+
+          <Card className={`bg-gradient-to-br ${monthlyNet >= 0 ? 'from-emerald-50 to-emerald-100 border-emerald-200' : 'from-orange-50 to-orange-100 border-orange-200'}`}>
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium">本月净收入</p>
+                  <p className={`text-2xl font-bold ${monthlyNet >= 0 ? 'text-emerald-800' : 'text-orange-800'}`}>
+                    {monthlyNet >= 0 ? '+' : ''}{formatCurrency(monthlyNet)}
+                  </p>
+                  <p className="text-xs mt-1">
+                    <span className={monthlyIncome > 0 ? 'text-green-600' : 'text-muted-foreground'}>
+                      收入 {formatCurrency(monthlyIncome)}
+                    </span>
+                    {' / '}
+                    <span className={monthlyExpense > 0 ? 'text-red-600' : 'text-muted-foreground'}>
+                      支出 {formatCurrency(monthlyExpense)}
+                    </span>
+                  </p>
+                </div>
+                <div className={`p-3 rounded-full ${monthlyNet >= 0 ? 'bg-emerald-200' : 'bg-orange-200'}`}>
+                  {monthlyNet >= 0 ? (
+                    <TrendingUpIcon className="h-6 w-6 text-emerald-700" />
+                  ) : (
+                    <TrendingDown className="h-6 w-6 text-orange-700" />
+                  )}
+                </div>
               </div>
-              <p className="text-xs text-muted-foreground">较上月增长 12.5%</p>
             </CardContent>
           </Card>
         </div>
@@ -113,20 +159,37 @@ export default function DashboardPage() {
           {/* Recent Transactions */}
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle>最近交易</CardTitle>
+              <div>
+                <CardTitle className="flex items-center gap-2">
+                  <Activity className="h-5 w-5" />
+                  最近交易
+                </CardTitle>
+                <CardDescription>您最近的收支记录</CardDescription>
+              </div>
               <Link href="/transactions">
-                <Button variant="ghost" size="sm">
+                <Button variant="outline" size="sm">
                   查看全部 <ArrowRight className="ml-1 h-4 w-4" />
                 </Button>
               </Link>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
+              <div className="space-y-3">
                 {recentTransactions.length === 0 ? (
-                  <p className="text-center text-muted-foreground py-8">暂无交易记录</p>
+                  <div className="text-center py-12">
+                    <DollarSign className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                    <p className="text-muted-foreground mb-4">暂无交易记录</p>
+                    <Link href="/transactions">
+                      <Button variant="outline" size="sm">
+                        添加交易
+                      </Button>
+                    </Link>
+                  </div>
                 ) : (
                   recentTransactions.map((tx) => (
-                    <div key={tx.transactionId} className="flex items-center justify-between">
+                    <div
+                      key={tx.transactionId}
+                      className="flex items-center justify-between p-3 rounded-lg hover:bg-muted/50 transition-colors"
+                    >
                       <div className="flex items-center gap-3">
                         <div className={`p-2 rounded-full ${tx.type === 'income' ? 'bg-green-100' : 'bg-red-100'}`}>
                           {tx.type === 'income' ? (
@@ -136,13 +199,13 @@ export default function DashboardPage() {
                           )}
                         </div>
                         <div>
-                          <p className="font-medium">{tx.note || '交易'}</p>
+                          <p className="font-medium">{tx.note || getTransactionTypeLabel(tx.type)}</p>
                           <p className="text-sm text-muted-foreground">
-                            {new Date(tx.occurredAt).toLocaleDateString()}
+                            {formatDate(tx.occurredAt, 'YYYY-MM-DD')}
                           </p>
                         </div>
                       </div>
-                      <span className={tx.type === 'income' ? 'text-green-600 font-medium' : 'text-red-600 font-medium'}>
+                      <span className={`font-semibold ${tx.type === 'income' ? 'text-green-600' : 'text-red-600'}`}>
                         {tx.type === 'income' ? '+' : '-'}{formatCurrency(tx.amount)}
                       </span>
                     </div>
@@ -155,9 +218,15 @@ export default function DashboardPage() {
           {/* Budget Progress */}
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle>预算进度</CardTitle>
+              <div>
+                <CardTitle className="flex items-center gap-2">
+                  <Target className="h-5 w-5" />
+                  预算进度
+                </CardTitle>
+                <CardDescription>当前活跃预算使用情况</CardDescription>
+              </div>
               <Link href="/budgets">
-                <Button variant="ghost" size="sm">
+                <Button variant="outline" size="sm">
                   管理预算 <ArrowRight className="ml-1 h-4 w-4" />
                 </Button>
               </Link>
@@ -165,11 +234,21 @@ export default function DashboardPage() {
             <CardContent>
               <div className="space-y-4">
                 {budgets.length === 0 ? (
-                  <p className="text-center text-muted-foreground py-8">暂无预算</p>
+                  <div className="text-center py-12">
+                    <Target className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                    <p className="text-muted-foreground mb-4">暂无预算</p>
+                    <Link href="/budgets">
+                      <Button variant="outline" size="sm">
+                        创建预算
+                      </Button>
+                    </Link>
+                  </div>
                 ) : (
                   budgets.slice(0, 4).map((budget) => {
                     const percentage = budget.amount > 0 ? (budget.spent / budget.amount) * 100 : 0;
                     const isOver = budget.spent > budget.amount;
+                    const remaining = budget.amount - budget.spent;
+
                     return (
                       <div key={budget.budgetId} className="space-y-2">
                         <div className="flex items-center justify-between">
@@ -178,13 +257,23 @@ export default function DashboardPage() {
                             {formatCurrency(budget.spent)} / {formatCurrency(budget.amount)}
                           </span>
                         </div>
-                        <Progress value={Math.min(percentage, 100)} className="h-2" />
+                        <Progress
+                          value={Math.min(percentage, 100)}
+                          className="h-2"
+                        />
                         <div className="flex items-center justify-between text-sm">
-                          <Badge variant={isOver ? 'destructive' : percentage > 80 ? 'warning' : 'success'}>
+                          <Badge
+                            variant={isOver ? 'destructive' : percentage > 80 ? 'warning' : 'success'}
+                            className={isOver ? '' : percentage > 80 ? 'bg-orange-500' : 'bg-green-500'}
+                          >
                             {isOver ? '已超支' : `${percentage.toFixed(0)}%`}
                           </Badge>
-                          <span className="text-muted-foreground">
-                            剩余 {formatCurrency(budget.amount - budget.spent)}
+                          <span className={`text-muted-foreground ${isOver ? 'text-red-600' : ''}`}>
+                            {isOver ? (
+                              <span className="text-red-600">超支 {formatCurrency(Math.abs(remaining))}</span>
+                            ) : (
+                              <span>剩余 {formatCurrency(remaining)}</span>
+                            )}
                           </span>
                         </div>
                       </div>
@@ -194,6 +283,57 @@ export default function DashboardPage() {
               </div>
             </CardContent>
           </Card>
+        </div>
+
+        {/* Quick Actions */}
+        <div className="grid gap-4 md:grid-cols-3">
+          <Link href="/transactions">
+            <Card className="hover:shadow-md transition-shadow cursor-pointer">
+              <CardContent className="pt-6">
+                <div className="flex items-center gap-4">
+                  <div className="p-3 bg-blue-100 rounded-full">
+                    <DollarSign className="h-6 w-6 text-blue-600" />
+                  </div>
+                  <div>
+                    <p className="font-semibold">记一笔账</p>
+                    <p className="text-sm text-muted-foreground">快速添加交易记录</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </Link>
+
+          <Link href="/accounts">
+            <Card className="hover:shadow-md transition-shadow cursor-pointer">
+              <CardContent className="pt-6">
+                <div className="flex items-center gap-4">
+                  <div className="p-3 bg-green-100 rounded-full">
+                    <Wallet className="h-6 w-6 text-green-600" />
+                  </div>
+                  <div>
+                    <p className="font-semibold">账户管理</p>
+                    <p className="text-sm text-muted-foreground">查看和管理账户</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </Link>
+
+          <Link href="/reports">
+            <Card className="hover:shadow-md transition-shadow cursor-pointer">
+              <CardContent className="pt-6">
+                <div className="flex items-center gap-4">
+                  <div className="p-3 bg-purple-100 rounded-full">
+                    <Activity className="h-6 w-6 text-purple-600" />
+                  </div>
+                  <div>
+                    <p className="font-semibold">财务报表</p>
+                    <p className="text-sm text-muted-foreground">分析收支情况</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </Link>
         </div>
       </div>
     </DashboardLayout>
