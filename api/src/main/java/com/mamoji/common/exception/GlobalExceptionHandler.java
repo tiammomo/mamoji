@@ -119,8 +119,9 @@ public class GlobalExceptionHandler {
      */
     @ExceptionHandler(RuntimeException.class)
     public Result<Void> handleRuntimeException(RuntimeException ex) {
-        log.error("Runtime exception: {}", ex.getMessage());
-        return Result.fail(ResultCode.FAIL.getCode(), ex.getMessage());
+        log.error("Runtime exception", ex);
+        String message = ex.getMessage() != null ? ex.getMessage() : "系统繁忙，请稍后重试";
+        return Result.fail(ResultCode.FAIL.getCode(), message);
     }
 
     /**
