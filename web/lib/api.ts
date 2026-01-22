@@ -9,8 +9,10 @@ const api = axios.create({
   baseURL: API_BASE_URL,
   timeout: 30000,
   headers: {
-    'Content-Type': 'application/json',
+    'Content-Type': 'application/json; charset=utf-8',
   },
+  transformRequest: [(data) => JSON.stringify(data)],
+  responseType: 'json',
 });
 
 // Request interceptor - add auth token

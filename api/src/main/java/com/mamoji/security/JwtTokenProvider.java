@@ -37,7 +37,13 @@ public class JwtTokenProvider {
 
     @PostConstruct
     public void init() {
-        this.secretKey = Keys.hmacShaKeyFor(jwtConfig.getSecret().getBytes(StandardCharsets.UTF_8));
+        String secret = jwtConfig.getSecret();
+        if (secret == null || secret.isEmpty()) {
+            secret = "mamoji-secret-key-for-jwt-token-generation-min-256-bits-required";
+            jwtConfig.setSecret(secret);
+        }
+        this.secretKey = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
+        log.info("JWT Token Provider initialized successfully");
     }
 
     /**
