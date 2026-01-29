@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { DashboardLayout } from '@/components/layout/dashboard-layout';
-import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
@@ -171,7 +171,6 @@ export default function DashboardPage() {
                   <Activity className="h-5 w-5" />
                   最近交易
                 </CardTitle>
-                <CardDescription>您最近的收支记录</CardDescription>
               </div>
               <Link href="/transactions">
                 <Button variant="outline" size="sm">
@@ -198,8 +197,8 @@ export default function DashboardPage() {
                       className="flex items-center justify-between p-3 rounded-lg hover:bg-muted/50 transition-colors"
                     >
                       <div className="flex items-center gap-3">
-                        <div className={`p-2 rounded-full ${tx.type === 'income' ? 'bg-green-100' : 'bg-red-100'}`}>
-                          {tx.type === 'income' ? (
+                        <div className={`p-2 rounded-full ${tx.type?.toLowerCase() === 'income' ? 'bg-green-100' : 'bg-red-100'}`}>
+                          {tx.type?.toLowerCase() === 'income' ? (
                             <TrendingUp className="h-4 w-4 text-green-600" />
                           ) : (
                             <TrendingDown className="h-4 w-4 text-red-600" />
@@ -212,8 +211,8 @@ export default function DashboardPage() {
                           </p>
                         </div>
                       </div>
-                      <span className={`font-semibold ${tx.type === 'income' ? 'text-green-600' : 'text-red-600'}`}>
-                        {tx.type === 'income' ? '+' : '-'}{formatCurrency(tx.amount)}
+                      <span className={`font-semibold ${tx.type?.toLowerCase() === 'income' ? 'text-green-600' : 'text-red-600'}`}>
+                        {tx.type?.toLowerCase() === 'income' ? '+' : '-'}{formatCurrency(tx.amount)}
                       </span>
                     </div>
                   ))
@@ -230,7 +229,6 @@ export default function DashboardPage() {
                   <Target className="h-5 w-5" />
                   预算进度
                 </CardTitle>
-                <CardDescription>当前活跃预算使用情况</CardDescription>
               </div>
               <Link href="/budgets">
                 <Button variant="outline" size="sm">
