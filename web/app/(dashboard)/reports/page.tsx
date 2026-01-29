@@ -2,19 +2,15 @@
 
 import React, { useEffect, useState } from 'react';
 import { DashboardLayout } from '@/components/layout/dashboard-layout';
-import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { formatCurrency } from '@/lib/utils';
 import { reportApi } from '@/api';
-import type { AccountSummary, CategoryReport, MonthlyReport, BalanceSheet } from '@/types';
 import {
   PieChart,
   Pie,
   Cell,
-  BarChart,
-  Bar,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -24,16 +20,51 @@ import {
   LineChart,
   Line,
 } from 'recharts';
-import { TrendingUp, TrendingDown, Wallet, DollarSign, TrendingUpIcon, TrendingDownIcon, BarChart3, PieChart as PieChartIcon, Activity } from 'lucide-react';
+import { TrendingUp, TrendingDown, Wallet, DollarSign, BarChart3, PieChart as PieChartIcon, Activity } from 'lucide-react';
 import { toast } from 'sonner';
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8', '#82CA9D', '#FF6B6B', '#4ECDC4'];
 
+interface CategoryReport {
+  categoryId?: number;
+  categoryName: string;
+  type: string;
+  amount: number;
+  count: number;
+  percentage?: number;
+}
+
+interface MonthlyData {
+  day: number;
+  income: number;
+  expense: number;
+}
+
+interface BalanceSheetItem {
+  accountId?: number;
+  name: string;
+  type?: string;
+  balance: number;
+}
+
 export default function ReportsPage() {
-  const [summary, setSummary] = useState<AccountSummary | null>(null);
+  const [summary, setSummary] = useState<{ totalIncome: number; totalExpense: number; netIncome: number } | null>(null);
   const [incomeExpense, setIncomeExpense] = useState<CategoryReport[]>([]);
-  const [monthlyReport, setMonthlyReport] = useState<MonthlyReport | null>(null);
-  const [balanceSheet, setBalanceSheet] = useState<BalanceSheet | null>(null);
+  const [monthlyData, setMonthlyData] = useState<{
+    year: number;
+    month: number;
+    totalIncome: number;
+    totalExpense: number;
+    netIncome: number;
+    dailyData: MonthlyData[];
+  } | null>(null);
+  const [balanceSheet, setBalanceSheet] = useState<{
+    totalAssets: number;
+    totalLiabilities: number;
+    netAssets: number;
+    assets: BalanceSheetItem[];
+    liabilities: BalanceSheetItem[];
+  } | null>(null);
   const [loading, setLoading] = useState(true);
   const [currentMonth, setCurrentMonth] = useState(() => {
     const now = new Date();
@@ -49,25 +80,90 @@ export default function ReportsPage() {
     try {
       const [year, month] = currentMonth.split('-').map(Number);
       const [summaryRes, incomeRes, monthlyRes, balanceRes] = await Promise.all([
-        reportApi.getSummary(),
+        reportApi.getSummary({}),
         reportApi.getIncomeExpense({ year, month }),
         reportApi.getMonthly({ year, month }),
         reportApi.getBalanceSheet(),
       ]);
 
-      if (summaryRes.code === 200) setSummary(summaryRes.data);
-      if (incomeRes.code === 200) setIncomeExpense(incomeRes.data || []);
-      if (monthlyRes.code === 200) setMonthlyReport(monthlyRes.data);
-      if (balanceRes.code === 200) setBalanceSheet(balanceRes.data);
+      if (summaryRes.code === 200 && summaryRes.data) {
+        const data = summaryRes.data as any;
+        setSummary({
+          totalIncome: Number(data.totalIncome) || 0,
+          totalExpense: Number(data.totalExpense) || 0,
+          netIncome: Number(data.netIncome) || 0,
+        });
+      }
+      if (incomeRes.code === 200) {
+        const data = incomeRes.data as any[];
+        setIncomeExpense(data.map((d) => ({
+          categoryId: d.categoryId,
+          categoryName: d.categoryName,
+          type: d.type,
+          amount: Number(d.amount) || 0,
+          count: d.count || 0,
+          percentage: d.percentage,
+        })));
+      }
+      if (monthlyRes.code === 200) {
+        const data = monthlyRes.data as any;
+        setMonthlyData({
+          year: data.year,
+          month: data.month,
+          totalIncome: Number(data.totalIncome) || 0,
+          totalExpense: Number(data.totalExpense) || 0,
+          netIncome: Number(data.netIncome) || 0,
+          dailyData: (data.dailyData || []).map((d: any) => ({
+            day: d.day,
+            income: Number(d.income) || 0,
+            expense: Number(d.expense) || 0,
+          })),
+        });
+      }
+      if (balanceRes.code === 200) {
+        const data = balanceRes.data as any;
+        setBalanceSheet({
+          totalAssets: Number(data.totalAssets) || 0,
+          totalLiabilities: Number(data.totalLiabilities) || 0,
+          netAssets: Number(data.netAssets) || 0,
+          assets: (data.assets || []).map((a: any) => ({
+            accountId: a.accountId,
+            name: a.name,
+            type: a.type,
+            balance: Number(a.balance) || 0,
+          })),
+          liabilities: (data.liabilities || []).map((l: any) => ({
+            accountId: l.accountId,
+            name: l.name,
+            balance: Number(l.balance) || 0,
+          })),
+        });
+      }
     } catch (error) {
+      console.error('加载报表失败:', error);
       toast.error('加载报表失败');
     } finally {
       setLoading(false);
     }
   };
 
-  const incomeData = incomeExpense.filter((i) => i.type === 'income');
-  const expenseData = incomeExpense.filter((i) => i.type === 'expense');
+  const incomeData = incomeExpense.filter((i) => i.type?.toLowerCase() === 'income');
+  const expenseData = incomeExpense.filter((i) => i.type?.toLowerCase() === 'expense');
+
+  const incomePieData = incomeData.map((d) => ({
+    name: d.categoryName,
+    value: d.amount,
+  }));
+  const expensePieData = expenseData.map((d) => ({
+    name: d.categoryName,
+    value: d.amount,
+  }));
+
+  const trendChartData = monthlyData?.dailyData.map((d) => ({
+    date: `${d.day}日`,
+    income: d.income,
+    expense: d.expense,
+  })) || [];
 
   if (loading) {
     return (
@@ -89,7 +185,6 @@ export default function ReportsPage() {
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
             <h2 className="text-2xl font-bold tracking-tight">报表统计</h2>
-            <p className="text-muted-foreground">分析您的收支情况</p>
           </div>
           <Select value={currentMonth} onValueChange={setCurrentMonth}>
             <SelectTrigger className="w-44">
@@ -97,14 +192,12 @@ export default function ReportsPage() {
             </SelectTrigger>
             <SelectContent>
               {Array.from({ length: 12 }, (_, i) => {
-                const year = new Date().getFullYear() - Math.floor(i / 12);
-                const month = new Date().getMonth() - (i % 12) + 1;
-                const adjustedYear = month <= 0 ? year - 1 : year;
-                const adjustedMonth = month <= 0 ? month + 12 : month;
-                const value = `${adjustedYear}-${String(adjustedMonth).padStart(2, '0')}`;
+                const date = new Date();
+                date.setMonth(date.getMonth() - i);
+                const value = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
                 return (
                   <SelectItem key={value} value={value}>
-                    {adjustedYear}年{adjustedMonth}月
+                    {date.getFullYear()}年{date.getMonth() + 1}月
                   </SelectItem>
                 );
               })}
@@ -120,11 +213,11 @@ export default function ReportsPage() {
                 <div>
                   <p className="text-sm text-green-700 font-medium">本月收入</p>
                   <p className="text-2xl font-bold text-green-800">
-                    {formatCurrency(monthlyReport?.totalIncome || 0)}
+                    {formatCurrency(monthlyData?.totalIncome || 0)}
                   </p>
                 </div>
                 <div className="p-3 bg-green-200 rounded-full">
-                  <TrendingUpIcon className="h-6 w-6 text-green-700" />
+                  <TrendingUp className="h-6 w-6 text-green-700" />
                 </div>
               </div>
             </CardContent>
@@ -136,23 +229,23 @@ export default function ReportsPage() {
                 <div>
                   <p className="text-sm text-red-700 font-medium">本月支出</p>
                   <p className="text-2xl font-bold text-red-800">
-                    {formatCurrency(monthlyReport?.totalExpense || 0)}
+                    {formatCurrency(monthlyData?.totalExpense || 0)}
                   </p>
                 </div>
                 <div className="p-3 bg-red-200 rounded-full">
-                  <TrendingDownIcon className="h-6 w-6 text-red-700" />
+                  <TrendingDown className="h-6 w-6 text-red-700" />
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card className={`bg-gradient-to-br ${(monthlyReport?.netIncome || 0) >= 0 ? 'from-blue-50 to-blue-100 border-blue-200' : 'from-orange-50 to-orange-100 border-orange-200'}`}>
+          <Card className={`bg-gradient-to-br ${(monthlyData?.netIncome || 0) >= 0 ? 'from-blue-50 to-blue-100 border-blue-200' : 'from-orange-50 to-orange-100 border-orange-200'}`}>
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium">净收入</p>
-                  <p className={`text-2xl font-bold ${(monthlyReport?.netIncome || 0) >= 0 ? 'text-blue-800' : 'text-orange-800'}`}>
-                    {formatCurrency(monthlyReport?.netIncome || 0)}
+                  <p className={`text-2xl font-bold ${(monthlyData?.netIncome || 0) >= 0 ? 'text-blue-800' : 'text-orange-800'}`}>
+                    {formatCurrency(monthlyData?.netIncome || 0)}
                   </p>
                 </div>
                 <div className="p-3 bg-blue-200 rounded-full">
@@ -168,7 +261,7 @@ export default function ReportsPage() {
                 <div>
                   <p className="text-sm text-purple-700 font-medium">净资产</p>
                   <p className="text-2xl font-bold text-purple-800">
-                    {formatCurrency(summary?.netAssets || 0)}
+                    {formatCurrency(balanceSheet?.netAssets || 0)}
                   </p>
                 </div>
                 <div className="p-3 bg-purple-200 rounded-full">
@@ -205,10 +298,9 @@ export default function ReportsPage() {
                     <TrendingUp className="h-5 w-5 text-green-600" />
                     收入分布
                   </CardTitle>
-                  <CardDescription>按分类统计的收入占比</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  {incomeData.length === 0 ? (
+                  {incomePieData.length === 0 ? (
                     <div className="text-center py-12">
                       <TrendingUp className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
                       <p className="text-muted-foreground">本月暂无收入</p>
@@ -217,17 +309,17 @@ export default function ReportsPage() {
                     <ResponsiveContainer width="100%" height={300}>
                       <PieChart>
                         <Pie
-                          data={incomeData}
+                          data={incomePieData}
                           cx="50%"
                           cy="50%"
                           labelLine={false}
                           outerRadius={100}
                           fill="#8884d8"
-                          dataKey="totalAmount"
-                          nameKey="categoryName"
+                          dataKey="value"
+                          nameKey="name"
                           label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
                         >
-                          {incomeData.map((_, index) => (
+                          {incomePieData.map((_, index) => (
                             <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                           ))}
                         </Pie>
@@ -245,10 +337,9 @@ export default function ReportsPage() {
                     <TrendingDown className="h-5 w-5 text-red-600" />
                     支出分布
                   </CardTitle>
-                  <CardDescription>按分类统计的支出占比</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  {expenseData.length === 0 ? (
+                  {expensePieData.length === 0 ? (
                     <div className="text-center py-12">
                       <TrendingDown className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
                       <p className="text-muted-foreground">本月暂无支出</p>
@@ -257,17 +348,17 @@ export default function ReportsPage() {
                     <ResponsiveContainer width="100%" height={300}>
                       <PieChart>
                         <Pie
-                          data={expenseData}
+                          data={expensePieData}
                           cx="50%"
                           cy="50%"
                           labelLine={false}
                           outerRadius={100}
                           fill="#8884d8"
-                          dataKey="totalAmount"
-                          nameKey="categoryName"
+                          dataKey="value"
+                          nameKey="name"
                           label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
                         >
-                          {expenseData.map((_, index) => (
+                          {expensePieData.map((_, index) => (
                             <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                           ))}
                         </Pie>
@@ -279,15 +370,13 @@ export default function ReportsPage() {
               </Card>
             </div>
 
-            {/* Income/Expense Details Table */}
+            {/* Income/Expense Details */}
             <Card>
               <CardHeader>
                 <CardTitle>收支明细</CardTitle>
-                <CardDescription>本月各分类收支详情</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="grid gap-4 md:grid-cols-2">
-                  {/* Income Details */}
                   <div>
                     <h4 className="font-medium mb-3 flex items-center gap-2">
                       <TrendingUp className="h-4 w-4 text-green-600" />
@@ -301,7 +390,7 @@ export default function ReportsPage() {
                           <div key={index} className="flex justify-between items-center p-2 bg-green-50 rounded">
                             <span>{item.categoryName}</span>
                             <span className="font-medium text-green-700">
-                              +{formatCurrency(item.totalAmount)}
+                              +{formatCurrency(item.amount)}
                             </span>
                           </div>
                         ))}
@@ -309,7 +398,6 @@ export default function ReportsPage() {
                     )}
                   </div>
 
-                  {/* Expense Details */}
                   <div>
                     <h4 className="font-medium mb-3 flex items-center gap-2">
                       <TrendingDown className="h-4 w-4 text-red-600" />
@@ -323,7 +411,7 @@ export default function ReportsPage() {
                           <div key={index} className="flex justify-between items-center p-2 bg-red-50 rounded">
                             <span>{item.categoryName}</span>
                             <span className="font-medium text-red-700">
-                              -{formatCurrency(item.totalAmount)}
+                              -{formatCurrency(item.amount)}
                             </span>
                           </div>
                         ))}
@@ -342,16 +430,14 @@ export default function ReportsPage() {
                   <Activity className="h-5 w-5 text-blue-600" />
                   每日收支趋势
                 </CardTitle>
-                <CardDescription>{currentMonth} 月每日收入与支出对比</CardDescription>
               </CardHeader>
               <CardContent>
-                {monthlyReport?.dailyData && monthlyReport.dailyData.length > 0 ? (
+                {trendChartData.length > 0 ? (
                   <ResponsiveContainer width="100%" height={400}>
-                    <LineChart data={monthlyReport.dailyData}>
+                    <LineChart data={trendChartData}>
                       <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                       <XAxis
                         dataKey="date"
-                        tickFormatter={(v) => v.slice(-2)}
                         tick={{ fill: 'muted-foreground' }}
                       />
                       <YAxis tick={{ fill: 'muted-foreground' }} />
@@ -399,7 +485,6 @@ export default function ReportsPage() {
                   <BarChart3 className="h-5 w-5 text-purple-600" />
                   资产负债表
                 </CardTitle>
-                <CardDescription>当前资产与负债状况</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="grid gap-6 md:grid-cols-2">
@@ -414,14 +499,14 @@ export default function ReportsPage() {
                           <div key={index} className="flex justify-between items-center p-3 bg-green-50 rounded-lg">
                             <span>{asset.name}</span>
                             <span className="font-medium text-green-700">
-                              {formatCurrency(asset.amount)}
+                              {formatCurrency(asset.balance)}
                             </span>
                           </div>
                         ))}
                         <div className="flex justify-between items-center p-3 font-bold bg-green-100 rounded-lg border-t-2 border-green-200">
                           <span>资产合计</span>
                           <span className="text-green-800">
-                            {formatCurrency(balanceSheet.assets.reduce((sum, a) => sum + a.amount, 0))}
+                            {formatCurrency(balanceSheet.totalAssets)}
                           </span>
                         </div>
                       </div>
@@ -442,14 +527,14 @@ export default function ReportsPage() {
                           <div key={index} className="flex justify-between items-center p-3 bg-red-50 rounded-lg">
                             <span>{liability.name}</span>
                             <span className="font-medium text-red-700">
-                              {formatCurrency(liability.amount)}
+                              {formatCurrency(liability.balance)}
                             </span>
                           </div>
                         ))}
                         <div className="flex justify-between items-center p-3 font-bold bg-red-100 rounded-lg border-t-2 border-red-200">
                           <span>负债合计</span>
                           <span className="text-red-800">
-                            {formatCurrency(balanceSheet.liabilities.reduce((sum, l) => sum + l.amount, 0))}
+                            {formatCurrency(balanceSheet.totalLiabilities)}
                           </span>
                         </div>
                       </div>
@@ -461,7 +546,6 @@ export default function ReportsPage() {
                   </div>
                 </div>
 
-                {/* Net Assets Summary */}
                 <div className="mt-6 p-6 bg-gradient-to-r from-purple-50 to-blue-50 rounded-xl border border-purple-200">
                   <div className="flex justify-between items-center">
                     <span className="text-lg font-semibold">净资产</span>

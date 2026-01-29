@@ -16,12 +16,12 @@ public interface FinTransactionMapper extends BaseMapper<FinTransaction> {
 
     /** Sum amount by conditions */
     @Select(
-            "SELECT COALESCE(SUM(amount), 0) FROM fin_transaction WHERE user_id = #{userId} AND status = 1 AND type = #{type}")
+            "SELECT COALESCE(SUM(amount), 0) FROM fin_transaction WHERE user_id = #{userId} AND status = 1 AND UPPER(type) = UPPER(#{type})")
     BigDecimal sumAmountByUserAndType(@Param("userId") Long userId, @Param("type") String type);
 
     /** Sum amount by conditions with date range */
     @Select(
-            "SELECT COALESCE(SUM(amount), 0) FROM fin_transaction WHERE user_id = #{userId} AND status = 1 AND type = #{type} AND occurred_at >= #{startDate} AND occurred_at <= #{endDate}")
+            "SELECT COALESCE(SUM(amount), 0) FROM fin_transaction WHERE user_id = #{userId} AND status = 1 AND UPPER(type) = UPPER(#{type}) AND occurred_at >= #{startDate} AND occurred_at <= #{endDate}")
     BigDecimal sumAmountByUserTypeAndDateRange(
             @Param("userId") Long userId,
             @Param("type") String type,
@@ -30,7 +30,7 @@ public interface FinTransactionMapper extends BaseMapper<FinTransaction> {
 
     /** Sum expense amount for budget */
     @Select(
-            "SELECT COALESCE(SUM(amount), 0) FROM fin_transaction WHERE budget_id = #{budgetId} AND status = 1 AND type = 'expense' AND occurred_at >= #{startDate} AND occurred_at <= #{endDate}")
+            "SELECT COALESCE(SUM(amount), 0) FROM fin_transaction WHERE budget_id = #{budgetId} AND status = 1 AND UPPER(type) = 'EXPENSE' AND occurred_at >= #{startDate} AND occurred_at <= #{endDate}")
     BigDecimal sumExpenseByBudgetId(
             @Param("budgetId") Long budgetId,
             @Param("startDate") LocalDateTime startDate,

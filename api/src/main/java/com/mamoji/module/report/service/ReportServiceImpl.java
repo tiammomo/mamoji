@@ -133,7 +133,7 @@ public class ReportServiceImpl implements ReportService {
             vo.setAmount(vo.getAmount().add(amount));
             vo.setCount(vo.getCount() + 1);
 
-            if ("income".equals(tx.getType())) {
+            if ("INCOME".equals(tx.getType())) {
                 totalIncome = totalIncome.add(amount);
             } else {
                 totalExpense = totalExpense.add(amount);
@@ -142,7 +142,7 @@ public class ReportServiceImpl implements ReportService {
 
         // Calculate percentage
         for (CategoryReportVO vo : categoryMap.values()) {
-            BigDecimal total = "income".equals(vo.getType()) ? totalIncome : totalExpense;
+            BigDecimal total = "INCOME".equals(vo.getType()) ? totalIncome : totalExpense;
             if (total.compareTo(BigDecimal.ZERO) > 0) {
                 Double percentage =
                         vo.getAmount()
@@ -179,11 +179,12 @@ public class ReportServiceImpl implements ReportService {
         for (FinTransaction tx : transactions) {
             int day = tx.getOccurredAt().getDayOfMonth();
             BigDecimal amount = tx.getAmount() != null ? tx.getAmount() : BigDecimal.ZERO;
+            String typeKey = "INCOME".equals(tx.getType()) ? "income" : "expense";
 
             dailyMap.computeIfAbsent(day, k -> new HashMap<>())
-                    .merge(tx.getType(), amount, BigDecimal::add);
+                    .merge(typeKey, amount, BigDecimal::add);
 
-            if ("income".equals(tx.getType())) {
+            if ("INCOME".equals(tx.getType())) {
                 totalIncome = totalIncome.add(amount);
             } else {
                 totalExpense = totalExpense.add(amount);
@@ -338,7 +339,7 @@ public class ReportServiceImpl implements ReportService {
 
             for (FinTransaction tx : entry.getValue()) {
                 BigDecimal amount = tx.getAmount() != null ? tx.getAmount() : BigDecimal.ZERO;
-                if ("income".equals(tx.getType())) {
+                if ("INCOME".equals(tx.getType())) {
                     income = income.add(amount);
                 } else {
                     expense = expense.add(amount);
