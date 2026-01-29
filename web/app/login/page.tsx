@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -22,8 +22,28 @@ type LoginForm = z.infer<typeof loginSchema>;
 
 export default function LoginPage() {
   const router = useRouter();
-  const { login, isLoading } = useAuthStore();
+  const { login, isLoading, isAuthenticated } = useAuthStore();
   const [showPassword, setShowPassword] = useState(false);
+
+  // 清除旧的认证状态，避免 403 错误
+  useEffect(() => {
+    // 清除 localStorage 中的旧 token
+    localStorage.removeItem('mamoji-auth');
+    // 重置 Zustand 状态
+    useAuthStore.setState({
+      token: null,
+      user: null,
+      isAuthenticated: false,
+      error: null,
+    });
+  }, []);
+
+  // 如果已登录，跳转到仪表盘
+  useEffect(() => {
+    if (isAuthenticated) {
+      router.push('/dashboard');
+    }
+  }, [isAuthenticated, router]);
 
   const {
     register,

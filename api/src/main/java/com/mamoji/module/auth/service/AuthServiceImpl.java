@@ -1,6 +1,8 @@
 package com.mamoji.module.auth.service;
 
-import cn.hutool.crypto.SecureUtil;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.mamoji.common.exception.BusinessException;
 import com.mamoji.common.result.ResultCode;
@@ -11,14 +13,16 @@ import com.mamoji.module.auth.dto.RegisterRequest;
 import com.mamoji.module.auth.entity.SysUser;
 import com.mamoji.module.auth.mapper.SysUserMapper;
 import com.mamoji.security.JwtTokenProvider;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.stereotype.Service;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
-/**
- * Authentication Service Implementation
- */
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+
+/** Authentication Service Implementation */
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -39,11 +43,11 @@ public class AuthServiceImpl implements AuthService {
         }
 
         // Find user by username
-        SysUser user = userMapper.selectOne(
-                new LambdaQueryWrapper<SysUser>()
-                        .eq(SysUser::getUsername, username)
-                        .eq(SysUser::getStatus, 1)
-        );
+        SysUser user =
+                userMapper.selectOne(
+                        new LambdaQueryWrapper<SysUser>()
+                                .eq(SysUser::getUsername, username)
+                                .eq(SysUser::getStatus, 1));
 
         if (user == null) {
             jwtTokenProvider.recordLoginFailure(username);
@@ -81,14 +85,15 @@ public class AuthServiceImpl implements AuthService {
         }
 
         // Create new user
-        SysUser user = SysUser.builder()
-                .username(request.getUsername())
-                .password(passwordEncoder.encode(request.getPassword()))
-                .phone(request.getPhone())
-                .email(request.getEmail())
-                .role("normal")
-                .status(1)
-                .build();
+        SysUser user =
+                SysUser.builder()
+                        .username(request.getUsername())
+                        .password(passwordEncoder.encode(request.getPassword()))
+                        .phone(request.getPhone())
+                        .email(request.getEmail())
+                        .role("normal")
+                        .status(1)
+                        .build();
 
         userMapper.insert(user);
 
@@ -118,15 +123,13 @@ public class AuthServiceImpl implements AuthService {
                 "email", user.getEmail() != null ? user.getEmail() : "",
                 "role", user.getRole(),
                 "status", user.getStatus(),
-                "createdAt", user.getCreatedAt()
-        );
+                "createdAt", user.getCreatedAt());
     }
 
     @Override
     public boolean existsByUsername(String username) {
         return userMapper.selectCount(
-                new LambdaQueryWrapper<SysUser>()
-                        .eq(SysUser::getUsername, username)
-        ) > 0;
+                        new LambdaQueryWrapper<SysUser>().eq(SysUser::getUsername, username))
+                > 0;
     }
 }

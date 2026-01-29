@@ -1,0 +1,40 @@
+{
+  "version": "1.0",
+  "hooks": {
+    "pre-commit": {
+      "commands": [
+        {
+          "name": "Format Frontend Code",
+          "run": "cd web && npm run format"
+        },
+        {
+          "name": "Format Backend Code",
+          "run": "cd api && mvn spotless:apply"
+        },
+        {
+          "name": "Lint Frontend Code",
+          "run": "cd web && npm run lint"
+        },
+        {
+          "name": "Type Check Frontend",
+          "run": "cd web && npm run type-check"
+        }
+      ],
+      "continueOnError": false
+    },
+    "pre-push": {
+      "commands": [
+        {
+          "name": "Run Backend Tests",
+          "run": "cd api && mvn test -Dspring.profiles.active=test",
+          "continueOnError": false
+        },
+        {
+          "name": "Run Frontend Tests",
+          "run": "cd web && npm test",
+          "continueOnError": false
+        }
+      ]
+    }
+  }
+}

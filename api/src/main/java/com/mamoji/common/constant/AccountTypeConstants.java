@@ -1,8 +1,6 @@
 package com.mamoji.common.constant;
 
-/**
- * 账户类型常量
- */
+/** 账户类型常量 */
 public final class AccountTypeConstants {
 
     private AccountTypeConstants() {

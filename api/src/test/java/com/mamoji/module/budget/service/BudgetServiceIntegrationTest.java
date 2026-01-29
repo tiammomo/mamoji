@@ -1,26 +1,24 @@
 package com.mamoji.module.budget.service;
 
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.mamoji.MySqlIntegrationTestBase;
-import com.mamoji.module.budget.dto.BudgetDTO;
-import com.mamoji.module.budget.dto.BudgetVO;
-import com.mamoji.module.budget.entity.FinBudget;
-import org.junit.jupiter.api.*;
-import org.springframework.beans.factory.annotation.Autowired;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import org.junit.jupiter.api.*;
+import org.springframework.beans.factory.annotation.Autowired;
 
-/**
- * BudgetService Integration Tests
- */
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.mamoji.MySqlIntegrationTestBase;
+import com.mamoji.module.budget.dto.BudgetDTO;
+import com.mamoji.module.budget.dto.BudgetVO;
+import com.mamoji.module.budget.entity.FinBudget;
+
+/** BudgetService Integration Tests */
 class BudgetServiceIntegrationTest extends MySqlIntegrationTestBase {
 
-    @Autowired
-    private BudgetService budgetService;
+    @Autowired private BudgetService budgetService;
 
     private final Long testUserId = 999L;
 
@@ -42,12 +40,13 @@ class BudgetServiceIntegrationTest extends MySqlIntegrationTestBase {
         LocalDate startDate = LocalDate.now().withDayOfMonth(1);
         LocalDate endDate = startDate.plusMonths(1).minusDays(1);
 
-        BudgetDTO dto = BudgetDTO.builder()
-                .name("Monthly Food Budget")
-                .amount(new BigDecimal("2000.00"))
-                .startDate(startDate)
-                .endDate(endDate)
-                .build();
+        BudgetDTO dto =
+                BudgetDTO.builder()
+                        .name("Monthly Food Budget")
+                        .amount(new BigDecimal("2000.00"))
+                        .startDate(startDate)
+                        .endDate(endDate)
+                        .build();
 
         // When
         Long budgetId = budgetService.createBudget(testUserId, dto);
@@ -67,26 +66,28 @@ class BudgetServiceIntegrationTest extends MySqlIntegrationTestBase {
     @DisplayName("List budgets should return user's budgets")
     void listBudgets_ShouldReturnUserBudgets() {
         // Given
-        FinBudget budget1 = FinBudget.builder()
-                .userId(testUserId)
-                .name("Budget 1")
-                .amount(new BigDecimal("1000.00"))
-                .spent(BigDecimal.ZERO)
-                .startDate(LocalDate.now().withDayOfMonth(1))
-                .endDate(LocalDate.now().withDayOfMonth(1).plusMonths(1).minusDays(1))
-                .status(1)
-                .build();
+        FinBudget budget1 =
+                FinBudget.builder()
+                        .userId(testUserId)
+                        .name("Budget 1")
+                        .amount(new BigDecimal("1000.00"))
+                        .spent(BigDecimal.ZERO)
+                        .startDate(LocalDate.now().withDayOfMonth(1))
+                        .endDate(LocalDate.now().withDayOfMonth(1).plusMonths(1).minusDays(1))
+                        .status(1)
+                        .build();
         budgetMapper.insert(budget1);
 
-        FinBudget budget2 = FinBudget.builder()
-                .userId(testUserId + 1)
-                .name("Other User Budget")
-                .amount(new BigDecimal("2000.00"))
-                .spent(BigDecimal.ZERO)
-                .startDate(LocalDate.now().withDayOfMonth(1))
-                .endDate(LocalDate.now().withDayOfMonth(1).plusMonths(1).minusDays(1))
-                .status(1)
-                .build();
+        FinBudget budget2 =
+                FinBudget.builder()
+                        .userId(testUserId + 1)
+                        .name("Other User Budget")
+                        .amount(new BigDecimal("2000.00"))
+                        .spent(BigDecimal.ZERO)
+                        .startDate(LocalDate.now().withDayOfMonth(1))
+                        .endDate(LocalDate.now().withDayOfMonth(1).plusMonths(1).minusDays(1))
+                        .status(1)
+                        .build();
         budgetMapper.insert(budget2);
 
         // When
@@ -101,15 +102,16 @@ class BudgetServiceIntegrationTest extends MySqlIntegrationTestBase {
     @DisplayName("Get budget should return VO when exists")
     void getBudget_ShouldReturnVOWhenExists() {
         // Given
-        FinBudget budget = FinBudget.builder()
-                .userId(testUserId)
-                .name("My Budget")
-                .amount(new BigDecimal("3000.00"))
-                .spent(new BigDecimal("500.00"))
-                .startDate(LocalDate.now().withDayOfMonth(1))
-                .endDate(LocalDate.now().withDayOfMonth(1).plusMonths(1).minusDays(1))
-                .status(1)
-                .build();
+        FinBudget budget =
+                FinBudget.builder()
+                        .userId(testUserId)
+                        .name("My Budget")
+                        .amount(new BigDecimal("3000.00"))
+                        .spent(new BigDecimal("500.00"))
+                        .startDate(LocalDate.now().withDayOfMonth(1))
+                        .endDate(LocalDate.now().withDayOfMonth(1).plusMonths(1).minusDays(1))
+                        .status(1)
+                        .build();
         budgetMapper.insert(budget);
 
         // When
@@ -126,15 +128,16 @@ class BudgetServiceIntegrationTest extends MySqlIntegrationTestBase {
     @DisplayName("Budget progress should be calculated correctly")
     void getBudgetProgress_ShouldCalculateCorrectly() {
         // Given
-        FinBudget budget = FinBudget.builder()
-                .userId(testUserId)
-                .name("Progress Test Budget")
-                .amount(new BigDecimal("1000.00"))
-                .spent(new BigDecimal("250.00"))
-                .startDate(LocalDate.now().withDayOfMonth(1))
-                .endDate(LocalDate.now().withDayOfMonth(1).plusMonths(1).minusDays(1))
-                .status(1)
-                .build();
+        FinBudget budget =
+                FinBudget.builder()
+                        .userId(testUserId)
+                        .name("Progress Test Budget")
+                        .amount(new BigDecimal("1000.00"))
+                        .spent(new BigDecimal("250.00"))
+                        .startDate(LocalDate.now().withDayOfMonth(1))
+                        .endDate(LocalDate.now().withDayOfMonth(1).plusMonths(1).minusDays(1))
+                        .status(1)
+                        .build();
         budgetMapper.insert(budget);
 
         // When
@@ -148,15 +151,16 @@ class BudgetServiceIntegrationTest extends MySqlIntegrationTestBase {
     @DisplayName("Budget over spent should have status 3")
     void getBudgetStatus_OverSpent_ShouldHaveStatus3() {
         // Given
-        FinBudget budget = FinBudget.builder()
-                .userId(testUserId)
-                .name("Over Budget")
-                .amount(new BigDecimal("1000.00"))
-                .spent(new BigDecimal("1500.00"))
-                .startDate(LocalDate.now().withDayOfMonth(1))
-                .endDate(LocalDate.now().withDayOfMonth(1).plusMonths(1).minusDays(1))
-                .status(1)
-                .build();
+        FinBudget budget =
+                FinBudget.builder()
+                        .userId(testUserId)
+                        .name("Over Budget")
+                        .amount(new BigDecimal("1000.00"))
+                        .spent(new BigDecimal("1500.00"))
+                        .startDate(LocalDate.now().withDayOfMonth(1))
+                        .endDate(LocalDate.now().withDayOfMonth(1).plusMonths(1).minusDays(1))
+                        .status(1)
+                        .build();
         budgetMapper.insert(budget);
 
         // When
@@ -170,22 +174,24 @@ class BudgetServiceIntegrationTest extends MySqlIntegrationTestBase {
     @DisplayName("Update budget should modify existing record")
     void updateBudget_ShouldModifyExistingRecord() {
         // Given
-        FinBudget budget = FinBudget.builder()
-                .userId(testUserId)
-                .name("Original Name")
-                .amount(new BigDecimal("1000.00"))
-                .startDate(LocalDate.now().withDayOfMonth(1))
-                .endDate(LocalDate.now().withDayOfMonth(1).plusMonths(1).minusDays(1))
-                .status(1)
-                .build();
+        FinBudget budget =
+                FinBudget.builder()
+                        .userId(testUserId)
+                        .name("Original Name")
+                        .amount(new BigDecimal("1000.00"))
+                        .startDate(LocalDate.now().withDayOfMonth(1))
+                        .endDate(LocalDate.now().withDayOfMonth(1).plusMonths(1).minusDays(1))
+                        .status(1)
+                        .build();
         budgetMapper.insert(budget);
 
-        BudgetDTO updateDto = BudgetDTO.builder()
-                .name("Updated Name")
-                .amount(new BigDecimal("2000.00"))
-                .startDate(LocalDate.now().withDayOfMonth(1))
-                .endDate(LocalDate.now().withDayOfMonth(1).plusMonths(1).minusDays(1))
-                .build();
+        BudgetDTO updateDto =
+                BudgetDTO.builder()
+                        .name("Updated Name")
+                        .amount(new BigDecimal("2000.00"))
+                        .startDate(LocalDate.now().withDayOfMonth(1))
+                        .endDate(LocalDate.now().withDayOfMonth(1).plusMonths(1).minusDays(1))
+                        .build();
 
         // When
         budgetService.updateBudget(testUserId, budget.getBudgetId(), updateDto);
@@ -200,25 +206,26 @@ class BudgetServiceIntegrationTest extends MySqlIntegrationTestBase {
     @DisplayName("Delete budget should set status to 0")
     void deleteBudget_ShouldSetStatusToZero() {
         // Given
-        FinBudget budget = FinBudget.builder()
-                .userId(testUserId)
-                .name("To Delete")
-                .amount(new BigDecimal("1000.00"))
-                .startDate(LocalDate.now().withDayOfMonth(1))
-                .endDate(LocalDate.now().withDayOfMonth(1).plusMonths(1).minusDays(1))
-                .status(1)
-                .build();
+        FinBudget budget =
+                FinBudget.builder()
+                        .userId(testUserId)
+                        .name("To Delete")
+                        .amount(new BigDecimal("1000.00"))
+                        .startDate(LocalDate.now().withDayOfMonth(1))
+                        .endDate(LocalDate.now().withDayOfMonth(1).plusMonths(1).minusDays(1))
+                        .status(1)
+                        .build();
         budgetMapper.insert(budget);
 
         // When
         budgetService.deleteBudget(testUserId, budget.getBudgetId());
 
         // Then - verify deletion by checking that active budgets count is 0
-        Long activeCount = budgetMapper.selectCount(
-                new LambdaQueryWrapper<FinBudget>()
-                        .eq(FinBudget::getBudgetId, budget.getBudgetId())
-                        .eq(FinBudget::getStatus, 1)
-        );
+        Long activeCount =
+                budgetMapper.selectCount(
+                        new LambdaQueryWrapper<FinBudget>()
+                                .eq(FinBudget::getBudgetId, budget.getBudgetId())
+                                .eq(FinBudget::getStatus, 1));
         assertThat(activeCount).isEqualTo(0);
     }
 
@@ -227,24 +234,26 @@ class BudgetServiceIntegrationTest extends MySqlIntegrationTestBase {
     void listActiveBudgets_ShouldReturnOnlyActiveBudgets() {
         // Given
         LocalDate now = LocalDate.now();
-        FinBudget activeBudget = FinBudget.builder()
-                .userId(testUserId)
-                .name("Active Budget")
-                .amount(new BigDecimal("2000.00"))
-                .startDate(now.withDayOfMonth(1))
-                .endDate(now.plusMonths(1).minusDays(1))
-                .status(1)
-                .build();
+        FinBudget activeBudget =
+                FinBudget.builder()
+                        .userId(testUserId)
+                        .name("Active Budget")
+                        .amount(new BigDecimal("2000.00"))
+                        .startDate(now.withDayOfMonth(1))
+                        .endDate(now.plusMonths(1).minusDays(1))
+                        .status(1)
+                        .build();
         budgetMapper.insert(activeBudget);
 
-        FinBudget deletedBudget = FinBudget.builder()
-                .userId(testUserId)
-                .name("Deleted Budget")
-                .amount(new BigDecimal("1000.00"))
-                .startDate(now.withDayOfMonth(1))
-                .endDate(now.plusMonths(1).minusDays(1))
-                .status(0)
-                .build();
+        FinBudget deletedBudget =
+                FinBudget.builder()
+                        .userId(testUserId)
+                        .name("Deleted Budget")
+                        .amount(new BigDecimal("1000.00"))
+                        .startDate(now.withDayOfMonth(1))
+                        .endDate(now.plusMonths(1).minusDays(1))
+                        .status(0)
+                        .build();
         budgetMapper.insert(deletedBudget);
 
         // When
@@ -260,15 +269,16 @@ class BudgetServiceIntegrationTest extends MySqlIntegrationTestBase {
     void recalculateSpent_ShouldUpdateSpentAmount() {
         // Given
         LocalDate now = LocalDate.now();
-        FinBudget budget = FinBudget.builder()
-                .userId(testUserId)
-                .name("Recalculate Test Budget")
-                .amount(new BigDecimal("2000.00"))
-                .spent(BigDecimal.ZERO)
-                .startDate(now.withDayOfMonth(1))
-                .endDate(now.plusMonths(1).minusDays(1))
-                .status(1)
-                .build();
+        FinBudget budget =
+                FinBudget.builder()
+                        .userId(testUserId)
+                        .name("Recalculate Test Budget")
+                        .amount(new BigDecimal("2000.00"))
+                        .spent(BigDecimal.ZERO)
+                        .startDate(now.withDayOfMonth(1))
+                        .endDate(now.plusMonths(1).minusDays(1))
+                        .status(1)
+                        .build();
         budgetMapper.insert(budget);
 
         // When

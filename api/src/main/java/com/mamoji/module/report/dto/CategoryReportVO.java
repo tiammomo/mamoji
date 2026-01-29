@@ -1,48 +1,43 @@
 package com.mamoji.module.report.dto;
 
+import java.math.BigDecimal;
+
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.math.BigDecimal;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
-/**
- * Category Report VO
- */
+/** Category Report VO */
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
 public class CategoryReportVO {
 
-    /**
-     * Category ID
-     */
+    /** Category ID */
     private Long categoryId;
 
-    /**
-     * Category name
-     */
+    /** Category name */
     private String categoryName;
 
-    /**
-     * Category type: income, expense
-     */
+    /** Category type: income, expense */
     private String type;
 
-    /**
-     * Total amount
-     */
+    /** Total amount */
     private BigDecimal amount;
 
-    /**
-     * Percentage of total
-     */
+    /** Percentage of total */
     private Double percentage;
 
-    /**
-     * Transaction count
-     */
+    /** Transaction count */
     private Integer count;
 }

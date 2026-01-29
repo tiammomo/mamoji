@@ -445,11 +445,17 @@
         "categoryName": "餐饮",
         "accountId": 1,
         "accountName": "工商银行",
-        "amount": 50.00,
+        "amount": 100.00,
         "currency": "CNY",
         "occurredAt": "2026-01-19T12:00:00",
         "note": "午餐",
         "status": 1,
+        "refundSummary": {
+          "totalRefunded": 25.00,
+          "remainingRefundable": 75.00,
+          "hasRefund": true,
+          "refundCount": 1
+        },
         "createdAt": "2026-01-19T12:00:00"
       }
     ],
@@ -515,16 +521,31 @@
     "categoryName": "餐饮",
     "accountId": 1,
     "accountName": "工商银行",
-    "amount": 50.00,
+    "amount": 100.00,
     "currency": "CNY",
     "occurredAt": "2026-01-19T12:00:00",
     "note": "午餐",
     "status": 1,
+    "refundSummary": {
+      "totalRefunded": 25.00,
+      "remainingRefundable": 75.00,
+      "hasRefund": true,
+      "refundCount": 1
+    },
     "createdAt": "2026-01-19T12:00:00",
     "updatedAt": "2026-01-19T12:00:00"
   }
 }
 ```
+
+**字段说明：**
+
+| 字段 | 说明 |
+|------|------|
+| refundSummary.totalRefunded | 已退金额合计 |
+| refundSummary.remainingRefundable | 剩余可退金额 |
+| refundSummary.hasRefund | 是否有退款记录 |
+| refundCount | 退款笔数 |
 
 ---
 
@@ -568,6 +589,115 @@
 {
   "code": 0,
   "message": "删除成功"
+}
+```
+
+---
+
+### 6. 获取交易的所有退款记录
+
+**GET** `/transactions/{id}/refunds`
+
+**Headers：** `Authorization: Bearer {token}`
+
+**响应：**
+
+```json
+{
+  "code": 0,
+  "data": {
+    "transaction": {
+      "transactionId": 1,
+      "amount": 100.00,
+      "type": "expense"
+    },
+    "refunds": [
+      {
+        "refundId": 1,
+        "amount": 25.00,
+        "note": "部分退款",
+        "occurredAt": "2026-01-20T14:30:00",
+        "status": 1,
+        "createdAt": "2026-01-20T14:30:00"
+      }
+    ],
+    "summary": {
+      "totalRefunded": 25.00,
+      "remainingRefundable": 75.00,
+      "refundCount": 1
+    }
+  }
+}
+```
+
+**字段说明：**
+
+| 字段 | 说明 |
+|------|------|
+| transaction | 原交易信息 |
+| refunds | 退款记录列表 |
+| summary.totalRefunded | 已退金额合计 |
+| summary.remainingRefundable | 剩余可退金额 |
+| summary.refundCount | 退款笔数 |
+
+---
+
+### 7. 创建退款记录
+
+**POST** `/transactions/{id}/refunds`
+
+**Headers：** `Authorization: Bearer {token}`
+
+**请求参数：**
+
+| 参数 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| amount | number | 是 | 退款金额 |
+| occurredAt | string | 是 | 发生时间 (ISO 8601) |
+| note | string | 否 | 备注 |
+
+**响应：**
+
+```json
+{
+  "code": 0,
+  "message": "退款成功",
+  "data": {
+    "refundId": 2,
+    "amount": 25.00,
+    "totalRefunded": 50.00,
+    "remainingRefundable": 50.00
+  }
+}
+```
+
+**错误响应：**
+
+```json
+{
+  "code": 409,
+  "message": "退款金额超出可退范围"
+}
+```
+
+---
+
+### 8. 取消退款
+
+**DELETE** `/transactions/{transactionId}/refunds/{refundId}`
+
+**Headers：** `Authorization: Bearer {token}`
+
+**响应：**
+
+```json
+{
+  "code": 0,
+  "message": "退款已取消",
+  "data": {
+    "totalRefunded": 0.00,
+    "remainingRefundable": 100.00
+  }
 }
 ```
 

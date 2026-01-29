@@ -1,0 +1,109 @@
+{
+  "version": "1.0",
+  "skills": {
+    "java": {
+      "enabled": true,
+      "version": "21",
+      "frameworks": ["Spring Boot 3.5.3", "MyBatis-Plus 3.5.5"],
+      "description": "后端 Java 开发技能"
+    },
+    "typescript": {
+      "enabled": true,
+      "version": "20",
+      "frameworks": ["Next.js 16", "React 19", "shadcn/ui"],
+      "description": "前端 TypeScript 开发技能"
+    },
+    "database": {
+      "enabled": true,
+      "types": ["MySQL 8.0", "Redis 7.x"],
+      "description": "数据库开发与优化技能"
+    },
+    "docker": {
+      "enabled": true,
+      "version": "latest",
+      "description": "容器化与 Docker Compose 技能"
+    },
+    "testing": {
+      "enabled": true,
+      "java": ["JUnit 5", "Mockito"],
+      "typescript": ["Jest", "Testing Library"],
+      "description": "单元测试与集成测试技能"
+    }
+  },
+  "maintenance": {
+    "checklist": [
+      "拉取最新代码 git pull",
+      "检查 Docker 服务状态 docker-compose ps",
+      "运行数据库迁移脚本",
+      "更新依赖 mvn/npm update",
+      "运行测试 mvn test / npm test",
+      "更新 skills.json（如有技术栈变更）"
+    ],
+    "update_frequency": "每次开发前"
+  },
+  "project_info": {
+    "name": "Mamoji 记账系统",
+    "description": "个人记账财务管理应用",
+    "tech_stack": {
+      "backend": ["Java 21", "Spring Boot 3.5.3", "MyBatis-Plus 3.5.5", "MySQL", "Redis"],
+      "frontend": ["TypeScript", "Next.js 16", "React 19", "shadcn/ui", "Recharts"],
+      "devops": ["Docker", "Docker Compose"]
+    }
+  },
+  "change_history": [
+    {
+      "date": "2026-01-27",
+      "version": "1.0.0",
+      "commit": "ed0c8b8",
+      "description": "初始版本，添加基础功能配置",
+      "changes": [
+        "创建本地配置文档 docs/local-config.md",
+        "创建 Skills 维护文档 docs/skills.md",
+        "创建启动指南 docs/STARTUP.md",
+        "配置 Docker MySQL 测试环境",
+        "添加 H2 测试依赖"
+      ],
+      "added_skills": ["Docker", "MySQL", "Redis"],
+      "added_tools": ["JUnit 5", "Jest"]
+    },
+    {
+      "date": "2026-01-27",
+      "version": "1.1.0",
+      "commit": "current",
+      "description": "代码风格统一配置",
+      "changes": [
+        "创建 .editorconfig 统一编辑器配置",
+        "创建 web/.prettierrc 前端格式化配置",
+        "添加 Prettier 依赖到 package.json",
+        "添加 Spotless Maven 插件到 pom.xml",
+        "创建 .claude/hooks.json Git Hooks 配置"
+      ],
+      "added_skills": ["代码格式化", "代码规范"],
+      "added_tools": ["Prettier", "Spotless"]
+    }
+  ],
+  "code_style": {
+    "editorconfig": true,
+    "prettier": {
+      "semi": false,
+      "singleQuote": true,
+      "tabWidth": 2,
+      "trailingComma": "none"
+    },
+    "spotless": {
+      "java_style": "AOSP",
+      "import_order": ["java,javax,org,spring,com,net", "|"]
+    },
+    "rules": {
+      "java": {
+        "max_method_lines": 50,
+        "max_class_lines": 500,
+        "max_parameters": 4
+      },
+      "typescript": {
+        "max_component_lines": 150,
+        "hooks_order": ["useState", "useEffect", "useCallback", "useMemo", "useRef", "useContext", "custom"]
+      }
+    }
+  }
+}

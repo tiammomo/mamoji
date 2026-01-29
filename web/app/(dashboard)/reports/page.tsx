@@ -97,12 +97,14 @@ export default function ReportsPage() {
             </SelectTrigger>
             <SelectContent>
               {Array.from({ length: 12 }, (_, i) => {
-                const date = new Date();
-                date.setMonth(date.getMonth() - i);
-                const value = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+                const year = new Date().getFullYear() - Math.floor(i / 12);
+                const month = new Date().getMonth() - (i % 12) + 1;
+                const adjustedYear = month <= 0 ? year - 1 : year;
+                const adjustedMonth = month <= 0 ? month + 12 : month;
+                const value = `${adjustedYear}-${String(adjustedMonth).padStart(2, '0')}`;
                 return (
                   <SelectItem key={value} value={value}>
-                    {date.getFullYear()}年{date.getMonth() + 1}月
+                    {adjustedYear}年{adjustedMonth}月
                   </SelectItem>
                 );
               })}

@@ -1,25 +1,24 @@
 package com.mamoji.performance;
 
-import com.github.benmanes.caffeine.cache.Cache;
-import com.github.benmanes.caffeine.cache.Caffeine;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.Timeout;
+import static org.junit.jupiter.api.Assertions.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
+
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
 
 /**
  * Cache Performance Tests
  *
- * Tests for Caffeine cache performance characteristics:
- * - Cache hit ratio
- * - Memory efficiency
- * - Eviction behavior
+ * <p>Tests for Caffeine cache performance characteristics: - Cache hit ratio - Memory efficiency -
+ * Eviction behavior
  */
 public class CachePerformanceTest {
 
@@ -27,10 +26,11 @@ public class CachePerformanceTest {
 
     @BeforeEach
     void setUp() {
-        caffeineBuilder = Caffeine.newBuilder()
-                .maximumSize(100)
-                .expireAfterWrite(10, TimeUnit.MINUTES)
-                .recordStats();
+        caffeineBuilder =
+                Caffeine.newBuilder()
+                        .maximumSize(100)
+                        .expireAfterWrite(10, TimeUnit.MINUTES)
+                        .recordStats();
     }
 
     @Test
@@ -68,21 +68,22 @@ public class CachePerformanceTest {
         long endTime = System.nanoTime();
         long durationMicros = (endTime - startTime) / 1000;
 
-        System.out.println("Cache write+read 100 entries took: " + durationMicros + " microseconds");
+        System.out.println(
+                "Cache write+read 100 entries took: " + durationMicros + " microseconds");
 
         // Performance assertion: should complete in less than 50ms (50,000 microseconds)
-        assertTrue(durationMicros < 50000,
-                "Cache operations should complete in less than 50ms, took: " + durationMicros + " microseconds");
+        assertTrue(
+                durationMicros < 50000,
+                "Cache operations should complete in less than 50ms, took: "
+                        + durationMicros
+                        + " microseconds");
     }
 
     @Test
     @DisplayName("Cache eviction when size limit exceeded")
     void testCacheEviction() {
         // Create cache with very small size limit
-        Cache<String, String> cache = Caffeine.newBuilder()
-                .maximumSize(5)
-                .recordStats()
-                .build();
+        Cache<String, String> cache = Caffeine.newBuilder().maximumSize(5).recordStats().build();
 
         // Add more entries than the size limit
         for (int i = 0; i < 15; i++) {
@@ -99,19 +100,16 @@ public class CachePerformanceTest {
     @Test
     @DisplayName("Cache statistics - hit rate calculation")
     void testCacheStats() {
-        Cache<String, String> cache = Caffeine.newBuilder()
-                .maximumSize(100)
-                .recordStats()
-                .build();
+        Cache<String, String> cache = Caffeine.newBuilder().maximumSize(100).recordStats().build();
 
         // Populate cache
         cache.put("key1", "value1");
         cache.put("key2", "value2");
 
         // Perform cache operations
-        cache.getIfPresent("key1");  // Hit
-        cache.getIfPresent("key2");  // Hit
-        cache.getIfPresent("key3");  // Miss
+        cache.getIfPresent("key1"); // Hit
+        cache.getIfPresent("key2"); // Hit
+        cache.getIfPresent("key3"); // Miss
 
         com.github.benmanes.caffeine.cache.stats.CacheStats stats = cache.stats();
 
@@ -124,10 +122,7 @@ public class CachePerformanceTest {
     @DisplayName("Memory efficient for duplicate values")
     void testMemoryEfficiency() {
         // Larger cache for this test
-        Cache<String, String> cache = Caffeine.newBuilder()
-                .maximumSize(500)
-                .recordStats()
-                .build();
+        Cache<String, String> cache = Caffeine.newBuilder().maximumSize(500).recordStats().build();
 
         String sharedValue = "SharedValue";
 
@@ -145,7 +140,9 @@ public class CachePerformanceTest {
         }
 
         // At least 80% should still be in cache
-        assertTrue(foundCount > 400, "At least 80% of entries should still be in cache, found: " + foundCount);
+        assertTrue(
+                foundCount > 400,
+                "At least 80% of entries should still be in cache, found: " + foundCount);
     }
 
     @Test
@@ -161,12 +158,14 @@ public class CachePerformanceTest {
 
         for (int i = 0; i < threadCount; i++) {
             final int threadId = i;
-            threads[i] = new Thread(() -> {
-                for (int j = 0; j < operationsPerThread; j++) {
-                    cache.put("key" + threadId + "_" + j, threadId * j);
-                    cache.getIfPresent("key" + threadId + "_" + j);
-                }
-            });
+            threads[i] =
+                    new Thread(
+                            () -> {
+                                for (int j = 0; j < operationsPerThread; j++) {
+                                    cache.put("key" + threadId + "_" + j, threadId * j);
+                                    cache.getIfPresent("key" + threadId + "_" + j);
+                                }
+                            });
         }
 
         long startTime = System.nanoTime();
@@ -184,8 +183,14 @@ public class CachePerformanceTest {
         long endTime = System.nanoTime();
         long durationMs = (endTime - startTime) / 1_000_000;
 
-        System.out.println("Concurrent cache access (" + threadCount + " threads, " +
-                (threadCount * operationsPerThread * 2) + " operations) took: " + durationMs + "ms");
+        System.out.println(
+                "Concurrent cache access ("
+                        + threadCount
+                        + " threads, "
+                        + (threadCount * operationsPerThread * 2)
+                        + " operations) took: "
+                        + durationMs
+                        + "ms");
 
         // Verify all operations completed
         com.github.benmanes.caffeine.cache.stats.CacheStats stats = cache.stats();
@@ -217,11 +222,15 @@ public class CachePerformanceTest {
         long endTime = System.nanoTime();
         long durationMicros = (endTime - startTime) / 1000;
 
-        System.out.println("10,000 BudgetVO to DTO conversions took: " + durationMicros + " microseconds");
+        System.out.println(
+                "10,000 BudgetVO to DTO conversions took: " + durationMicros + " microseconds");
 
         // Performance assertion
-        assertTrue(durationMicros < 1_000_000,
-                "Conversions should complete in less than 1 second, took: " + durationMicros + " microseconds");
+        assertTrue(
+                durationMicros < 1_000_000,
+                "Conversions should complete in less than 1 second, took: "
+                        + durationMicros
+                        + " microseconds");
     }
 
     private BudgetDTO convertToDTO(BudgetVO vo) {
@@ -244,8 +253,9 @@ public class CachePerformanceTest {
         // Perform 10,000 calculations
         for (int i = 0; i < 10000; i++) {
             BigDecimal remaining = amount.subtract(spent);
-            BigDecimal progress = spent.multiply(BigDecimal.valueOf(100))
-                    .divide(amount, 2, java.math.RoundingMode.HALF_UP);
+            BigDecimal progress =
+                    spent.multiply(BigDecimal.valueOf(100))
+                            .divide(amount, 2, java.math.RoundingMode.HALF_UP);
             assertNotNull(remaining);
             assertNotNull(progress);
         }
@@ -253,11 +263,15 @@ public class CachePerformanceTest {
         long endTime = System.nanoTime();
         long durationMicros = (endTime - startTime) / 1000;
 
-        System.out.println("10,000 BigDecimal calculations took: " + durationMicros + " microseconds");
+        System.out.println(
+                "10,000 BigDecimal calculations took: " + durationMicros + " microseconds");
 
         // Performance assertion
-        assertTrue(durationMicros < 2_000_000,
-                "Calculations should complete in less than 2 seconds, took: " + durationMicros + " microseconds");
+        assertTrue(
+                durationMicros < 2_000_000,
+                "Calculations should complete in less than 2 seconds, took: "
+                        + durationMicros
+                        + " microseconds");
     }
 
     // Simple DTO class for testing
@@ -266,14 +280,38 @@ public class CachePerformanceTest {
         private BigDecimal amount;
         private LocalDate startDate;
         private LocalDate endDate;
-        public String getName() { return name; }
-        public void setName(String name) { this.name = name; }
-        public BigDecimal getAmount() { return amount; }
-        public void setAmount(BigDecimal amount) { this.amount = amount; }
-        public LocalDate getStartDate() { return startDate; }
-        public void setStartDate(LocalDate startDate) { this.startDate = startDate; }
-        public LocalDate getEndDate() { return endDate; }
-        public void setEndDate(LocalDate endDate) { this.endDate = endDate; }
+
+        public String getName() {
+            return name;
+        }
+
+        public void setName(String name) {
+            this.name = name;
+        }
+
+        public BigDecimal getAmount() {
+            return amount;
+        }
+
+        public void setAmount(BigDecimal amount) {
+            this.amount = amount;
+        }
+
+        public LocalDate getStartDate() {
+            return startDate;
+        }
+
+        public void setStartDate(LocalDate startDate) {
+            this.startDate = startDate;
+        }
+
+        public LocalDate getEndDate() {
+            return endDate;
+        }
+
+        public void setEndDate(LocalDate endDate) {
+            this.endDate = endDate;
+        }
     }
 
     // Simple VO class for testing
@@ -287,23 +325,77 @@ public class CachePerformanceTest {
         private Double progress;
         private LocalDate startDate;
         private LocalDate endDate;
-        public Long getBudgetId() { return budgetId; }
-        public void setBudgetId(Long budgetId) { this.budgetId = budgetId; }
-        public String getName() { return name; }
-        public void setName(String name) { this.name = name; }
-        public BigDecimal getAmount() { return amount; }
-        public void setAmount(BigDecimal amount) { this.amount = amount; }
-        public BigDecimal getSpent() { return spent; }
-        public void setSpent(BigDecimal spent) { this.spent = spent; }
-        public BigDecimal getRemaining() { return remaining; }
-        public void setRemaining(BigDecimal remaining) { this.remaining = remaining; }
-        public Integer getStatus() { return status; }
-        public void setStatus(Integer status) { this.status = status; }
-        public Double getProgress() { return progress; }
-        public void setProgress(Double progress) { this.progress = progress; }
-        public LocalDate getStartDate() { return startDate; }
-        public void setStartDate(LocalDate startDate) { this.startDate = startDate; }
-        public LocalDate getEndDate() { return endDate; }
-        public void setEndDate(LocalDate endDate) { this.endDate = endDate; }
+
+        public Long getBudgetId() {
+            return budgetId;
+        }
+
+        public void setBudgetId(Long budgetId) {
+            this.budgetId = budgetId;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public void setName(String name) {
+            this.name = name;
+        }
+
+        public BigDecimal getAmount() {
+            return amount;
+        }
+
+        public void setAmount(BigDecimal amount) {
+            this.amount = amount;
+        }
+
+        public BigDecimal getSpent() {
+            return spent;
+        }
+
+        public void setSpent(BigDecimal spent) {
+            this.spent = spent;
+        }
+
+        public BigDecimal getRemaining() {
+            return remaining;
+        }
+
+        public void setRemaining(BigDecimal remaining) {
+            this.remaining = remaining;
+        }
+
+        public Integer getStatus() {
+            return status;
+        }
+
+        public void setStatus(Integer status) {
+            this.status = status;
+        }
+
+        public Double getProgress() {
+            return progress;
+        }
+
+        public void setProgress(Double progress) {
+            this.progress = progress;
+        }
+
+        public LocalDate getStartDate() {
+            return startDate;
+        }
+
+        public void setStartDate(LocalDate startDate) {
+            this.startDate = startDate;
+        }
+
+        public LocalDate getEndDate() {
+            return endDate;
+        }
+
+        public void setEndDate(LocalDate endDate) {
+            this.endDate = endDate;
+        }
     }
 }

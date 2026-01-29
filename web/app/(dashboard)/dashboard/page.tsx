@@ -1,38 +1,49 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { DashboardLayout } from '@/components/layout/dashboard-layout';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { formatCurrency, formatDate, getTransactionTypeLabel } from '@/lib/utils';
-import { accountApi, transactionApi, budgetApi } from '@/api';
-import type { AccountSummary, Transaction, Budget } from '@/types';
+import { accountApi, transactionApi, budgetApi, reportApi } from '@/api';
+import { useAuthStore } from '@/hooks/useAuth';
+import type { AccountSummary, Transaction, Budget, ReportsSummary } from '@/types';
 import { TrendingUp, TrendingDown, Wallet, CreditCard, PiggyBank, ArrowRight, TrendingUp as TrendingUpIcon, DollarSign, Target, Activity } from 'lucide-react';
 import Link from 'next/link';
 
 export default function DashboardPage() {
+  const router = useRouter();
+  const { isAuthenticated } = useAuthStore();
   const [summary, setSummary] = useState<AccountSummary | null>(null);
   const [recentTransactions, setRecentTransactions] = useState<Transaction[]>([]);
   const [budgets, setBudgets] = useState<Budget[]>([]);
+  const [reportsSummary, setReportsSummary] = useState<ReportsSummary | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (!isAuthenticated) {
+      router.push('/login');
+      return;
+    }
     loadDashboardData();
-  }, []);
+  }, [isAuthenticated, router]);
 
   const loadDashboardData = async () => {
     try {
-      const [summaryRes, transactionsRes, budgetsRes] = await Promise.all([
+      const [summaryRes, transactionsRes, budgetsRes, reportsRes] = await Promise.all([
         accountApi.getSummary(),
         transactionApi.getRecent(5),
         budgetApi.listActive(),
+        reportApi.getSummary({ startDate: new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0] }),
       ]);
 
       if (summaryRes.code === 200) setSummary(summaryRes.data);
       if (transactionsRes.code === 200) setRecentTransactions(transactionsRes.data || []);
       if (budgetsRes.code === 200) setBudgets(budgetsRes.data || []);
+      if (reportsRes.code === 200) setReportsSummary(reportsRes.data);
     } catch (error) {
       console.error('Failed to load dashboard data:', error);
     } finally {
@@ -40,14 +51,10 @@ export default function DashboardPage() {
     }
   };
 
-  // Calculate monthly net income (mock for now - would need backend support)
-  const monthlyIncome = recentTransactions
-    .filter(tx => tx.type === 'income')
-    .reduce((sum, tx) => sum + tx.amount, 0);
-  const monthlyExpense = recentTransactions
-    .filter(tx => tx.type === 'expense')
-    .reduce((sum, tx) => sum + tx.amount, 0);
-  const monthlyNet = monthlyIncome - monthlyExpense;
+  // Get monthly financial data from reports API
+  const monthlyIncome = reportsSummary?.totalIncome || 0;
+  const monthlyExpense = reportsSummary?.totalExpense || 0;
+  const monthlyNet = reportsSummary?.netIncome || 0;
 
   if (loading) {
     return (

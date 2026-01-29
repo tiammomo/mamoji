@@ -9,7 +9,7 @@ const createIconMock = (name) => {
     return React.createElement(
       'svg',
       {
-        'data-testid': name,
+        'data-testid': name.toLowerCase(),
         className,
         ...props,
         ref,
@@ -30,6 +30,7 @@ const createIconMock = (name) => {
   return MockComponent;
 };
 
+// All icons
 const icons = {
   // Navigation icons
   LayoutDashboard: createIconMock('LayoutDashboard'),
@@ -63,6 +64,9 @@ const icons = {
   Banknote: createIconMock('Banknote'),
   PiggyBank: createIconMock('PiggyBank'),
   DollarSign: createIconMock('DollarSign'),
+  Building2: createIconMock('Building2'),
+  Smartphone: createIconMock('Smartphone'),
+  Landmark: createIconMock('Landmark'),
 
   // Status icons
   AlertTriangle: createIconMock('AlertTriangle'),
@@ -71,6 +75,7 @@ const icons = {
   Tag: createIconMock('Tag'),
   AlertCircle: createIconMock('AlertCircle'),
   Info: createIconMock('Info'),
+  RefreshCw: createIconMock('RefreshCw'),
 
   // Misc icons
   Menu: createIconMock('Menu'),
@@ -79,10 +84,18 @@ const icons = {
   Download: createIconMock('Download'),
   Upload: createIconMock('Upload'),
   Filter: createIconMock('Filter'),
-  RefreshCw: createIconMock('RefreshCw'),
   Calendar: createIconMock('Calendar'),
   FileText: createIconMock('FileText'),
   Printer: createIconMock('Printer'),
+  Eye: createIconMock('Eye'),
+  EyeOff: createIconMock('EyeOff'),
+  TrendingUpTrend: createIconMock('TrendingUpTrend'),
+  Activity: createIconMock('Activity'),
+  TrendingUpIcon: createIconMock('TrendingUpIcon'),
+  TrendingDownIcon: createIconMock('TrendingDownIcon'),
+  BarChart3: createIconMock('BarChart3'),
+  PieChartIcon: createIconMock('PieChartIcon'),
 };
 
+// Export as default and named exports
 module.exports = icons;

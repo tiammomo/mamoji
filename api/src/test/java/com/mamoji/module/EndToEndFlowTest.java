@@ -1,5 +1,19 @@
 package com.mamoji.module;
 
+import static org.junit.jupiter.api.Assertions.*;
+
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.transaction.annotation.Transactional;
+
 import com.mamoji.module.account.dto.AccountDTO;
 import com.mamoji.module.account.dto.AccountVO;
 import com.mamoji.module.account.service.AccountService;
@@ -10,47 +24,27 @@ import com.mamoji.module.category.dto.CategoryDTO;
 import com.mamoji.module.category.service.CategoryService;
 import com.mamoji.module.transaction.dto.TransactionDTO;
 import com.mamoji.module.transaction.service.TransactionService;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.transaction.annotation.Transactional;
-
-import java.math.BigDecimal;
-import java.time.LocalDateTime;
-
-import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * 端到端连贯操作测试
  *
- * 测试完整的记账流程，验证各模块之间的数据联动：
- * 1. 添加钱包 -> 2. 添加预算 -> 3. 添加分类 ->
- * 4. 添加收入 -> 5. 添加支出(关联预算) ->
- * 6. 验证汇总 -> 7. 删除支出(回滚) -> 8. 删除收入(回滚)
+ * <p>测试完整的记账流程，验证各模块之间的数据联动： 1. 添加钱包 -> 2. 添加预算 -> 3. 添加分类 -> 4. 添加收入 -> 5. 添加支出(关联预算) -> 6. 验证汇总
+ * -> 7. 删除支出(回滚) -> 8. 删除收入(回滚)
  */
 @SpringBootTest
 @ActiveProfiles("test")
-@Transactional  // Each test method runs in a transaction that rolls back at the end
+@Transactional // Each test method runs in a transaction that rolls back at the end
 public class EndToEndFlowTest {
 
-    @Autowired
-    private AccountService accountService;
+    @Autowired private AccountService accountService;
 
-    @Autowired
-    private BudgetService budgetService;
+    @Autowired private BudgetService budgetService;
 
-    @Autowired
-    private CategoryService categoryService;
+    @Autowired private CategoryService categoryService;
 
-    @Autowired
-    private TransactionService transactionService;
+    @Autowired private TransactionService transactionService;
 
-    @Autowired
-    private JdbcTemplate jdbcTemplate;
+    @Autowired private JdbcTemplate jdbcTemplate;
 
     private final Long testUserId = 999L;
 
@@ -59,11 +53,12 @@ public class EndToEndFlowTest {
     private Long incomeCategoryId;
     private Long expenseCategoryId;
 
-    /**
-     * 辅助方法：比较 BigDecimal 是否相等 (忽略精度)
-     */
+    /** 辅助方法：比较 BigDecimal 是否相等 (忽略精度) */
     private void assertBalanceEquals(BigDecimal expected, BigDecimal actual, String message) {
-        assertEquals(0, expected.compareTo(actual), message + " (expected: " + expected + ", actual: " + actual + ")");
+        assertEquals(
+                0,
+                expected.compareTo(actual),
+                message + " (expected: " + expected + ", actual: " + actual + ")");
     }
 
     @BeforeEach
@@ -149,12 +144,11 @@ public class EndToEndFlowTest {
         assertNotNull(incomeId, "收入交易创建成功");
 
         AccountVO walletAfterIncome = accountService.getAccount(testUserId, walletId);
-        assertBalanceEquals(new BigDecimal("500.00"), walletAfterIncome.getBalance(), 
-                "收入后钱包余额为500");
+        assertBalanceEquals(
+                new BigDecimal("500.00"), walletAfterIncome.getBalance(), "收入后钱包余额为500");
 
         BudgetVO budgetAfterIncome = budgetService.getBudget(testUserId, budgetId);
-        assertBalanceEquals(BigDecimal.ZERO, budgetAfterIncome.getSpent(), 
-                "收入不影响预算spent");
+        assertBalanceEquals(BigDecimal.ZERO, budgetAfterIncome.getSpent(), "收入不影响预算spent");
 
         // ===== Step 5: 添加支出交易 (关联预算) =====
         TransactionDTO expense = new TransactionDTO();
@@ -170,14 +164,13 @@ public class EndToEndFlowTest {
         assertNotNull(expenseId, "支出交易创建成功");
 
         AccountVO walletAfterExpense = accountService.getAccount(testUserId, walletId);
-        assertBalanceEquals(new BigDecimal("300.00"), walletAfterExpense.getBalance(), 
-                "支出后钱包余额为300 (500-200)");
+        assertBalanceEquals(
+                new BigDecimal("300.00"), walletAfterExpense.getBalance(), "支出后钱包余额为300 (500-200)");
 
         BudgetVO budgetAfterExpense = budgetService.getBudget(testUserId, budgetId);
-        assertBalanceEquals(new BigDecimal("200.00"), budgetAfterExpense.getSpent(), 
-                "支出后预算spent为200");
-        assertEquals(20.0, budgetAfterExpense.getProgress(), 0.01, 
-                "预算进度为20%");
+        assertBalanceEquals(
+                new BigDecimal("200.00"), budgetAfterExpense.getSpent(), "支出后预算spent为200");
+        assertEquals(20.0, budgetAfterExpense.getProgress(), 0.01, "预算进度为20%");
 
         // ===== Step 6: 验证账户汇总 =====
         Object summary = accountService.getAccountSummary(testUserId);
@@ -187,8 +180,8 @@ public class EndToEndFlowTest {
         transactionService.deleteTransaction(testUserId, expenseId);
 
         AccountVO walletAfterDeleteExpense = accountService.getAccount(testUserId, walletId);
-        assertBalanceEquals(new BigDecimal("500.00"), walletAfterDeleteExpense.getBalance(),
-                "删除支出后钱包回滚到500");
+        assertBalanceEquals(
+                new BigDecimal("500.00"), walletAfterDeleteExpense.getBalance(), "删除支出后钱包回滚到500");
 
         // 注意：预算 spent 回滚需要新的数据库查询，
         // 在同一测试方法内由于 MyBatis L1 缓存可能不会立即更新
@@ -218,18 +211,26 @@ public class EndToEndFlowTest {
         budgetId = budgetService.createBudget(testUserId, budget);
 
         // 3. 添加三笔支出
-        Long expenseId1 = createExpense(walletId, expenseCategoryId, budgetId, new BigDecimal("100.00"), "早餐");
-        Long expenseId2 = createExpense(walletId, expenseCategoryId, budgetId, new BigDecimal("200.00"), "午餐");
-        Long expenseId3 = createExpense(walletId, expenseCategoryId, budgetId, new BigDecimal("300.00"), "晚餐");
+        Long expenseId1 =
+                createExpense(
+                        walletId, expenseCategoryId, budgetId, new BigDecimal("100.00"), "早餐");
+        Long expenseId2 =
+                createExpense(
+                        walletId, expenseCategoryId, budgetId, new BigDecimal("200.00"), "午餐");
+        Long expenseId3 =
+                createExpense(
+                        walletId, expenseCategoryId, budgetId, new BigDecimal("300.00"), "晚餐");
 
         // 验证：三笔支出后
         AccountVO walletAfterAll = accountService.getAccount(testUserId, walletId);
-        assertBalanceEquals(new BigDecimal("-600.00"), walletAfterAll.getBalance(), 
+        assertBalanceEquals(
+                new BigDecimal("-600.00"),
+                walletAfterAll.getBalance(),
                 "三笔支出后钱包余额为-600 (0-100-200-300)");
 
         BudgetVO budgetAfterAll = budgetService.getBudget(testUserId, budgetId);
-        assertBalanceEquals(new BigDecimal("600.00"), budgetAfterAll.getSpent(),
-                "三笔支出后预算spent为600");
+        assertBalanceEquals(
+                new BigDecimal("600.00"), budgetAfterAll.getSpent(), "三笔支出后预算spent为600");
         assertEquals(60.0, budgetAfterAll.getProgress(), 0.01, "预算进度为60%");
 
         // 4. 删除中间一笔支出，验证钱包回滚
@@ -237,7 +238,9 @@ public class EndToEndFlowTest {
         transactionService.deleteTransaction(testUserId, expenseId2);
 
         AccountVO walletAfterPartialDelete = accountService.getAccount(testUserId, walletId);
-        assertBalanceEquals(new BigDecimal("-400.00"), walletAfterPartialDelete.getBalance(),
+        assertBalanceEquals(
+                new BigDecimal("-400.00"),
+                walletAfterPartialDelete.getBalance(),
                 "删除一笔支出后钱包余额为-400 (-100-300)");
 
         System.out.println("✅ 多笔支出测试通过！");
@@ -288,12 +291,10 @@ public class EndToEndFlowTest {
 
         // 3. 验证双方余额
         AccountVO wallet1After = accountService.getAccount(testUserId, walletId1);
-        assertBalanceEquals(new BigDecimal("700.00"), wallet1After.getBalance(), 
-                "钱包1转出后余额为700");
+        assertBalanceEquals(new BigDecimal("700.00"), wallet1After.getBalance(), "钱包1转出后余额为700");
 
         AccountVO wallet2After = accountService.getAccount(testUserId, walletId2);
-        assertBalanceEquals(new BigDecimal("300.00"), wallet2After.getBalance(), 
-                "钱包2转入后余额为300");
+        assertBalanceEquals(new BigDecimal("300.00"), wallet2After.getBalance(), "钱包2转入后余额为300");
 
         System.out.println("✅ 账户间转账测试通过！");
     }
@@ -328,7 +329,13 @@ public class EndToEndFlowTest {
         assertNotNull(budgetId, "预算创建成功");
 
         // 4. 支出600 (超过预算500)
-        Long expenseId = createExpense(walletId, localExpenseCategoryId, budgetId, new BigDecimal("600.00"), "大额消费");
+        Long expenseId =
+                createExpense(
+                        walletId,
+                        localExpenseCategoryId,
+                        budgetId,
+                        new BigDecimal("600.00"),
+                        "大额消费");
         assertNotNull(expenseId, "支出创建成功");
 
         // 5. 验证超支状态
@@ -382,11 +389,9 @@ public class EndToEndFlowTest {
         System.out.println("✅ 预算完成状态测试通过！");
     }
 
-    /**
-     * 辅助方法：创建支出交易
-     */
-    private Long createExpense(Long accountId, Long categoryId, Long budgetId, 
-                               BigDecimal amount, String note) {
+    /** 辅助方法：创建支出交易 */
+    private Long createExpense(
+            Long accountId, Long categoryId, Long budgetId, BigDecimal amount, String note) {
         TransactionDTO expense = new TransactionDTO();
         expense.setAccountId(accountId);
         expense.setCategoryId(categoryId);

@@ -1,14 +1,12 @@
 package com.mamoji.common.utils;
 
-import org.springframework.beans.BeanUtils;
-
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
-/**
- * DTO/VO 转换工具类
- */
+import org.springframework.beans.BeanUtils;
+
+/** DTO/VO 转换工具类 */
 public final class DtoConverter {
 
     private DtoConverter() {
@@ -18,10 +16,10 @@ public final class DtoConverter {
     /**
      * 单个对象转换
      *
-     * @param source     源对象
+     * @param source 源对象
      * @param targetClass 目标类
-     * @param <T>        源类型
-     * @param <V>        目标类型
+     * @param <T> 源类型
+     * @param <V> 目标类型
      * @return 目标类型实例
      */
     public static <T, V> V convert(T source, Class<V> targetClass) {
@@ -40,10 +38,10 @@ public final class DtoConverter {
     /**
      * 列表转换
      *
-     * @param sourceList  源列表
+     * @param sourceList 源列表
      * @param targetClass 目标类
-     * @param <T>         源类型
-     * @param <V>         目标类型
+     * @param <T> 源类型
+     * @param <V> 目标类型
      * @return 目标类型列表
      */
     public static <T, V> List<V> convertList(List<T> sourceList, Class<V> targetClass) {

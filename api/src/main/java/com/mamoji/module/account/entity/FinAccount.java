@@ -1,19 +1,27 @@
 package com.mamoji.module.account.entity;
 
-import com.baomidou.mybatisplus.annotation.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-
 import java.io.Serial;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
-/**
- * Account Entity (账户)
- */
+import com.baomidou.mybatisplus.annotation.*;
+
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+/** Account Entity (账户) */
 @Data
 @Builder
 @NoArgsConstructor
@@ -21,64 +29,44 @@ import java.time.LocalDateTime;
 @TableName("fin_account")
 public class FinAccount implements Serializable {
 
-    @Serial
-    private static final long serialVersionUID = 1L;
+    @Serial private static final long serialVersionUID = 1L;
 
-    /**
-     * Account ID
-     */
+    /** Account ID */
     @TableId(type = IdType.AUTO)
     private Long accountId;
 
-    /**
-     * User ID
-     */
+    /** User ID */
     private Long userId;
 
-    /**
-     * Account name
-     */
+    /** Account name */
     private String name;
 
     /**
-     * Account type: bank, credit, cash, alipay, wechat, gold, fund_accumulation, fund, stock, topup, debt
+     * Account type: bank, credit, cash, alipay, wechat, gold, fund_accumulation, fund, stock,
+     * topup, debt
      */
     private String accountType;
 
-    /**
-     * Sub type: bank_primary, bank_secondary, credit_card
-     */
+    /** Sub type: bank_primary, bank_secondary, credit_card */
     private String accountSubType;
 
-    /**
-     * Currency
-     */
+    /** Currency */
     private String currency;
 
-    /**
-     * Balance (positive for assets, negative for liabilities)
-     */
+    /** Balance (positive for assets, negative for liabilities) */
     private BigDecimal balance;
 
-    /**
-     * Include in total assets: 0=no, 1=yes
-     */
+    /** Include in total assets: 0=no, 1=yes */
     private Integer includeInTotal;
 
-    /**
-     * Status: 0=disabled, 1=normal
-     */
+    /** Status: 0=disabled, 1=normal */
     private Integer status;
 
-    /**
-     * Creation time
-     */
+    /** Creation time */
     @TableField(fill = FieldFill.INSERT)
     private LocalDateTime createdAt;
 
-    /**
-     * Last update time
-     */
+    /** Last update time */
     @TableField(fill = FieldFill.INSERT_UPDATE)
     private LocalDateTime updatedAt;
 }

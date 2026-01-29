@@ -1,18 +1,26 @@
 package com.mamoji.module.auth.entity;
 
+import java.io.Serial;
+import java.io.Serializable;
+import java.time.LocalDateTime;
+
 import com.baomidou.mybatisplus.annotation.*;
+
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.io.Serial;
-import java.io.Serializable;
-import java.time.LocalDateTime;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
-/**
- * User Preference Entity
- */
+/** User Preference Entity */
 @Data
 @Builder
 @NoArgsConstructor
@@ -20,49 +28,32 @@ import java.time.LocalDateTime;
 @TableName("sys_preference")
 public class SysPreference implements Serializable {
 
-    @Serial
-    private static final long serialVersionUID = 1L;
+    @Serial private static final long serialVersionUID = 1L;
 
-    /**
-     * Preference ID
-     */
+    /** Preference ID */
     @TableId(type = IdType.AUTO)
     private Long prefId;
 
-    /**
-     * User ID (unique)
-     */
+    /** User ID (unique) */
     private Long userId;
 
-    /**
-     * Default currency
-     */
+    /** Default currency */
     private String currency;
 
-    /**
-     * Timezone
-     */
+    /** Timezone */
     private String timezone;
 
-    /**
-     * Date format
-     */
+    /** Date format */
     private String dateFormat;
 
-    /**
-     * Month start day
-     */
+    /** Month start day */
     private Integer monthStart;
 
-    /**
-     * Creation time
-     */
+    /** Creation time */
     @TableField(fill = FieldFill.INSERT)
     private LocalDateTime createdAt;
 
-    /**
-     * Last update time
-     */
+    /** Last update time */
     @TableField(fill = FieldFill.INSERT_UPDATE)
     private LocalDateTime updatedAt;
 }

@@ -1,64 +1,53 @@
 package com.mamoji.module.account.dto;
 
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
-/**
- * Account Response VO
- */
+/** Account Response VO */
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
 public class AccountVO {
 
-    /**
-     * Account ID
-     */
+    /** Account ID */
     private Long accountId;
 
-    /**
-     * Account name
-     */
+    /** Account name */
     private String name;
 
-    /**
-     * Account type
-     */
+    /** Account type */
     private String accountType;
 
-    /**
-     * Account sub type
-     */
+    /** Account sub type */
     private String accountSubType;
 
-    /**
-     * Currency
-     */
+    /** Currency */
     private String currency;
 
-    /**
-     * Balance
-     */
+    /** Balance */
     private BigDecimal balance;
 
-    /**
-     * Include in total assets
-     */
+    /** Include in total assets */
     private Integer includeInTotal;
 
-    /**
-     * Status
-     */
+    /** Status */
     private Integer status;
 
-    /**
-     * Creation time
-     */
+    /** Creation time */
     private LocalDateTime createdAt;
 }

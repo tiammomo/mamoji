@@ -1,19 +1,27 @@
 package com.mamoji.module.transaction.entity;
 
-import com.baomidou.mybatisplus.annotation.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-
 import java.io.Serial;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
-/**
- * Transaction Entity (交易记录)
- */
+import com.baomidou.mybatisplus.annotation.*;
+
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+/** Transaction Entity (交易记录) */
 @Data
 @Builder
 @NoArgsConstructor
@@ -21,74 +29,50 @@ import java.time.LocalDateTime;
 @TableName("fin_transaction")
 public class FinTransaction implements Serializable {
 
-    @Serial
-    private static final long serialVersionUID = 1L;
+    @Serial private static final long serialVersionUID = 1L;
 
-    /**
-     * Transaction ID
-     */
+    /** Transaction ID */
     @TableId(type = IdType.AUTO)
     private Long transactionId;
 
-    /**
-     * User ID
-     */
+    /** User ID */
     private Long userId;
 
-    /**
-     * Account ID
-     */
+    /** Account ID */
     private Long accountId;
 
-    /**
-     * Category ID (required)
-     */
+    /** Category ID (required) */
     private Long categoryId;
 
-    /**
-     * Budget ID (optional)
-     */
+    /** Budget ID (optional) */
     private Long budgetId;
 
-    /**
-     * Transaction type: income, expense
-     */
+    /** Refund transaction ID (for refund transactions, linked to original expense) */
+    private Long refundId;
+
+    /** Transaction type: income, expense, refund */
     private String type;
 
-    /**
-     * Amount
-     */
+    /** Amount */
     private BigDecimal amount;
 
-    /**
-     * Currency
-     */
+    /** Currency */
     private String currency;
 
-    /**
-     * Occurred time
-     */
+    /** Occurred time */
     private LocalDateTime occurredAt;
 
-    /**
-     * Note/remark
-     */
+    /** Note/remark */
     private String note;
 
-    /**
-     * Status: 0=deleted, 1=normal
-     */
+    /** Status: 0=deleted, 1=normal */
     private Integer status;
 
-    /**
-     * Creation time
-     */
+    /** Creation time */
     @TableField(fill = FieldFill.INSERT)
     private LocalDateTime createdAt;
 
-    /**
-     * Last update time
-     */
+    /** Last update time */
     @TableField(fill = FieldFill.INSERT_UPDATE)
     private LocalDateTime updatedAt;
 }

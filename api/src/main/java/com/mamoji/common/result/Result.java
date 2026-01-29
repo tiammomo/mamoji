@@ -1,48 +1,44 @@
 package com.mamoji.common.result;
 
+import java.io.Serial;
+import java.io.Serializable;
+
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.io.Serial;
-import java.io.Serializable;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
-/**
- * Unified API Response Result
- */
+/** Unified API Response Result */
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
 public class Result<T> implements Serializable {
 
-    @Serial
-    private static final long serialVersionUID = 1L;
+    @Serial private static final long serialVersionUID = 1L;
 
-    /**
-     * Response code
-     */
+    /** Response code */
     private Integer code;
 
-    /**
-     * Response message
-     */
+    /** Response message */
     private String message;
 
-    /**
-     * Response data
-     */
+    /** Response data */
     private T data;
 
-    /**
-     * Whether the request was successful
-     */
+    /** Whether the request was successful */
     private Boolean success;
 
-    /**
-     * Create a successful response with data
-     */
+    /** Create a successful response with data */
     public static <T> Result<T> success(T data) {
         return Result.<T>builder()
                 .code(ResultCode.SUCCESS.getCode())
@@ -52,9 +48,7 @@ public class Result<T> implements Serializable {
                 .build();
     }
 
-    /**
-     * Create a successful response without data
-     */
+    /** Create a successful response without data */
     public static <T> Result<T> success() {
         return Result.<T>builder()
                 .code(ResultCode.SUCCESS.getCode())
@@ -63,9 +57,7 @@ public class Result<T> implements Serializable {
                 .build();
     }
 
-    /**
-     * Create a failed response
-     */
+    /** Create a failed response */
     public static <T> Result<T> fail(String message) {
         return Result.<T>builder()
                 .code(ResultCode.FAIL.getCode())
@@ -74,9 +66,7 @@ public class Result<T> implements Serializable {
                 .build();
     }
 
-    /**
-     * Create a failed response with code
-     */
+    /** Create a failed response with code */
     public static <T> Result<T> fail(ResultCode resultCode) {
         return Result.<T>builder()
                 .code(resultCode.getCode())
@@ -85,14 +75,8 @@ public class Result<T> implements Serializable {
                 .build();
     }
 
-    /**
-     * Create a failed response with code and message
-     */
+    /** Create a failed response with code and message */
     public static <T> Result<T> fail(Integer code, String message) {
-        return Result.<T>builder()
-                .code(code)
-                .message(message)
-                .success(false)
-                .build();
+        return Result.<T>builder().code(code).message(message).success(false).build();
     }
 }

@@ -26,8 +26,14 @@
           │                                   │                                   │
           │                                   ▼                                   │
           │                           ┌─────────────┐                             │
-          └───────────────────────────│fin_transaction│◀──────────────────────────┘
-                                    └─────────────┘
+          │                           │fin_transaction│◀──────────────────────────┘
+          │                           └─────────────┘
+          │                                   │
+          │                                   │ 1:N
+          │                                   ▼
+          │                           ┌─────────────┐
+          └───────────────────────────│fin_refund   │
+                                      └─────────────┘
 ```
 
 ## 表结构
@@ -184,7 +190,43 @@ CREATE TABLE `fin_budget` (
 
 ---
 
-### 6. sys_preference 用户偏好表
+### 6. fin_refund 退款表
+
+```sql
+CREATE TABLE `fin_refund` (
+  `refund_id` BIGINT UNSIGNED PRIMARY KEY AUTO_INCREMENT COMMENT '退款ID',
+  `user_id` BIGINT UNSIGNED NOT NULL COMMENT '用户ID',
+  `transaction_id` BIGINT UNSIGNED NOT NULL COMMENT '原交易ID',
+  `account_id` BIGINT UNSIGNED NOT NULL COMMENT '账户ID',
+  `category_id` BIGINT UNSIGNED NOT NULL COMMENT '分类ID',
+  `amount` DECIMAL(18,2) NOT NULL COMMENT '退款金额',
+  `currency` VARCHAR(10) DEFAULT 'CNY' COMMENT '币种',
+  `occurred_at` DATETIME NOT NULL COMMENT '发生时间',
+  `note` VARCHAR(500) COMMENT '备注',
+  `status` TINYINT DEFAULT 1 COMMENT '状态: 0取消, 1有效',
+  `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='退款记录表';
+```
+
+**字段说明：**
+
+| 字段 | 说明 |
+|------|------|
+| transaction_id | 关联的原交易ID，一笔交易可对应多笔退款 |
+| account_id | 退款到的账户ID |
+| category_id | 退款分类（通常与原交易分类相同） |
+| amount | 退款金额，正数 |
+| note | 备注，格式为 "退款：xxx" |
+
+**退款规则：**
+- 累计退款金额不能超过原交易金额
+- 退款后原交易的 refundSummary 自动更新
+- 账户余额 = 原交易扣款 + 累计退款金额
+
+---
+
+### 7. sys_preference 用户偏好表
 
 ```sql
 CREATE TABLE `sys_preference` (
@@ -225,6 +267,10 @@ CREATE TABLE `sys_preference` (
 | fin_budget | status | INDEX | 状态索引 |
 | fin_budget | user_id, status | INDEX | 用户+状态复合索引 |
 | fin_budget | user_id, start_date, end_date | INDEX | 周期查询复合索引 |
+| fin_refund | user_id | INDEX | 用户索引 |
+| fin_refund | transaction_id | INDEX | 原交易索引 |
+| fin_refund | status | INDEX | 状态索引 |
+| fin_refund | user_id, status | INDEX | 用户+状态复合索引 |
 | sys_preference | user_id | UNIQUE | 用户唯一索引 |
 
 ---
@@ -240,6 +286,7 @@ CREATE TABLE `sys_preference` (
 | fin_account | 禁用 | 正常 |
 | fin_transaction | 已删除 | 正常 |
 | fin_budget | 已取消 | 进行中/已完成/超支 |
+| fin_refund | 已取消 | 有效 |
 
 **查询数据时需过滤** `status = 1`（或 `status != 0`）：
 
@@ -299,6 +346,7 @@ INSERT INTO fin_category (name, type) VALUES
 |----|------|--------|
 | income | 收入 | fin_category, fin_transaction |
 | expense | 支出 | fin_category, fin_transaction |
+| refund | 退款 | fin_refund |
 
 ### account_type 账户类型
 

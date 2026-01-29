@@ -1,20 +1,25 @@
 package com.mamoji.module.category.controller;
 
+import java.util.List;
+
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.*;
+
 import com.mamoji.common.result.Result;
 import com.mamoji.module.category.dto.CategoryDTO;
 import com.mamoji.module.category.dto.CategoryVO;
 import com.mamoji.module.category.service.CategoryService;
 import com.mamoji.security.UserPrincipal;
+
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.*;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 
-import java.util.List;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 
-/**
- * Category Controller
- */
+/** Category Controller */
 @RestController
 @RequestMapping("/api/v1/categories")
 @RequiredArgsConstructor
@@ -22,9 +27,7 @@ public class CategoryController {
 
     private final CategoryService categoryService;
 
-    /**
-     * Get all categories for current user
-     */
+    /** Get all categories for current user */
     @GetMapping
     public Result<List<CategoryVO>> listCategories(
             @AuthenticationPrincipal UserPrincipal user,
@@ -38,20 +41,15 @@ public class CategoryController {
         return Result.success(categories);
     }
 
-    /**
-     * Create a new category
-     */
+    /** Create a new category */
     @PostMapping
     public Result<Long> createCategory(
-            @AuthenticationPrincipal UserPrincipal user,
-            @Valid @RequestBody CategoryDTO request) {
+            @AuthenticationPrincipal UserPrincipal user, @Valid @RequestBody CategoryDTO request) {
         Long categoryId = categoryService.createCategory(user.userId(), request);
         return Result.success(categoryId);
     }
 
-    /**
-     * Update a category
-     */
+    /** Update a category */
     @PutMapping("/{id}")
     public Result<Void> updateCategory(
             @AuthenticationPrincipal UserPrincipal user,
@@ -61,13 +59,10 @@ public class CategoryController {
         return Result.success();
     }
 
-    /**
-     * Delete a category
-     */
+    /** Delete a category */
     @DeleteMapping("/{id}")
     public Result<Void> deleteCategory(
-            @AuthenticationPrincipal UserPrincipal user,
-            @PathVariable Long id) {
+            @AuthenticationPrincipal UserPrincipal user, @PathVariable Long id) {
         categoryService.deleteCategory(user.userId(), id);
         return Result.success();
     }

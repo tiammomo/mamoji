@@ -1,5 +1,12 @@
 package com.mamoji.module.account.service;
 
+import java.math.BigDecimal;
+import java.util.List;
+
+import org.springframework.beans.BeanUtils;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
@@ -9,18 +16,16 @@ import com.mamoji.module.account.dto.AccountDTO;
 import com.mamoji.module.account.dto.AccountVO;
 import com.mamoji.module.account.entity.FinAccount;
 import com.mamoji.module.account.mapper.FinAccountMapper;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.BeanUtils;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
-import java.math.BigDecimal;
-import java.util.List;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
-/**
- * Account Service Implementation
- */
+/** Account Service Implementation */
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -29,12 +34,12 @@ public class AccountServiceImpl extends ServiceImpl<FinAccountMapper, FinAccount
 
     @Override
     public List<AccountVO> listAccounts(Long userId) {
-        List<FinAccount> accounts = this.list(
-                new LambdaQueryWrapper<FinAccount>()
-                        .eq(FinAccount::getUserId, userId)
-                        .eq(FinAccount::getStatus, 1)
-                        .orderByDesc(FinAccount::getCreatedAt)
-        );
+        List<FinAccount> accounts =
+                this.list(
+                        new LambdaQueryWrapper<FinAccount>()
+                                .eq(FinAccount::getUserId, userId)
+                                .eq(FinAccount::getStatus, 1)
+                                .orderByDesc(FinAccount::getCreatedAt));
 
         return accounts.stream().map(this::toVO).toList();
     }
@@ -51,16 +56,22 @@ public class AccountServiceImpl extends ServiceImpl<FinAccountMapper, FinAccount
     @Override
     @Transactional(rollbackFor = Exception.class)
     public Long createAccount(Long userId, AccountDTO request) {
-        FinAccount account = FinAccount.builder()
-                .userId(userId)
-                .name(request.getName())
-                .accountType(request.getAccountType())
-                .accountSubType(request.getAccountSubType())
-                .currency(request.getCurrency() != null ? request.getCurrency() : "CNY")
-                .balance(request.getBalance() != null ? request.getBalance() : BigDecimal.ZERO)
-                .includeInTotal(determineIncludeInTotal(request.getAccountType(), request.getIncludeInTotal()))
-                .status(1)
-                .build();
+        FinAccount account =
+                FinAccount.builder()
+                        .userId(userId)
+                        .name(request.getName())
+                        .accountType(request.getAccountType())
+                        .accountSubType(request.getAccountSubType())
+                        .currency(request.getCurrency() != null ? request.getCurrency() : "CNY")
+                        .balance(
+                                request.getBalance() != null
+                                        ? request.getBalance()
+                                        : BigDecimal.ZERO)
+                        .includeInTotal(
+                                determineIncludeInTotal(
+                                        request.getAccountType(), request.getIncludeInTotal()))
+                        .status(1)
+                        .build();
 
         this.save(account);
 
@@ -82,10 +93,18 @@ public class AccountServiceImpl extends ServiceImpl<FinAccountMapper, FinAccount
                         .eq(FinAccount::getAccountId, accountId)
                         .set(FinAccount::getName, request.getName())
                         .set(FinAccount::getAccountSubType, request.getAccountSubType())
-                        .set(request.getCurrency() != null, FinAccount::getCurrency, request.getCurrency())
-                        .set(request.getBalance() != null, FinAccount::getBalance, request.getBalance())
-                        .set(request.getIncludeInTotal() != null, FinAccount::getIncludeInTotal, request.getIncludeInTotal())
-        );
+                        .set(
+                                request.getCurrency() != null,
+                                FinAccount::getCurrency,
+                                request.getCurrency())
+                        .set(
+                                request.getBalance() != null,
+                                FinAccount::getBalance,
+                                request.getBalance())
+                        .set(
+                                request.getIncludeInTotal() != null,
+                                FinAccount::getIncludeInTotal,
+                                request.getIncludeInTotal()));
 
         log.info("Account updated: accountId={}", accountId);
     }
@@ -102,8 +121,7 @@ public class AccountServiceImpl extends ServiceImpl<FinAccountMapper, FinAccount
         this.update(
                 new LambdaUpdateWrapper<FinAccount>()
                         .eq(FinAccount::getAccountId, accountId)
-                        .set(FinAccount::getStatus, 0)
-        );
+                        .set(FinAccount::getStatus, 0));
 
         log.info("Account deleted: accountId={}", accountId);
     }
@@ -114,17 +132,16 @@ public class AccountServiceImpl extends ServiceImpl<FinAccountMapper, FinAccount
         this.update(
                 new LambdaUpdateWrapper<FinAccount>()
                         .eq(FinAccount::getAccountId, accountId)
-                        .setSql("balance = balance + " + amount)
-        );
+                        .setSql("balance = balance + " + amount));
     }
 
     @Override
     public Object getAccountSummary(Long userId) {
-        List<FinAccount> accounts = this.list(
-                new LambdaQueryWrapper<FinAccount>()
-                        .eq(FinAccount::getUserId, userId)
-                        .eq(FinAccount::getStatus, 1)
-        );
+        List<FinAccount> accounts =
+                this.list(
+                        new LambdaQueryWrapper<FinAccount>()
+                                .eq(FinAccount::getUserId, userId)
+                                .eq(FinAccount::getStatus, 1));
 
         BigDecimal totalAssets = BigDecimal.ZERO;
         BigDecimal totalLiabilities = BigDecimal.ZERO;
@@ -133,8 +150,10 @@ public class AccountServiceImpl extends ServiceImpl<FinAccountMapper, FinAccount
         BigDecimal debtBalance = BigDecimal.ZERO;
 
         for (FinAccount account : accounts) {
-            BigDecimal balance = account.getBalance() != null ? account.getBalance() : BigDecimal.ZERO;
-            Integer includeInTotal = account.getIncludeInTotal() != null ? account.getIncludeInTotal() : 1;
+            BigDecimal balance =
+                    account.getBalance() != null ? account.getBalance() : BigDecimal.ZERO;
+            Integer includeInTotal =
+                    account.getIncludeInTotal() != null ? account.getIncludeInTotal() : 1;
 
             if (includeInTotal == 1) {
                 String type = account.getAccountType();
@@ -161,13 +180,10 @@ public class AccountServiceImpl extends ServiceImpl<FinAccountMapper, FinAccount
                 "fundBalance", fundBalance,
                 "creditLimit", creditLimit,
                 "debtBalance", debtBalance,
-                "accountCount", accounts.size()
-        );
+                "accountCount", accounts.size());
     }
 
-    /**
-     * Determine if account should be included in total assets
-     */
+    /** Determine if account should be included in total assets */
     private Integer determineIncludeInTotal(String accountType, Integer includeInTotal) {
         if (includeInTotal != null) {
             return includeInTotal;
@@ -179,9 +195,7 @@ public class AccountServiceImpl extends ServiceImpl<FinAccountMapper, FinAccount
         return 1;
     }
 
-    /**
-     * Convert entity to VO
-     */
+    /** Convert entity to VO */
     private AccountVO toVO(FinAccount account) {
         AccountVO vo = new AccountVO();
         BeanUtils.copyProperties(account, vo);

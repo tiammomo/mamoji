@@ -1,34 +1,34 @@
 package com.mamoji.module.report.dto;
 
+import java.time.LocalDate;
+
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.math.BigDecimal;
-import java.time.LocalDate;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
-/**
- * Report Query Request DTO
- */
+/** Report Query Request DTO */
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
 public class ReportQueryDTO {
 
-    /**
-     * Start date
-     */
+    /** Start date */
     private LocalDate startDate;
 
-    /**
-     * End date
-     */
+    /** End date */
     private LocalDate endDate;
 
-    /**
-     * Group by: day, week, month
-     */
+    /** Group by: day, week, month */
     private String groupBy;
 }
