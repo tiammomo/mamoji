@@ -1,12 +1,6 @@
 package com.mamoji.performance;
 
-import com.mamoji.module.budget.dto.BudgetDTO;
-import com.mamoji.module.budget.dto.BudgetVO;
-import com.mamoji.module.budget.service.BudgetService;
-import org.junit.jupiter.api.*;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.ActiveProfiles;
+import static org.junit.jupiter.api.Assertions.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -15,24 +9,27 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.*;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.ActiveProfiles;
+
+import com.mamoji.module.budget.dto.BudgetDTO;
+import com.mamoji.module.budget.dto.BudgetVO;
+import com.mamoji.module.budget.service.BudgetService;
 
 /**
  * Performance Tests for Budget Service Operations
  *
- * Tests the performance of core budget operations:
- * - getBudget()
- * - listBudgets()
- * - listActiveBudgets()
- * - createBudget()
+ * <p>Tests the performance of core budget operations: - getBudget() - listBudgets() -
+ * listActiveBudgets() - createBudget()
  */
 @SpringBootTest
 @ActiveProfiles("test")
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class BudgetPerformanceTest {
 
-    @Autowired
-    private BudgetService budgetService;
+    @Autowired private BudgetService budgetService;
 
     private final Long testUserId = 999L;
     private static Long createdBudgetId;
@@ -72,13 +69,15 @@ public class BudgetPerformanceTest {
         long durationMicros = (endTime - startTime) / 1000;
         long durationMs = (endTime - startTime) / 1_000_000;
 
-        System.out.println("getBudget() took: " + durationMs + "ms (" + durationMicros + " microseconds)");
+        System.out.println(
+                "getBudget() took: " + durationMs + "ms (" + durationMicros + " microseconds)");
 
         assertNotNull(budget, "Budget should not be null");
         assertEquals(createdBudgetId, budget.getBudgetId(), "Budget ID should match");
 
         // Performance assertion
-        assertTrue(durationMs < 50,
+        assertTrue(
+                durationMs < 50,
                 "getBudget() should complete in under 50ms, took: " + durationMs + "ms");
     }
 
@@ -93,12 +92,14 @@ public class BudgetPerformanceTest {
         long durationMicros = (endTime - startTime) / 1000;
         long durationMs = (endTime - startTime) / 1_000_000;
 
-        System.out.println("listBudgets() took: " + durationMs + "ms (" + durationMicros + " microseconds)");
+        System.out.println(
+                "listBudgets() took: " + durationMs + "ms (" + durationMicros + " microseconds)");
 
         assertNotNull(budgets, "Budgets list should not be null");
 
         // Performance assertion
-        assertTrue(durationMs < 100,
+        assertTrue(
+                durationMs < 100,
                 "listBudgets() should complete in under 100ms, took: " + durationMs + "ms");
     }
 
@@ -113,12 +114,18 @@ public class BudgetPerformanceTest {
         long durationMicros = (endTime - startTime) / 1000;
         long durationMs = (endTime - startTime) / 1_000_000;
 
-        System.out.println("listActiveBudgets() took: " + durationMs + "ms (" + durationMicros + " microseconds)");
+        System.out.println(
+                "listActiveBudgets() took: "
+                        + durationMs
+                        + "ms ("
+                        + durationMicros
+                        + " microseconds)");
 
         assertNotNull(budgets, "Active budgets list should not be null");
 
         // Performance assertion
-        assertTrue(durationMs < 100,
+        assertTrue(
+                durationMs < 100,
                 "listActiveBudgets() should complete in under 100ms, took: " + durationMs + "ms");
     }
 
@@ -139,12 +146,14 @@ public class BudgetPerformanceTest {
         long durationMicros = (endTime - startTime) / 1000;
         long durationMs = (endTime - startTime) / 1_000_000;
 
-        System.out.println("createBudget() took: " + durationMs + "ms (" + durationMicros + " microseconds)");
+        System.out.println(
+                "createBudget() took: " + durationMs + "ms (" + durationMicros + " microseconds)");
 
         assertNotNull(budgetId, "Created budget ID should not be null");
 
         // Performance assertion - relaxed for test environment
-        assertTrue(durationMs < 500,
+        assertTrue(
+                durationMs < 500,
                 "createBudget() should complete in under 500ms, took: " + durationMs + "ms");
 
         // Clean up
@@ -170,10 +179,12 @@ public class BudgetPerformanceTest {
         long durationMicros = (endTime - startTime) / 1000;
         long durationMs = (endTime - startTime) / 1_000_000;
 
-        System.out.println("deleteBudget() took: " + durationMs + "ms (" + durationMicros + " microseconds)");
+        System.out.println(
+                "deleteBudget() took: " + durationMs + "ms (" + durationMicros + " microseconds)");
 
         // Performance assertion - relaxed for test environment
-        assertTrue(durationMs < 300,
+        assertTrue(
+                durationMs < 300,
                 "deleteBudget() should complete in under 300ms, took: " + durationMs + "ms");
     }
 
@@ -233,17 +244,18 @@ public class BudgetPerformanceTest {
         long startTime = System.nanoTime();
 
         for (int i = 0; i < threadCount; i++) {
-            executor.submit(() -> {
-                try {
-                    for (int j = 0; j < 10; j++) {
-                        budgetService.getBudget(testUserId, createdBudgetId);
-                    }
-                } catch (Exception e) {
-                    e.printStackTrace();
-                } finally {
-                    latch.countDown();
-                }
-            });
+            executor.submit(
+                    () -> {
+                        try {
+                            for (int j = 0; j < 10; j++) {
+                                budgetService.getBudget(testUserId, createdBudgetId);
+                            }
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        } finally {
+                            latch.countDown();
+                        }
+                    });
         }
 
         latch.await(30, TimeUnit.SECONDS);

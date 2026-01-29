@@ -1,5 +1,14 @@
 package com.mamoji.module.transaction.service;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.List;
+
+import org.junit.jupiter.api.*;
+import org.springframework.beans.factory.annotation.Autowired;
+
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.mamoji.MySqlIntegrationTestBase;
 import com.mamoji.module.account.entity.FinAccount;
@@ -10,29 +19,15 @@ import com.mamoji.module.transaction.dto.TransactionDTO;
 import com.mamoji.module.transaction.dto.TransactionQueryDTO;
 import com.mamoji.module.transaction.dto.TransactionVO;
 import com.mamoji.module.transaction.entity.FinTransaction;
-import com.mamoji.module.transaction.mapper.FinTransactionMapper;
-import org.junit.jupiter.api.*;
-import org.springframework.beans.factory.annotation.Autowired;
 
-import java.math.BigDecimal;
-import java.time.LocalDateTime;
-import java.util.List;
-
-import static org.assertj.core.api.Assertions.assertThat;
-
-/**
- * TransactionService Integration Tests
- */
+/** TransactionService Integration Tests */
 class TransactionServiceIntegrationTest extends MySqlIntegrationTestBase {
 
-    @Autowired
-    private TransactionService transactionService;
+    @Autowired private TransactionService transactionService;
 
-    @Autowired
-    private FinAccountMapper accountMapper;
+    @Autowired private FinAccountMapper accountMapper;
 
-    @Autowired
-    private FinCategoryMapper categoryMapper;
+    @Autowired private FinCategoryMapper categoryMapper;
 
     private final Long testUserId = 999L;
     private Long testAccountId;
@@ -41,53 +36,64 @@ class TransactionServiceIntegrationTest extends MySqlIntegrationTestBase {
     @BeforeEach
     void setUp() {
         // Clean up test data using wrapper with always true condition
-        transactionMapper.delete(new LambdaQueryWrapper<FinTransaction>().isNotNull(FinTransaction::getTransactionId));
-        accountMapper.delete(new LambdaQueryWrapper<FinAccount>().isNotNull(FinAccount::getAccountId));
-        categoryMapper.delete(new LambdaQueryWrapper<FinCategory>().isNotNull(FinCategory::getCategoryId));
+        transactionMapper.delete(
+                new LambdaQueryWrapper<FinTransaction>()
+                        .isNotNull(FinTransaction::getTransactionId));
+        accountMapper.delete(
+                new LambdaQueryWrapper<FinAccount>().isNotNull(FinAccount::getAccountId));
+        categoryMapper.delete(
+                new LambdaQueryWrapper<FinCategory>().isNotNull(FinCategory::getCategoryId));
 
         // Create test account
-        FinAccount account = FinAccount.builder()
-                .userId(testUserId)
-                .name("Test Account")
-                .accountType("bank")
-                .balance(new BigDecimal("10000.00"))
-                .currency("CNY")
-                .status(1)
-                .build();
+        FinAccount account =
+                FinAccount.builder()
+                        .userId(testUserId)
+                        .name("Test Account")
+                        .accountType("bank")
+                        .balance(new BigDecimal("10000.00"))
+                        .currency("CNY")
+                        .status(1)
+                        .build();
         accountMapper.insert(account);
         testAccountId = account.getAccountId();
 
         // Create test category
-        FinCategory category = FinCategory.builder()
-                .userId(testUserId)
-                .name("Test Category")
-                .type("expense")
-                .status(1)
-                .build();
+        FinCategory category =
+                FinCategory.builder()
+                        .userId(testUserId)
+                        .name("Test Category")
+                        .type("expense")
+                        .status(1)
+                        .build();
         categoryMapper.insert(category);
         testCategoryId = category.getCategoryId();
     }
 
     @AfterEach
     void tearDown() {
-        transactionMapper.delete(new LambdaQueryWrapper<FinTransaction>().isNotNull(FinTransaction::getTransactionId));
-        accountMapper.delete(new LambdaQueryWrapper<FinAccount>().isNotNull(FinAccount::getAccountId));
-        categoryMapper.delete(new LambdaQueryWrapper<FinCategory>().isNotNull(FinCategory::getCategoryId));
+        transactionMapper.delete(
+                new LambdaQueryWrapper<FinTransaction>()
+                        .isNotNull(FinTransaction::getTransactionId));
+        accountMapper.delete(
+                new LambdaQueryWrapper<FinAccount>().isNotNull(FinAccount::getAccountId));
+        categoryMapper.delete(
+                new LambdaQueryWrapper<FinCategory>().isNotNull(FinCategory::getCategoryId));
     }
 
     @Test
     @DisplayName("Create transaction should persist and return id")
     void createTransaction_ShouldPersistAndReturnId() {
         // Given
-        TransactionDTO dto = TransactionDTO.builder()
-                .accountId(testAccountId)
-                .categoryId(testCategoryId)
-                .type("expense")
-                .amount(new BigDecimal("100.00"))
-                .currency("CNY")
-                .occurredAt(LocalDateTime.now())
-                .note("Test transaction")
-                .build();
+        TransactionDTO dto =
+                TransactionDTO.builder()
+                        .accountId(testAccountId)
+                        .categoryId(testCategoryId)
+                        .type("expense")
+                        .amount(new BigDecimal("100.00"))
+                        .currency("CNY")
+                        .occurredAt(LocalDateTime.now())
+                        .note("Test transaction")
+                        .build();
 
         // When
         Long transactionId = transactionService.createTransaction(testUserId, dto);
@@ -109,28 +115,30 @@ class TransactionServiceIntegrationTest extends MySqlIntegrationTestBase {
     @DisplayName("List transactions should return user's transactions")
     void listTransactions_ShouldReturnUserTransactions() {
         // Given
-        FinTransaction tx1 = FinTransaction.builder()
-                .userId(testUserId)
-                .accountId(testAccountId)
-                .categoryId(testCategoryId)
-                .type("expense")
-                .amount(new BigDecimal("100.00"))
-                .currency("CNY")
-                .occurredAt(LocalDateTime.now())
-                .status(1)
-                .build();
+        FinTransaction tx1 =
+                FinTransaction.builder()
+                        .userId(testUserId)
+                        .accountId(testAccountId)
+                        .categoryId(testCategoryId)
+                        .type("expense")
+                        .amount(new BigDecimal("100.00"))
+                        .currency("CNY")
+                        .occurredAt(LocalDateTime.now())
+                        .status(1)
+                        .build();
         transactionMapper.insert(tx1);
 
-        FinTransaction tx2 = FinTransaction.builder()
-                .userId(testUserId)
-                .accountId(testAccountId)
-                .categoryId(testCategoryId)
-                .type("income")
-                .amount(new BigDecimal("500.00"))
-                .currency("CNY")
-                .occurredAt(LocalDateTime.now())
-                .status(1)
-                .build();
+        FinTransaction tx2 =
+                FinTransaction.builder()
+                        .userId(testUserId)
+                        .accountId(testAccountId)
+                        .categoryId(testCategoryId)
+                        .type("income")
+                        .amount(new BigDecimal("500.00"))
+                        .currency("CNY")
+                        .occurredAt(LocalDateTime.now())
+                        .status(1)
+                        .build();
         transactionMapper.insert(tx2);
 
         // When
@@ -144,16 +152,17 @@ class TransactionServiceIntegrationTest extends MySqlIntegrationTestBase {
     @DisplayName("Get transaction should return VO when exists")
     void getTransaction_ShouldReturnVOWhenExists() {
         // Given
-        FinTransaction tx = FinTransaction.builder()
-                .userId(testUserId)
-                .accountId(testAccountId)
-                .categoryId(testCategoryId)
-                .type("expense")
-                .amount(new BigDecimal("200.00"))
-                .currency("CNY")
-                .occurredAt(LocalDateTime.now())
-                .status(1)
-                .build();
+        FinTransaction tx =
+                FinTransaction.builder()
+                        .userId(testUserId)
+                        .accountId(testAccountId)
+                        .categoryId(testCategoryId)
+                        .type("expense")
+                        .amount(new BigDecimal("200.00"))
+                        .currency("CNY")
+                        .occurredAt(LocalDateTime.now())
+                        .status(1)
+                        .build();
         transactionMapper.insert(tx);
 
         // When
@@ -168,27 +177,28 @@ class TransactionServiceIntegrationTest extends MySqlIntegrationTestBase {
     @DisplayName("Delete transaction should set status to 0")
     void deleteTransaction_ShouldSetStatusToZero() {
         // Given
-        FinTransaction tx = FinTransaction.builder()
-                .userId(testUserId)
-                .accountId(testAccountId)
-                .categoryId(testCategoryId)
-                .type("expense")
-                .amount(new BigDecimal("150.00"))
-                .currency("CNY")
-                .occurredAt(LocalDateTime.now())
-                .status(1)
-                .build();
+        FinTransaction tx =
+                FinTransaction.builder()
+                        .userId(testUserId)
+                        .accountId(testAccountId)
+                        .categoryId(testCategoryId)
+                        .type("expense")
+                        .amount(new BigDecimal("150.00"))
+                        .currency("CNY")
+                        .occurredAt(LocalDateTime.now())
+                        .status(1)
+                        .build();
         transactionMapper.insert(tx);
 
         // When
         transactionService.deleteTransaction(testUserId, tx.getTransactionId());
 
         // Then - verify deletion by checking that active transactions count is 0
-        Long activeCount = transactionMapper.selectCount(
-                new LambdaQueryWrapper<FinTransaction>()
-                        .eq(FinTransaction::getTransactionId, tx.getTransactionId())
-                        .eq(FinTransaction::getStatus, 1)
-        );
+        Long activeCount =
+                transactionMapper.selectCount(
+                        new LambdaQueryWrapper<FinTransaction>()
+                                .eq(FinTransaction::getTransactionId, tx.getTransactionId())
+                                .eq(FinTransaction::getStatus, 1));
         assertThat(activeCount).isEqualTo(0);
     }
 
@@ -197,21 +207,23 @@ class TransactionServiceIntegrationTest extends MySqlIntegrationTestBase {
     void getRecentTransactions_ShouldReturnLimitedList() {
         // Given
         for (int i = 0; i < 15; i++) {
-            FinTransaction tx = FinTransaction.builder()
-                    .userId(testUserId)
-                    .accountId(testAccountId)
-                    .categoryId(testCategoryId)
-                    .type("expense")
-                    .amount(new BigDecimal("10.00"))
-                    .currency("CNY")
-                    .occurredAt(LocalDateTime.now())
-                    .status(1)
-                    .build();
+            FinTransaction tx =
+                    FinTransaction.builder()
+                            .userId(testUserId)
+                            .accountId(testAccountId)
+                            .categoryId(testCategoryId)
+                            .type("expense")
+                            .amount(new BigDecimal("10.00"))
+                            .currency("CNY")
+                            .occurredAt(LocalDateTime.now())
+                            .status(1)
+                            .build();
             transactionMapper.insert(tx);
         }
 
         // When
-        List<TransactionVO> result = transactionService.getRecentTransactions(testUserId, testAccountId, 10);
+        List<TransactionVO> result =
+                transactionService.getRecentTransactions(testUserId, testAccountId, 10);
 
         // Then
         assertThat(result).hasSize(10);
@@ -221,27 +233,29 @@ class TransactionServiceIntegrationTest extends MySqlIntegrationTestBase {
     @DisplayName("Update transaction should modify and adjust balance")
     void updateTransaction_ShouldModifyAndAdjustBalance() {
         // Given
-        FinTransaction tx = FinTransaction.builder()
-                .userId(testUserId)
-                .accountId(testAccountId)
-                .categoryId(testCategoryId)
-                .type("expense")
-                .amount(new BigDecimal("100.00"))
-                .currency("CNY")
-                .occurredAt(LocalDateTime.now())
-                .status(1)
-                .build();
+        FinTransaction tx =
+                FinTransaction.builder()
+                        .userId(testUserId)
+                        .accountId(testAccountId)
+                        .categoryId(testCategoryId)
+                        .type("expense")
+                        .amount(new BigDecimal("100.00"))
+                        .currency("CNY")
+                        .occurredAt(LocalDateTime.now())
+                        .status(1)
+                        .build();
         transactionMapper.insert(tx);
 
-        TransactionDTO updateDto = TransactionDTO.builder()
-                .accountId(testAccountId)
-                .categoryId(testCategoryId)
-                .type("expense")
-                .amount(new BigDecimal("150.00"))
-                .currency("CNY")
-                .occurredAt(LocalDateTime.now())
-                .note("Updated transaction")
-                .build();
+        TransactionDTO updateDto =
+                TransactionDTO.builder()
+                        .accountId(testAccountId)
+                        .categoryId(testCategoryId)
+                        .type("expense")
+                        .amount(new BigDecimal("150.00"))
+                        .currency("CNY")
+                        .occurredAt(LocalDateTime.now())
+                        .note("Updated transaction")
+                        .build();
 
         // When
         transactionService.updateTransaction(testUserId, tx.getTransactionId(), updateDto);

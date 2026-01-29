@@ -1,53 +1,46 @@
 package com.mamoji.module.transaction.dto;
 
+import java.time.LocalDate;
+
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDate;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
-/**
- * Transaction Query Request DTO
- */
+/** Transaction Query Request DTO */
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
 public class TransactionQueryDTO {
 
-    /**
-     * Transaction type: income, expense
-     */
+    /** Transaction type: income, expense */
     private String type;
 
-    /**
-     * Account ID filter
-     */
+    /** Account ID filter */
     private Long accountId;
 
-    /**
-     * Category ID filter
-     */
+    /** Category ID filter */
     private Long categoryId;
 
-    /**
-     * Start date
-     */
+    /** Start date */
     private LocalDate startDate;
 
-    /**
-     * End date
-     */
+    /** End date */
     private LocalDate endDate;
 
-    /**
-     * Current page
-     */
+    /** Current page */
     private Long current;
 
-    /**
-     * Page size
-     */
+    /** Page size */
     private Long size;
 }

@@ -1,28 +1,23 @@
 package com.mamoji.performance;
 
-import org.junit.jupiter.api.*;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.test.context.ActiveProfiles;
+import static org.junit.jupiter.api.Assertions.*;
 
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.*;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.test.context.ActiveProfiles;
 
 /**
  * Redis Cache Performance Tests
  *
- * Tests for Redis operations performance:
- * - Basic operations (GET/SET)
- * - Hash operations
- - List operations
- - Set operations
- - TTL operations
- - Concurrent access
+ * <p>Tests for Redis operations performance: - Basic operations (GET/SET) - Hash operations - List
+ * operations - Set operations - TTL operations - Concurrent access
  */
 @SpringBootTest
 @ActiveProfiles("test")
@@ -224,13 +219,17 @@ public class RedisPerformanceTest {
 
         // Warmup
         for (int i = 0; i < WARMUP; i++) {
-            redisTemplate.opsForValue().set(KEY_PREFIX + "batch_warmup_" + i, "value" + i, 1, TimeUnit.MINUTES);
+            redisTemplate
+                    .opsForValue()
+                    .set(KEY_PREFIX + "batch_warmup_" + i, "value" + i, 1, TimeUnit.MINUTES);
         }
 
         // Measure batch SET
         long batchSetStart = System.nanoTime();
         for (int i = 0; i < BATCH_SIZE; i++) {
-            redisTemplate.opsForValue().set(KEY_PREFIX + "batch_" + i, "value" + i, 1, TimeUnit.MINUTES);
+            redisTemplate
+                    .opsForValue()
+                    .set(KEY_PREFIX + "batch_" + i, "value" + i, 1, TimeUnit.MINUTES);
         }
         long batchSetTime = System.nanoTime() - batchSetStart;
 
@@ -244,10 +243,22 @@ public class RedisPerformanceTest {
         double setThroughput = BATCH_SIZE / (batchSetTime / 1_000_000_000.0);
         double getThroughput = BATCH_SIZE / (batchGetTime / 1_000_000_000.0);
 
-        System.out.println("Batch SET " + BATCH_SIZE + " ops: " + (batchSetTime / 1_000_000.0) +
-                "ms (" + String.format("%.0f", setThroughput) + " ops/sec)");
-        System.out.println("Batch GET " + BATCH_SIZE + " ops: " + (batchGetTime / 1_000_000.0) +
-                "ms (" + String.format("%.0f", getThroughput) + " ops/sec)");
+        System.out.println(
+                "Batch SET "
+                        + BATCH_SIZE
+                        + " ops: "
+                        + (batchSetTime / 1_000_000.0)
+                        + "ms ("
+                        + String.format("%.0f", setThroughput)
+                        + " ops/sec)");
+        System.out.println(
+                "Batch GET "
+                        + BATCH_SIZE
+                        + " ops: "
+                        + (batchGetTime / 1_000_000.0)
+                        + "ms ("
+                        + String.format("%.0f", getThroughput)
+                        + " ops/sec)");
 
         assertTrue(setThroughput > 50, "SET throughput should be > 50 ops/sec");
         assertTrue(getThroughput > 100, "GET throughput should be > 100 ops/sec");
@@ -270,14 +281,18 @@ public class RedisPerformanceTest {
         Thread[] threads = new Thread[threadCount];
         for (int i = 0; i < threadCount; i++) {
             final int threadId = i;
-            threads[i] = new Thread(() -> {
-                for (int j = 0; j < operationsPerThread; j++) {
-                    String key = KEY_PREFIX + "concurrent_" + threadId + "_" + j;
-                    redisTemplate.opsForValue().set(key, "value", 1, TimeUnit.MINUTES);
-                    redisTemplate.opsForValue().get(key);
-                    totalOps.incrementAndGet();
-                }
-            });
+            threads[i] =
+                    new Thread(
+                            () -> {
+                                for (int j = 0; j < operationsPerThread; j++) {
+                                    String key = KEY_PREFIX + "concurrent_" + threadId + "_" + j;
+                                    redisTemplate
+                                            .opsForValue()
+                                            .set(key, "value", 1, TimeUnit.MINUTES);
+                                    redisTemplate.opsForValue().get(key);
+                                    totalOps.incrementAndGet();
+                                }
+                            });
         }
 
         for (Thread t : threads) t.start();
@@ -286,8 +301,14 @@ public class RedisPerformanceTest {
         long durationMs = (System.nanoTime() - startTime) / 1_000_000;
         double throughput = totalOps.get() / (durationMs / 1000.0);
 
-        System.out.println("Concurrent Redis access: " + totalOps.get() + " ops in " +
-                durationMs + "ms (" + String.format("%.1f", throughput) + " ops/sec)");
+        System.out.println(
+                "Concurrent Redis access: "
+                        + totalOps.get()
+                        + " ops in "
+                        + durationMs
+                        + "ms ("
+                        + String.format("%.1f", throughput)
+                        + " ops/sec)");
 
         assertEquals(threadCount * operationsPerThread, totalOps.get());
         assertTrue(throughput > 20, "Throughput should be > 20 ops/sec");
@@ -304,7 +325,9 @@ public class RedisPerformanceTest {
 
         // Prepare data
         for (int i = 0; i < BATCH_SIZE; i++) {
-            redisTemplate.opsForValue().set(KEY_PREFIX + "delete_" + i, "value", 1, TimeUnit.MINUTES);
+            redisTemplate
+                    .opsForValue()
+                    .set(KEY_PREFIX + "delete_" + i, "value", 1, TimeUnit.MINUTES);
         }
 
         // Measure single DELETE
@@ -322,8 +345,12 @@ public class RedisPerformanceTest {
         long batchDelTime = System.nanoTime() - batchDelStart;
 
         System.out.println("Single DELETE: " + (singleDelTime / 1_000_000.0) + "ms");
-        System.out.println("Batch DELETE " + keysToDelete.size() + " keys: " +
-                (batchDelTime / 1_000_000.0) + "ms");
+        System.out.println(
+                "Batch DELETE "
+                        + keysToDelete.size()
+                        + " keys: "
+                        + (batchDelTime / 1_000_000.0)
+                        + "ms");
 
         assertTrue(singleDelTime / 1_000_000.0 < 50, "Single DELETE should be under 50ms");
         assertTrue(batchDelTime / 1_000_000.0 < 200, "Batch DELETE should be under 200ms");

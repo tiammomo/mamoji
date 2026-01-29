@@ -4,33 +4,21 @@ import com.mamoji.module.auth.dto.LoginRequest;
 import com.mamoji.module.auth.dto.LoginResponse;
 import com.mamoji.module.auth.dto.RegisterRequest;
 
-/**
- * Authentication Service Interface
- */
+/** Authentication Service Interface */
 public interface AuthService {
 
-    /**
-     * User login
-     */
+    /** User login */
     LoginResponse login(LoginRequest request);
 
-    /**
-     * User register
-     */
+    /** User register */
     void register(RegisterRequest request);
 
-    /**
-     * User logout
-     */
+    /** User logout */
     void logout(String token);
 
-    /**
-     * Get current user profile
-     */
+    /** Get current user profile */
     Object getProfile(Long userId);
 
-    /**
-     * Check if username exists
-     */
+    /** Check if username exists */
     boolean existsByUsername(String username);
 }

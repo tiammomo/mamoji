@@ -26,6 +26,8 @@ export const useAuthStore = create<AuthState>()(
 
       login: async (data: LoginRequest) => {
         set({ isLoading: true, error: null });
+        // 清除可能存在的旧 token，避免 403
+        set({ token: null, isAuthenticated: false });
         try {
           console.log('[Auth] 发送登录请求:', data);
           const response = await authApi.login(data);

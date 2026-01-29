@@ -1,15 +1,16 @@
 # Test Environment Configuration
+# Using Docker MySQL for real database integration testing
 spring:
   config:
     activate:
       on-profile: test
 
-  # DataSource Configuration - Local MySQL (same as dev)
+  # DataSource Configuration - Docker MySQL
   datasource:
-    driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://localhost:3306/mamoji_test?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=false&serverTimezone=Asia/Shanghai
+    url: jdbc:mysql://localhost:3306/mamoji_test?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true
     username: root
-    password: root
+    password: rootpassword
+    driver-class-name: com.mysql.cj.jdbc.Driver
     hikari:
       minimum-idle: 5
       maximum-pool-size: 10
@@ -17,8 +18,9 @@ spring:
       pool-name: MamojiHikariCP
       max-lifetime: 1800000
       connection-timeout: 30000
+      connection-init-sql: SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci
 
-  # Redis Configuration - Local Redis
+  # Redis Configuration - Docker Redis
   data:
     redis:
       host: localhost
@@ -31,12 +33,22 @@ mybatis-plus:
   configuration:
     map-underscore-to-camel-case: true
     log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+  global-config:
+    db-config:
+      id-type: auto
 
-# Disable Redisson for tests (use embedded or mock)
+# Redisson Configuration
 redisson:
   address: redis://localhost:6379
   timeout: 3000
+  connection-pool-size: 10
+  connection-minimum-idle-size: 2
   enabled: false
+
+# JWT Configuration for tests
+jwt:
+  secret: mamoji-jwt-secret-key-2024-must-be-at-least-256-bits-for-testing
+  expiration: 86400000
 
 # Logging Configuration
 logging:
@@ -44,3 +56,4 @@ logging:
     com.mamoji: debug
     com.mamoji.module: debug
     com.mamoji.module.budget: debug
+    com.zaxxer.hikari: info

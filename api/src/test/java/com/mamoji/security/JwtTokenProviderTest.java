@@ -1,5 +1,8 @@
 package com.mamoji.security;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.when;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -9,28 +12,22 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.when;
-
-/**
- * JwtTokenProvider Unit Tests
- */
+/** JwtTokenProvider Unit Tests */
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
 class JwtTokenProviderTest {
 
-    @Mock
-    private com.mamoji.config.JwtConfig jwtConfig;
+    @Mock private com.mamoji.config.JwtConfig jwtConfig;
 
-    @Mock
-    private org.springframework.data.redis.core.RedisTemplate<String, Object> redisTemplate;
+    @Mock private org.springframework.data.redis.core.RedisTemplate<String, Object> redisTemplate;
 
     private JwtTokenProvider jwtTokenProvider;
 
     @BeforeEach
     void setUp() {
         // Setup mock config
-        when(jwtConfig.getSecret()).thenReturn("test-secret-key-for-jwt-token-generation-min-256-bits-required");
+        when(jwtConfig.getSecret())
+                .thenReturn("test-secret-key-for-jwt-token-generation-min-256-bits-required");
         when(jwtConfig.getExpiration()).thenReturn(86400000L);
 
         jwtTokenProvider = new JwtTokenProvider(jwtConfig, redisTemplate);

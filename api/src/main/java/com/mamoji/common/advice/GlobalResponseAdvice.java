@@ -1,7 +1,5 @@
 package com.mamoji.common.advice;
 
-import com.mamoji.common.result.Result;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.MethodParameter;
 import org.springframework.http.MediaType;
 import org.springframework.http.server.ServerHttpRequest;
@@ -9,9 +7,14 @@ import org.springframework.http.server.ServerHttpResponse;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseBodyAdvice;
 
-/**
- * Global Response Advice - Wraps all controller return values in Result
- */
+import com.mamoji.common.result.Result;
+
+import lombok.extern.slf4j.Slf4j;
+import lombok.extern.slf4j.Slf4j;
+
+import lombok.extern.slf4j.Slf4j;
+
+/** Global Response Advice - Wraps all controller return values in Result */
 @Slf4j
 @ControllerAdvice
 public class GlobalResponseAdvice implements ResponseBodyAdvice<Object> {

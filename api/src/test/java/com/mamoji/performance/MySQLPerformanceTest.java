@@ -1,42 +1,34 @@
 package com.mamoji.performance;
 
-import org.junit.jupiter.api.*;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.test.context.ActiveProfiles;
+import static org.junit.jupiter.api.Assertions.*;
 
-import javax.sql.DataSource;
 import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.HashSet;
-import java.util.Set;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static org.junit.jupiter.api.Assertions.*;
+import javax.sql.DataSource;
+
+import org.junit.jupiter.api.*;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.ActiveProfiles;
 
 /**
  * MySQL Database Performance Tests
  *
- * Tests for MySQL query performance:
- * - Simple queries
- * - Complex queries with joins
- * - Batch operations
- * - Transaction performance
- * - Connection pool efficiency
+ * <p>Tests for MySQL query performance: - Simple queries - Complex queries with joins - Batch
+ * operations - Transaction performance - Connection pool efficiency
  */
 @SpringBootTest
 @ActiveProfiles("test")
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class MySQLPerformanceTest {
 
-    @Autowired
-    private DataSource dataSource;
+    @Autowired private DataSource dataSource;
 
     private static final String TEST_TABLE = "perf_test_table";
     private static final int BATCH_SIZE = 100;
@@ -46,18 +38,21 @@ public class MySQLPerformanceTest {
     @BeforeAll
     static void createTestTable(@Autowired DataSource dataSource) throws SQLException {
         try (Connection conn = dataSource.getConnection();
-             Statement stmt = conn.createStatement()) {
-            stmt.execute("CREATE TABLE IF NOT EXISTS " + TEST_TABLE + " (" +
-                    "id INT AUTO_INCREMENT PRIMARY KEY, " +
-                    "name VARCHAR(100), " +
-                    "value DECIMAL(10,2))");
+                Statement stmt = conn.createStatement()) {
+            stmt.execute(
+                    "CREATE TABLE IF NOT EXISTS "
+                            + TEST_TABLE
+                            + " ("
+                            + "id INT AUTO_INCREMENT PRIMARY KEY, "
+                            + "name VARCHAR(100), "
+                            + "value DECIMAL(10,2))");
         }
     }
 
     @AfterAll
     static void dropTestTable(@Autowired DataSource dataSource) throws SQLException {
         try (Connection conn = dataSource.getConnection();
-             Statement stmt = conn.createStatement()) {
+                Statement stmt = conn.createStatement()) {
             stmt.execute("DROP TABLE IF EXISTS " + TEST_TABLE);
         }
     }
@@ -120,8 +115,12 @@ public class MySQLPerformanceTest {
         double avgMs = totalTime / (MEASURE_ITERATIONS * 1_000_000.0);
         double throughput = BATCH_SIZE / avgMs;
 
-        System.out.println("Batch INSERT avg: " + String.format("%.3f", avgMs) + "ms (" +
-                String.format("%.1f", throughput) + " ops/sec)");
+        System.out.println(
+                "Batch INSERT avg: "
+                        + String.format("%.3f", avgMs)
+                        + "ms ("
+                        + String.format("%.1f", throughput)
+                        + " ops/sec)");
 
         assertTrue(avgMs < 500, "Batch INSERT should be under 500ms, was: " + avgMs);
         assertEquals(MEASURE_ITERATIONS * BATCH_SIZE, totalInserted);
@@ -164,8 +163,14 @@ public class MySQLPerformanceTest {
         double avgMs = totalTime / (MEASURE_ITERATIONS * 1_000_000.0);
         double throughput = operations / avgMs;
 
-        System.out.println("Transaction (" + operations + " ops) avg: " +
-                String.format("%.3f", avgMs) + "ms (" + String.format("%.1f", throughput) + " ops/sec)");
+        System.out.println(
+                "Transaction ("
+                        + operations
+                        + " ops) avg: "
+                        + String.format("%.3f", avgMs)
+                        + "ms ("
+                        + String.format("%.1f", throughput)
+                        + " ops/sec)");
 
         assertTrue(avgMs < 500, "Transaction should be under 500ms, was: " + avgMs);
     }
@@ -181,16 +186,18 @@ public class MySQLPerformanceTest {
 
         Thread[] threads = new Thread[threadCount];
         for (int i = 0; i < threadCount; i++) {
-            threads[i] = new Thread(() -> {
-                for (int j = 0; j < queriesPerThread; j++) {
-                    try {
-                        executeSimpleQuery();
-                        totalQueries.incrementAndGet();
-                    } catch (SQLException e) {
-                        e.printStackTrace();
-                    }
-                }
-            });
+            threads[i] =
+                    new Thread(
+                            () -> {
+                                for (int j = 0; j < queriesPerThread; j++) {
+                                    try {
+                                        executeSimpleQuery();
+                                        totalQueries.incrementAndGet();
+                                    } catch (SQLException e) {
+                                        e.printStackTrace();
+                                    }
+                                }
+                            });
         }
 
         for (Thread t : threads) t.start();
@@ -199,8 +206,14 @@ public class MySQLPerformanceTest {
         long durationMs = (System.nanoTime() - startTime) / 1_000_000;
         double throughput = totalQueries.get() / (durationMs / 1000.0);
 
-        System.out.println("Concurrent queries: " + totalQueries.get() + " in " +
-                durationMs + "ms (" + String.format("%.1f", throughput) + " ops/sec)");
+        System.out.println(
+                "Concurrent queries: "
+                        + totalQueries.get()
+                        + " in "
+                        + durationMs
+                        + "ms ("
+                        + String.format("%.1f", throughput)
+                        + " ops/sec)");
 
         assertEquals(threadCount * queriesPerThread, totalQueries.get());
         assertTrue(throughput > 5, "Throughput should be > 5 ops/sec");
@@ -212,7 +225,9 @@ public class MySQLPerformanceTest {
     void testPreparedStatementPerformance() throws SQLException {
         // Warmup
         try (Connection conn = dataSource.getConnection();
-             PreparedStatement stmt = conn.prepareStatement("SELECT COUNT(*) FROM fin_budget WHERE user_id = ?")) {
+                PreparedStatement stmt =
+                        conn.prepareStatement(
+                                "SELECT COUNT(*) FROM fin_budget WHERE user_id = ?")) {
             for (int i = 0; i < WARMUP_ITERATIONS; i++) {
                 stmt.setLong(1, 999L);
                 stmt.executeQuery();
@@ -222,7 +237,9 @@ public class MySQLPerformanceTest {
         // Measure
         long totalTime = 0;
         try (Connection conn = dataSource.getConnection();
-             PreparedStatement stmt = conn.prepareStatement("SELECT COUNT(*) FROM fin_budget WHERE user_id = ?")) {
+                PreparedStatement stmt =
+                        conn.prepareStatement(
+                                "SELECT COUNT(*) FROM fin_budget WHERE user_id = ?")) {
 
             for (int i = 0; i < MEASURE_ITERATIONS; i++) {
                 long start = System.nanoTime();
@@ -241,8 +258,9 @@ public class MySQLPerformanceTest {
 
     private void executeSimpleQuery() throws SQLException {
         try (Connection conn = dataSource.getConnection();
-             PreparedStatement stmt = conn.prepareStatement("SELECT * FROM fin_budget WHERE budget_id = 1");
-             ResultSet rs = stmt.executeQuery()) {
+                PreparedStatement stmt =
+                        conn.prepareStatement("SELECT * FROM fin_budget WHERE budget_id = 1");
+                ResultSet rs = stmt.executeQuery()) {
             while (rs.next()) {
                 // Just iterate
             }
@@ -251,8 +269,8 @@ public class MySQLPerformanceTest {
 
     private int executeCountQuery() throws SQLException {
         try (Connection conn = dataSource.getConnection();
-             PreparedStatement stmt = conn.prepareStatement("SELECT COUNT(*) FROM fin_budget");
-             ResultSet rs = stmt.executeQuery()) {
+                PreparedStatement stmt = conn.prepareStatement("SELECT COUNT(*) FROM fin_budget");
+                ResultSet rs = stmt.executeQuery()) {
             rs.next();
             return rs.getInt(1);
         }
@@ -261,8 +279,9 @@ public class MySQLPerformanceTest {
     private int executeBatchInsert(int size) throws SQLException {
         try (Connection conn = dataSource.getConnection()) {
             conn.setAutoCommit(false);
-            try (PreparedStatement stmt = conn.prepareStatement(
-                    "INSERT INTO " + TEST_TABLE + " (name, value) VALUES (?, ?)")) {
+            try (PreparedStatement stmt =
+                    conn.prepareStatement(
+                            "INSERT INTO " + TEST_TABLE + " (name, value) VALUES (?, ?)")) {
                 for (int i = 0; i < size; i++) {
                     stmt.setString(1, "test_" + System.nanoTime() + "_" + i);
                     stmt.setBigDecimal(2, new BigDecimal(i));
@@ -278,8 +297,8 @@ public class MySQLPerformanceTest {
     private int executeBatchUpdate() throws SQLException {
         try (Connection conn = dataSource.getConnection()) {
             conn.setAutoCommit(false);
-            try (PreparedStatement stmt = conn.prepareStatement(
-                    "UPDATE " + TEST_TABLE + " SET value = value + 1")) {
+            try (PreparedStatement stmt =
+                    conn.prepareStatement("UPDATE " + TEST_TABLE + " SET value = value + 1")) {
                 int[] results = stmt.executeBatch();
                 conn.commit();
                 return results.length;
@@ -291,8 +310,8 @@ public class MySQLPerformanceTest {
         try (Connection conn = dataSource.getConnection()) {
             conn.setAutoCommit(false);
             for (int i = 0; i < operations; i++) {
-                try (PreparedStatement stmt = conn.prepareStatement(
-                        "SELECT COUNT(*) FROM fin_budget")) {
+                try (PreparedStatement stmt =
+                        conn.prepareStatement("SELECT COUNT(*) FROM fin_budget")) {
                     stmt.executeQuery();
                 }
             }

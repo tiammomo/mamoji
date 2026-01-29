@@ -6,9 +6,7 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.web.filter.CorsFilter;
 
-/**
- * CORS (Cross-Origin Resource Sharing) Configuration
- */
+/** CORS (Cross-Origin Resource Sharing) Configuration */
 @Configuration
 public class CorsConfig {
 

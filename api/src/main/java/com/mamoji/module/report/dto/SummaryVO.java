@@ -1,43 +1,40 @@
 package com.mamoji.module.report.dto;
 
+import java.math.BigDecimal;
+
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.math.BigDecimal;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
-/**
- * Summary Report VO
- */
+/** Summary Report VO */
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
 public class SummaryVO {
 
-    /**
-     * Total income
-     */
+    /** Total income */
     private BigDecimal totalIncome;
 
-    /**
-     * Total expense
-     */
+    /** Total expense */
     private BigDecimal totalExpense;
 
-    /**
-     * Net income (income - expense)
-     */
+    /** Net income (income - expense) */
     private BigDecimal netIncome;
 
-    /**
-     * Transaction count
-     */
+    /** Transaction count */
     private Integer transactionCount;
 
-    /**
-     * Account count
-     */
+    /** Account count */
     private Integer accountCount;
 }

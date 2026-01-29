@@ -72,7 +72,7 @@ export interface Account {
 }
 
 // Transaction
-export type TransactionType = 'income' | 'expense' | 'transfer';
+export type TransactionType = 'income' | 'expense' | 'transfer' | 'refund';
 
 export interface Transaction {
   transactionId: number;
@@ -80,6 +80,7 @@ export interface Transaction {
   accountId: number;
   categoryId: number;
   budgetId?: number;
+  refundId?: number;  // 关联的原始交易ID（退款时使用）
   type: TransactionType;
   amount: number;
   currency: string;
@@ -87,6 +88,9 @@ export interface Transaction {
   note?: string;
   attachments?: string[];
   status: 0 | 1;
+  // 前端展示用字段
+  refundAmount?: number;
+  refundTransactionId?: number;
 }
 
 // Budget
@@ -111,6 +115,15 @@ export interface AccountSummary {
   netAssets: number;
   accountsCount: number;
   lastUpdated: string;
+}
+
+// 财务报表汇总 (从 reports/summary API 返回)
+export interface ReportsSummary {
+  totalIncome: number;      // 总收入
+  totalExpense: number;     // 总支出
+  netIncome: number;        // 净收支
+  transactionCount: number; // 交易数量
+  accountCount: number;     // 账户数量
 }
 
 export interface CategoryReport {
@@ -203,6 +216,7 @@ export interface TransactionRequest {
   occurredAt?: string;
   note?: string;
   budgetId?: number;
+  refundId?: number;  // 关联的原始交易ID（退款时使用）
 }
 
 export interface BudgetRequest {
@@ -222,8 +236,8 @@ export interface TransactionQueryParams {
   minAmount?: number;
   maxAmount?: number;
   keyword?: string;
-  page?: number;
-  pageSize?: number;
+  current?: number;
+  size?: number;
 }
 
 export interface ReportQueryParams {
@@ -243,11 +257,11 @@ export interface ApiResponse<T> {
 }
 
 export interface PageResult<T> {
-  list: T[];
+  current: number;
+  size: number;
   total: number;
-  page: number;
-  pageSize: number;
-  totalPages: number;
+  pages: number;
+  records: T[];
 }
 
 // Form Types
@@ -293,4 +307,73 @@ export interface AuthState {
   login: (data: LoginRequest) => Promise<void>;
   logout: () => void;
   checkAuth: () => Promise<void>;
+}
+
+// Refund Types
+export interface Refund {
+  refundId: number;
+  transactionId: number;
+  amount: number;
+  note: string;
+  occurredAt: string;
+  status: 0 | 1;
+  createdAt: string;
+}
+
+export interface RefundSummary {
+  totalRefunded: number;
+  remainingRefundable: number;
+  hasRefund: boolean;
+  refundCount: number;
+}
+
+export interface TransactionRefundResponse {
+  transaction: {
+    transactionId: number;
+    amount: number;
+    type: string;
+  };
+  refunds: Refund[];
+  summary: RefundSummary;
+}
+
+export interface RefundRequest {
+  amount: number;
+  occurredAt: string;
+  note?: string;
+}
+
+// Extend Transaction with refundSummary (from API)
+export interface TransactionWithRefundSummary extends Transaction {
+  refundSummary?: RefundSummary;
+}
+
+// Budget Progress Type
+export interface BudgetProgress {
+  budgetId: number;
+  name: string;
+  amount: number;
+  spent: number;
+  remaining: number;
+  progress: number;
+  status: BudgetStatus;
+  statusText: string;
+  startDate: string;
+  endDate: string;
+  daysRemaining?: number;
+  averageDailySpend?: number;
+  projectedBalance?: number;
+  createdAt: string;
+}
+
+// Trend Data Type
+export interface TrendData {
+  period: string;
+  income: number;
+  expense: number;
+  netIncome: number;
+  transactionCount: number;
+  incomeChangePercent?: number;
+  expenseChangePercent?: number;
+  netIncomeChangePercent?: number;
 }

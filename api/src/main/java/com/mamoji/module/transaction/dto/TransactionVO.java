@@ -1,89 +1,68 @@
 package com.mamoji.module.transaction.dto;
 
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
-/**
- * Transaction Response VO
- */
+/** Transaction Response VO */
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
 public class TransactionVO {
 
-    /**
-     * Transaction ID
-     */
+    /** Transaction ID */
     private Long transactionId;
 
-    /**
-     * User ID
-     */
+    /** User ID */
     private Long userId;
 
-    /**
-     * Account ID
-     */
+    /** Account ID */
     private Long accountId;
 
-    /**
-     * Account name
-     */
+    /** Account name */
     private String accountName;
 
-    /**
-     * Category ID
-     */
+    /** Category ID */
     private Long categoryId;
 
-    /**
-     * Category name
-     */
+    /** Category name */
     private String categoryName;
 
-    /**
-     * Budget ID
-     */
+    /** Budget ID */
     private Long budgetId;
 
-    /**
-     * Transaction type
-     */
+    /** Transaction type */
     private String type;
 
-    /**
-     * Amount
-     */
+    /** Amount */
     private BigDecimal amount;
 
-    /**
-     * Currency
-     */
+    /** Currency */
     private String currency;
 
-    /**
-     * Occurred time
-     */
+    /** Occurred time */
     private LocalDateTime occurredAt;
 
-    /**
-     * Note
-     */
+    /** Note */
     private String note;
 
-    /**
-     * Status
-     */
+    /** Status */
     private Integer status;
 
-    /**
-     * Creation time
-     */
+    /** Creation time */
     private LocalDateTime createdAt;
 }

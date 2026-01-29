@@ -1,26 +1,36 @@
 package com.mamoji.security;
 
-import com.mamoji.config.JwtConfig;
-import io.jsonwebtoken.*;
-import io.jsonwebtoken.security.Keys;
-import jakarta.annotation.PostConstruct;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.context.annotation.Profile;
-import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.stereotype.Component;
-
-import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-/**
- * JWT Token Provider
- * Handles JWT token generation, validation, and parsing
- */
+import javax.crypto.SecretKey;
+
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.stereotype.Component;
+
+import com.mamoji.config.JwtConfig;
+
+import io.jsonwebtoken.*;
+import io.jsonwebtoken.security.Keys;
+import jakarta.annotation.PostConstruct;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import io.jsonwebtoken.*;
+import io.jsonwebtoken.security.Keys;
+import jakarta.annotation.PostConstruct;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+
+import io.jsonwebtoken.*;
+import io.jsonwebtoken.security.Keys;
+import jakarta.annotation.PostConstruct;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+
+/** JWT Token Provider Handles JWT token generation, validation, and parsing */
 @Slf4j
 @Component
 @RequiredArgsConstructor
@@ -46,9 +56,7 @@ public class JwtTokenProvider {
         log.info("JWT Token Provider initialized successfully");
     }
 
-    /**
-     * Generate JWT token for a user
-     */
+    /** Generate JWT token for a user */
     public String generateToken(Long userId, String username) {
         Date now = new Date();
         Date expiryDate = new Date(now.getTime() + jwtConfig.getExpiration());
@@ -66,25 +74,19 @@ public class JwtTokenProvider {
                 .compact();
     }
 
-    /**
-     * Get user ID from JWT token
-     */
+    /** Get user ID from JWT token */
     public Long getUserIdFromToken(String token) {
         Claims claims = parseToken(token);
         return claims.get("userId", Long.class);
     }
 
-    /**
-     * Get username from JWT token
-     */
+    /** Get username from JWT token */
     public String getUsernameFromToken(String token) {
         Claims claims = parseToken(token);
         return claims.getSubject();
     }
 
-    /**
-     * Validate JWT token
-     */
+    /** Validate JWT token */
     public boolean validateToken(String token) {
         try {
             // Check if token is in blacklist
@@ -109,20 +111,12 @@ public class JwtTokenProvider {
         return false;
     }
 
-    /**
-     * Parse JWT token and return claims
-     */
+    /** Parse JWT token and return claims */
     private Claims parseToken(String token) {
-        return Jwts.parser()
-                .verifyWith(secretKey)
-                .build()
-                .parseSignedClaims(token)
-                .getPayload();
+        return Jwts.parser().verifyWith(secretKey).build().parseSignedClaims(token).getPayload();
     }
 
-    /**
-     * Add token to blacklist (for logout)
-     */
+    /** Add token to blacklist (for logout) */
     public void addToBlacklist(String token) {
         try {
             Claims claims = parseToken(token);
@@ -136,9 +130,7 @@ public class JwtTokenProvider {
         }
     }
 
-    /**
-     * Check if token is in blacklist - safe method for tests
-     */
+    /** Check if token is in blacklist - safe method for tests */
     public boolean isTokenBlacklisted(String token) {
         try {
             String key = TOKEN_BLACKLIST_PREFIX + token;
@@ -150,9 +142,7 @@ public class JwtTokenProvider {
         }
     }
 
-    /**
-     * Record login failure - safe method for tests
-     */
+    /** Record login failure - safe method for tests */
     public void recordLoginFailure(String username) {
         try {
             String key = LOGIN_FAIL_PREFIX + username;
@@ -167,9 +157,7 @@ public class JwtTokenProvider {
         }
     }
 
-    /**
-     * Clear login failure count - safe method for tests
-     */
+    /** Clear login failure count - safe method for tests */
     public void clearLoginFailure(String username) {
         try {
             String key = LOGIN_FAIL_PREFIX + username;
@@ -179,9 +167,7 @@ public class JwtTokenProvider {
         }
     }
 
-    /**
-     * Get login failure count - safe method for tests
-     */
+    /** Get login failure count - safe method for tests */
     public Long getLoginFailCount(String username) {
         try {
             String key = LOGIN_FAIL_PREFIX + username;
@@ -193,9 +179,7 @@ public class JwtTokenProvider {
         }
     }
 
-    /**
-     * Lock account - safe method for tests
-     */
+    /** Lock account - safe method for tests */
     public void lockAccount(String username) {
         try {
             String key = LOCKED_PREFIX + username;
@@ -205,9 +189,7 @@ public class JwtTokenProvider {
         }
     }
 
-    /**
-     * Check if account is locked - safe method for tests
-     */
+    /** Check if account is locked - safe method for tests */
     public boolean isAccountLocked(String username) {
         try {
             String key = LOCKED_PREFIX + username;
@@ -218,9 +200,7 @@ public class JwtTokenProvider {
         }
     }
 
-    /**
-     * Unlock account - safe method for tests
-     */
+    /** Unlock account - safe method for tests */
     public void unlockAccount(String username) {
         try {
             String key = LOCKED_PREFIX + username;

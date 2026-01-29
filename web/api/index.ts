@@ -14,11 +14,18 @@ import type {
   Budget,
   BudgetRequest,
   AccountSummary,
+  ReportsSummary,
   CategoryReport,
   MonthlyReport,
   BalanceSheet,
   ReportQueryParams,
   PageResult,
+  Refund,
+  RefundRequest,
+  RefundSummary,
+  TransactionRefundResponse,
+  TrendData,
+  BudgetProgress,
 } from '@/types';
 
 // ===========================================
@@ -59,22 +66,28 @@ export const transactionApi = {
   delete: (id: number) => del<void>(`/transactions/${id}`),
   getRecent: (limit?: number) =>
     get<Transaction[]>('/transactions/recent', { limit }),
+  // Import/Export
+  export: (params?: { startDate?: string; endDate?: string; type?: string }) =>
+    get<string>('/transactions/export', params),
+  getImportTemplate: () => get<string>('/transactions/import/template'),
+  previewImport: (data: TransactionRequest[]) =>
+    post<TransactionRequest[]>('/transactions/import/preview', data),
+  import: (data: TransactionRequest[]) =>
+    post<number[]>('/transactions/import', data),
 };
 
 // ===========================================
 // Budget API
 // ===========================================
 export const budgetApi = {
-  list: () => get<Budget[]>('/budgets'),
+  list: (activeOnly?: boolean) => get<Budget[]>('/budgets', { activeOnly }),
   get: (id: number) => get<Budget>(`/budgets/${id}`),
   create: (data: BudgetRequest) => post<number>('/budgets', data),
   update: (id: number, data: Partial<BudgetRequest>) =>
     put<void>(`/budgets/${id}`, data),
   delete: (id: number) => del<void>(`/budgets/${id}`),
-  listActive: () => get<Budget[]>('/budgets/active'),
-  getProgress: (id: number) => get<{ spent: number; remaining: number; percentage: number }>(
-    `/budgets/${id}/progress`
-  ),
+  listActive: () => get<Budget[]>('/budgets', { activeOnly: true }),
+  getProgress: (id: number) => get<BudgetProgress>(`/budgets/${id}/progress`),
 };
 
 // ===========================================
@@ -95,15 +108,27 @@ export const categoryApi = {
 // ===========================================
 export const reportApi = {
   getSummary: (params?: ReportQueryParams) =>
-    get<AccountSummary>('/reports/summary', params),
+    get<ReportsSummary>('/reports/summary', params),
   getIncomeExpense: (params?: ReportQueryParams) =>
     get<CategoryReport[]>('/reports/income-expense', params),
   getMonthly: (params: { year: number; month: number; accountId?: number }) =>
     get<MonthlyReport>('/reports/monthly', params),
   getBalanceSheet: () => get<BalanceSheet>('/reports/balance-sheet'),
-  getTrend: (params: { startDate: string; endDate: string; type?: 'daily' | 'weekly' | 'monthly' }) =>
-    get<{ labels: string[]; income: number[]; expense: number[] }>(
-      '/reports/trend',
-      params
-    ),
+  getTrend: (params: { startDate: string; endDate: string; period?: 'daily' | 'weekly' | 'monthly' }) =>
+    get<TrendData[]>('/reports/trend', params),
+};
+
+// ===========================================
+// Refund API
+// ===========================================
+export const refundApi = {
+  // Get all refunds for a transaction
+  getTransactionRefunds: (transactionId: number) =>
+    get<TransactionRefundResponse>(`/transactions/${transactionId}/refunds`),
+  // Create a refund for a transaction
+  createRefund: (transactionId: number, data: RefundRequest) =>
+    post<Refund>(`/transactions/${transactionId}/refunds`, data),
+  // Cancel a refund
+  cancelRefund: (transactionId: number, refundId: number) =>
+    del<RefundSummary>(`/transactions/${transactionId}/refunds/${refundId}`),
 };
