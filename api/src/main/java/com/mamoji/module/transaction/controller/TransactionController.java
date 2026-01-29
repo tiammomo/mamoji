@@ -20,11 +20,6 @@ import com.mamoji.security.UserPrincipal;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
-
-import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
 
 /** Transaction Controller */
 @RestController
@@ -35,13 +30,27 @@ public class TransactionController {
     private final TransactionService transactionService;
     private final RefundService refundService;
 
+    /** Get recent transactions - must be before /{id} to avoid matching "recent" as id */
+    @GetMapping("/recent")
+    public Result<List<TransactionVO>> getRecentTransactions(
+            @AuthenticationPrincipal UserPrincipal user,
+            @RequestParam(required = false) Long accountId,
+            @RequestParam(defaultValue = "10") Integer limit) {
+        List<TransactionVO> transactions;
+        if (accountId != null) {
+            transactions = transactionService.getRecentTransactions(user.userId(), accountId, limit);
+        } else {
+            transactions = transactionService.getRecentTransactions(user.userId(), null, limit);
+        }
+        return Result.success(transactions);
+    }
+
     /** Get transactions with pagination */
     @GetMapping
     public Result<PageResult<TransactionVO>> listTransactions(
             @AuthenticationPrincipal UserPrincipal user,
             @ModelAttribute TransactionQueryDTO request) {
-        PageResult<TransactionVO> result =
-                transactionService.listTransactions(user.userId(), request);
+        PageResult<TransactionVO> result = transactionService.listTransactions(user.userId(), request);
         return Result.success(result);
     }
 
@@ -78,23 +87,6 @@ public class TransactionController {
             @AuthenticationPrincipal UserPrincipal user, @PathVariable Long id) {
         transactionService.deleteTransaction(user.userId(), id);
         return Result.success();
-    }
-
-    /** Get recent transactions */
-    @GetMapping("/recent")
-    public Result<List<TransactionVO>> getRecentTransactions(
-            @AuthenticationPrincipal UserPrincipal user,
-            @RequestParam(required = false) Long accountId,
-            @RequestParam(defaultValue = "10") Integer limit) {
-        List<TransactionVO> transactions;
-        if (accountId != null) {
-            transactions =
-                    transactionService.getRecentTransactions(user.userId(), accountId, limit);
-        } else {
-            // Get recent transactions across all accounts
-            transactions = transactionService.getRecentTransactions(user.userId(), null, limit);
-        }
-        return Result.success(transactions);
     }
 
     // ==================== Refund Endpoints ====================
@@ -137,18 +129,16 @@ public class TransactionController {
             @RequestParam(required = false) String startDate,
             @RequestParam(required = false) String endDate,
             @RequestParam(required = false) String type) {
-        String csvContent =
-                transactionService.exportTransactions(user.userId(), startDate, endDate, type);
+        String csvContent = transactionService.exportTransactions(user.userId(), startDate, endDate, type);
         return Result.success(csvContent);
     }
 
     /** Get import template */
     @GetMapping("/import/template")
     public Result<String> getImportTemplate() {
-        String template =
-                "日期,类型,金额,分类,账户,备注\n"
-                        + "2024-01-15,income,5000,薪资,银行卡,工资\n"
-                        + "2024-01-14,expense,100,餐饮,微信,午餐";
+        String template = "日期,类型,金额,分类,账户,备注\n"
+                + "2024-01-15,income,5000,薪资,银行卡,工资\n"
+                + "2024-01-14,expense,100,餐饮,微信,午餐";
         return Result.success(template);
     }
 
@@ -157,8 +147,7 @@ public class TransactionController {
     public Result<List<TransactionDTO>> previewImport(
             @AuthenticationPrincipal UserPrincipal user,
             @RequestBody List<TransactionDTO> transactions) {
-        List<TransactionDTO> preview =
-                transactionService.previewImport(user.userId(), transactions);
+        List<TransactionDTO> preview = transactionService.previewImport(user.userId(), transactions);
         return Result.success(preview);
     }
 
