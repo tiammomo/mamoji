@@ -35,6 +35,17 @@ public class TransactionController {
     private final TransactionService transactionService;
     private final RefundService refundService;
 
+    /** Get recent transactions - must be before /{id} to avoid matching "recent" as id */
+    @GetMapping("/recent")
+    public Result<List<TransactionVO>> getRecentTransactions(
+            @AuthenticationPrincipal UserPrincipal user,
+            @RequestParam(required = false) Long accountId,
+            @RequestParam(defaultValue = "10") Integer limit) {
+        List<TransactionVO> transactions =
+                transactionService.getRecentTransactions(user.userId(), accountId, limit);
+        return Result.success(transactions);
+    }
+
     /** Get transactions with pagination */
     @GetMapping
     public Result<PageResult<TransactionVO>> listTransactions(
@@ -78,23 +89,6 @@ public class TransactionController {
             @AuthenticationPrincipal UserPrincipal user, @PathVariable Long id) {
         transactionService.deleteTransaction(user.userId(), id);
         return Result.success();
-    }
-
-    /** Get recent transactions */
-    @GetMapping("/recent")
-    public Result<List<TransactionVO>> getRecentTransactions(
-            @AuthenticationPrincipal UserPrincipal user,
-            @RequestParam(required = false) Long accountId,
-            @RequestParam(defaultValue = "10") Integer limit) {
-        List<TransactionVO> transactions;
-        if (accountId != null) {
-            transactions =
-                    transactionService.getRecentTransactions(user.userId(), accountId, limit);
-        } else {
-            // Get recent transactions across all accounts
-            transactions = transactionService.getRecentTransactions(user.userId(), null, limit);
-        }
-        return Result.success(transactions);
     }
 
     // ==================== Refund Endpoints ====================

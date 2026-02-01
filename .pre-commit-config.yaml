@@ -1,0 +1,12 @@
+repos:
+  - repo: https://github.com/allierays/agentic-loop
+    rev: v1.0.0
+    hooks:
+      - id: backup-db
+        name: Backup database before commit
+      - id: check-secrets
+        name: Check for hardcoded secrets
+      - id: check-hardcoded-urls
+        name: Check for hardcoded URLs
+      - id: check-debug
+        name: Check for debug statements

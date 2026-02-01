@@ -31,14 +31,22 @@ public class AccountController {
     private final AccountService accountService;
     private final TransactionService transactionService;
 
-    /** Get all accounts for current user */
+    /** List all accounts for user */
     @GetMapping
     public Result<List<AccountVO>> listAccounts(@AuthenticationPrincipal UserPrincipal user) {
         List<AccountVO> accounts = accountService.listAccounts(user.userId());
         return Result.success(accounts);
     }
 
-    /** Get account by ID */
+    /** Get account summary (total balance, account count) */
+    @GetMapping("/summary")
+    public Result<Map<String, Object>> getAccountSummary(
+            @AuthenticationPrincipal UserPrincipal user) {
+        Map<String, Object> summary = accountService.getAccountSummary(user.userId());
+        return Result.success(summary);
+    }
+
+    /** Get account details by ID */
     @GetMapping("/{id}")
     public Result<AccountVO> getAccount(
             @AuthenticationPrincipal UserPrincipal user, @PathVariable Long id) {
@@ -46,7 +54,7 @@ public class AccountController {
         return Result.success(account);
     }
 
-    /** Create a new account */
+    /** Create new account */
     @PostMapping
     public Result<Long> createAccount(
             @AuthenticationPrincipal UserPrincipal user, @Valid @RequestBody AccountDTO request) {
@@ -54,7 +62,7 @@ public class AccountController {
         return Result.success(accountId);
     }
 
-    /** Update an account */
+    /** Update account */
     @PutMapping("/{id}")
     public Result<Void> updateAccount(
             @AuthenticationPrincipal UserPrincipal user,
@@ -64,7 +72,7 @@ public class AccountController {
         return Result.success();
     }
 
-    /** Delete an account */
+    /** Delete account (soft delete) */
     @DeleteMapping("/{id}")
     public Result<Void> deleteAccount(
             @AuthenticationPrincipal UserPrincipal user, @PathVariable Long id) {
@@ -73,22 +81,13 @@ public class AccountController {
     }
 
     /** Get recent transactions for an account */
-    @GetMapping("/{id}/flows")
-    public Result<List<TransactionVO>> listAccountFlows(
+    @GetMapping("/{id}/transactions/recent")
+    public Result<List<TransactionVO>> getRecentAccountTransactions(
             @AuthenticationPrincipal UserPrincipal user,
             @PathVariable Long id,
             @RequestParam(defaultValue = "10") Integer limit) {
-        List<TransactionVO> flows =
+        List<TransactionVO> transactions =
                 transactionService.getRecentTransactions(user.userId(), id, limit);
-        return Result.success(flows);
-    }
-
-    /** Get account summary */
-    @GetMapping("/summary")
-    public Result<Map<String, Object>> getAccountSummary(
-            @AuthenticationPrincipal UserPrincipal user) {
-        Map<String, Object> summary =
-                (Map<String, Object>) accountService.getAccountSummary(user.userId());
-        return Result.success(summary);
+        return Result.success(transactions);
     }
 }

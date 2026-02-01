@@ -22,6 +22,7 @@ import com.mamoji.module.auth.dto.LoginRequest;
 import com.mamoji.module.auth.dto.LoginResponse;
 import com.mamoji.module.auth.dto.RegisterRequest;
 import com.mamoji.module.auth.service.AuthService;
+import com.mamoji.security.JwtTokenProvider;
 
 /** Auth Controller Unit Tests Tests public endpoints without Spring context */
 @ExtendWith(MockitoExtension.class)
@@ -30,6 +31,8 @@ public class AuthControllerTest {
     private MockMvc mockMvc;
 
     @Mock private AuthService authService;
+
+    @Mock private JwtTokenProvider jwtTokenProvider;
 
     @InjectMocks private AuthController authController;
 

@@ -361,3 +361,8 @@ storybook-static/
 
 # 示例配置（不包含敏感信息）
 !api/config/config.example.yaml
+.ralph/last_*
+.ralph/screenshots/
+.ralph/archive/
+.backups/
+.claude/settings.json

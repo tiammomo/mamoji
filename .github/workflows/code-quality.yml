@@ -1,0 +1,114 @@
+name: Code Quality
+
+on:
+  schedule:
+    # Run weekly on Sunday at 00:00
+    - cron: '0 0 * * 0'
+  workflow_dispatch:
+
+jobs:
+  backend-quality:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+
+      - name: Cache Maven packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-m2-qa-${{ hashFiles('**/pom.xml') }}
+          restore-keys: ${{ runner.os }}-m2-qa-
+
+      - name: Start MySQL
+        uses: samin/mysql-action@v1
+        with:
+          character set server: 'utf8mb4'
+          collation server: 'utf8mb4_unicode_ci'
+          mysql database: 'mamoji_test'
+          mysql user: 'root'
+          mysql password: 'rootpassword'
+
+      - name: Start Redis
+        uses: supercharge/redis-github-action@1.8.0
+        with:
+          redis-version: 7
+
+      - name: Check Code Style
+        working-directory: ./api
+        run: mvn spotless:check
+
+      - name: Run Full Tests with Coverage
+        working-directory: ./api
+        run: mvn clean test jacoco:report -Dspotless.check.skip=true
+
+      - name: Upload Coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          files: ./api/target/site/jacoco/jacoco.xml
+          fail_ci_if_error: false
+
+  frontend-quality:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: web/package-lock.json
+
+      - name: Install Dependencies
+        working-directory: ./web
+        run: npm ci
+
+      - name: Check Code Format
+        working-directory: ./web
+        run: npm run format:check
+
+      - name: Run Lint with Warnings
+        working-directory: ./web
+        run: npm run lint || true
+
+      - name: Type Check Full
+        working-directory: ./web
+        run: npm run type-check
+
+      - name: Run Tests with Coverage
+        working-directory: ./web
+        run: npm test -- --ci --coverage --passWithNoTests
+
+      - name: Upload Coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          files: ./web/coverage/lcov.info
+          fail_ci_if_error: false
+
+  security-scan:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run Trivy Vulnerability Scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          severity: 'CRITICAL,HIGH'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+
+      - name: Upload Trivy Scan Results
+        uses: github/codeql-action/upload-sarif@v2
+        with:
+          sarif_file: 'trivy-results.sarif'

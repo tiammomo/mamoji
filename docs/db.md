@@ -1,461 +1,395 @@
-# Mamoji 数据库设计
+# Mamoji 数据库设计文档
 
-## 数据库信息
+## 1. 数据库信息
 
 | 项目 | 值 |
 |------|-----|
 | 数据库 | MySQL 8.0 |
 | 字符集 | utf8mb4 |
 | 排序规则 | utf8mb4_unicode_ci |
-| 表前缀 | 无 |
+| 数据库名 | mamoji |
+| 测试数据库 | mamoji_test |
 
-## ER 图
+---
+
+## 2. ER 关系图
 
 ```
-                                    ┌─────────────────┐
-                                    │   sys_user      │
-                                    └─────────────────┘
-                                              │
-          ┌───────────────────────────────────┼───────────────────────────────────┐
-          │                                   │                                   │
-          ▼                                   ▼                                   ▼
-    ┌─────────────┐                   ┌─────────────┐                   ┌─────────────┐
-    │fin_category │                   │fin_account  │                   │fin_budget   │
-    └─────────────┘                   └─────────────┘                   └─────────────┘
-          ▲                                   │                                   │
-          │                                   │                                   │
-          │                                   ▼                                   │
-          │                           ┌─────────────┐                             │
-          │                           │fin_transaction│◀──────────────────────────┘
-          │                           └─────────────┘
-          │                                   │
-          │                                   │ 1:N
-          │                                   ▼
-          │                           ┌─────────────┐
-          └───────────────────────────│fin_refund   │
-                                      └─────────────┘
-```
-
-## 表结构
-
-### 1. sys_user 用户表
-
-```sql
-CREATE TABLE `sys_user` (
-  `user_id` BIGINT UNSIGNED PRIMARY KEY AUTO_INCREMENT COMMENT '用户ID',
-  `username` VARCHAR(50) NOT NULL COMMENT '用户名',
-  `password` VARCHAR(255) NOT NULL COMMENT '密码(BCRYPT加密)',
-  `phone` VARCHAR(20) COMMENT '手机号',
-  `email` VARCHAR(100) COMMENT '邮箱',
-  `role` VARCHAR(20) DEFAULT 'normal' COMMENT '角色: super_admin, admin, normal',
-  `status` TINYINT DEFAULT 1 COMMENT '状态: 0禁用, 1正常',
-  `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-  `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间'
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='用户表';
+┌─────────────┐       ┌─────────────┐
+│  sys_user   │       │sys_preference│
+└──────┬──────┘       └──────┬──────┘
+       │                     │
+       ├─────────────────────┤
+       │                     │
+       ▼                     ▼
+┌─────────────┐       ┌─────────────┐
+│fin_category │       │ fin_account │
+└─────────────┘       └─────────────┘
+       │                     │
+       │                     │
+       ▼                     ▼
+┌─────────────┐       ┌─────────────┐
+│  fin_budget │       │fin_transaction
+└─────────────┘       └──────┬──────┘
+                             │
+                             ▼
+                        ┌─────────────┐
+                        │  fin_refund │
+                        └─────────────┘
 ```
 
 ---
 
-### 2. fin_category 分类表
+## 3. 数据表详情
+
+### 3.1 用户表 (sys_user)
+
+存储用户账户信息。
 
 ```sql
-CREATE TABLE `fin_category` (
-  `category_id` BIGINT UNSIGNED PRIMARY KEY AUTO_INCREMENT COMMENT '分类ID',
-  `user_id` BIGINT UNSIGNED DEFAULT 0 COMMENT '用户ID, 0为系统默认',
-  `name` VARCHAR(50) NOT NULL COMMENT '分类名称',
-  `type` VARCHAR(20) NOT NULL COMMENT '类型: income(收入), expense(支出)',
-  `status` TINYINT DEFAULT 1 COMMENT '状态: 0禁用, 1正常',
-  `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-  `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间'
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='收支分类表';
-```
-
-**系统默认分类：**
-
-| 分类名称 | 类型 | 说明 |
-|----------|------|------|
-| 工资 | income | 薪资收入 |
-| 奖金 | income | 奖金收入 |
-| 投资收入 | income | 理财收益 |
-| 其他收入 | income | 其他收入 |
-| 餐饮 | expense | 日常餐饮 |
-| 交通 | expense | 出行费用 |
-| 购物 | expense | 日常购物 |
-| 居住 | expense | 房租/房贷/水电 |
-| 娱乐 | expense | 休闲娱乐 |
-| 医疗 | expense | 医疗健康 |
-| 教育 | expense | 学习培训 |
-| 其他支出 | expense | 其他支出 |
-
----
-
-### 3. fin_account 账户表
-
-```sql
-CREATE TABLE `fin_account` (
-  `account_id` BIGINT UNSIGNED PRIMARY KEY AUTO_INCREMENT COMMENT '账户ID',
-  `user_id` BIGINT UNSIGNED NOT NULL COMMENT '用户ID',
-  `name` VARCHAR(100) NOT NULL COMMENT '账户名称',
-  `account_type` VARCHAR(30) NOT NULL COMMENT '账户类型',
-  `account_sub_type` VARCHAR(30) COMMENT '子类型',
-  `currency` VARCHAR(10) DEFAULT 'CNY' COMMENT '币种',
-  `balance` DECIMAL(18,2) DEFAULT 0.00 COMMENT '余额(负债类为负数)',
-  `include_in_total` TINYINT DEFAULT 1 COMMENT '是否计入总资产: 1是, 0否',
-  `status` TINYINT DEFAULT 1 COMMENT '状态: 0禁用, 1正常',
-  `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-  `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间'
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='账户表';
-```
-
-**账户类型 (account_type) 说明：**
-
-| account_type | account_sub_type | 说明 |
-|--------------|------------------|------|
-| bank | bank_primary | 一类银行卡 |
-| bank | bank_secondary | 二类银行卡 |
-| credit | credit_card | 信用卡 |
-| cash | - | 现金 |
-| alipay | - | 支付宝 |
-| wechat | - | 微信 |
-| gold | - | 黄金 |
-| fund_accumulation | - | 公积金 |
-| fund | - | 基金 |
-| stock | - | 股票 |
-| topup | - | 充值卡 |
-| debt | - | 借款 |
-
-**余额规则：**
-- 资产类（bank/credit/cash/alipay/wechat/gold/fund_accumulation/fund/stock/topup）：余额为正数
-- 负债类（credit/debt）：余额为负数
-
-**计入总资产：**
-- 默认计入（include_in_total = 1），可手动关闭
-
----
-
-### 4. fin_transaction 交易表
-
-```sql
-CREATE TABLE `fin_transaction` (
-  `transaction_id` BIGINT UNSIGNED PRIMARY KEY AUTO_INCREMENT COMMENT '交易ID',
-  `user_id` BIGINT UNSIGNED NOT NULL COMMENT '用户ID',
-  `account_id` BIGINT UNSIGNED NOT NULL COMMENT '账户ID',
-  `category_id` BIGINT UNSIGNED NOT NULL COMMENT '分类ID',
-  `budget_id` BIGINT UNSIGNED COMMENT '预算ID(可选)',
-  `type` VARCHAR(20) NOT NULL COMMENT '类型: income, expense',
-  `amount` DECIMAL(18,2) NOT NULL COMMENT '金额',
-  `currency` VARCHAR(10) DEFAULT 'CNY' COMMENT '币种',
-  `occurred_at` DATETIME NOT NULL COMMENT '发生时间',
-  `note` VARCHAR(500) COMMENT '备注',
-  `status` TINYINT DEFAULT 1 COMMENT '状态: 0删除, 1正常',
-  `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-  `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间'
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='交易记录表';
-```
-
-**字段说明：**
-- `category_id`：必填，记录交易的收支分类
-- `budget_id`：可选，关联预算便于统计
-
----
-
-### 5. fin_budget 预算表
-
-```sql
-CREATE TABLE `fin_budget` (
-  `budget_id` BIGINT UNSIGNED PRIMARY KEY AUTO_INCREMENT COMMENT '预算ID',
-  `user_id` BIGINT UNSIGNED NOT NULL COMMENT '用户ID',
-  `name` VARCHAR(100) NOT NULL COMMENT '预算名称',
-  `amount` DECIMAL(18,2) NOT NULL COMMENT '预算金额',
-  `spent` DECIMAL(18,2) DEFAULT 0.00 COMMENT '已花费(实时更新)',
-  `start_date` DATE NOT NULL COMMENT '开始日期',
-  `end_date` DATE NOT NULL COMMENT '结束日期',
-  `status` TINYINT DEFAULT 1 COMMENT '状态: 0取消, 1进行中, 2已完成, 3超支',
-  `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-  `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间'
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='预算表';
-```
-
-**说明：**
-- 周期由 `start_date` 和 `end_date` 定义，支持任意时长（周、月、季度、年等）
-
-**预算状态：**
-
-| 状态 | 说明 | 触发条件 |
-|------|------|----------|
-| 0 | 已取消 | 用户手动取消 |
-| 1 | 进行中 | 正常进行中 |
-| 2 | 已完成 | 正常结束，未超支 |
-| 3 | 超支 | spent > amount |
-
----
-
-### 6. fin_refund 退款表
-
-```sql
-CREATE TABLE `fin_refund` (
-  `refund_id` BIGINT UNSIGNED PRIMARY KEY AUTO_INCREMENT COMMENT '退款ID',
-  `user_id` BIGINT UNSIGNED NOT NULL COMMENT '用户ID',
-  `transaction_id` BIGINT UNSIGNED NOT NULL COMMENT '原交易ID',
-  `account_id` BIGINT UNSIGNED NOT NULL COMMENT '账户ID',
-  `category_id` BIGINT UNSIGNED NOT NULL COMMENT '分类ID',
-  `amount` DECIMAL(18,2) NOT NULL COMMENT '退款金额',
-  `currency` VARCHAR(10) DEFAULT 'CNY' COMMENT '币种',
-  `occurred_at` DATETIME NOT NULL COMMENT '发生时间',
-  `note` VARCHAR(500) COMMENT '备注',
-  `status` TINYINT DEFAULT 1 COMMENT '状态: 0取消, 1有效',
-  `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-  `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间'
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='退款记录表';
+CREATE TABLE sys_user (
+    user_id BIGINT PRIMARY KEY COMMENT '用户ID',
+    username VARCHAR(50) NOT NULL COMMENT '用户名',
+    email VARCHAR(100) NOT NULL COMMENT '邮箱',
+    password VARCHAR(100) NOT NULL COMMENT '密码(BCrypt加密)',
+    phone VARCHAR(20) COMMENT '手机号',
+    status TINYINT DEFAULT 1 COMMENT '状态: 1=正常, 0=禁用',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    UNIQUE KEY uk_email (email),
+    UNIQUE KEY uk_username (username)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='用户表';
 ```
 
 **字段说明：**
 
-| 字段 | 说明 |
-|------|------|
-| transaction_id | 关联的原交易ID，一笔交易可对应多笔退款 |
-| account_id | 退款到的账户ID |
-| category_id | 退款分类（通常与原交易分类相同） |
-| amount | 退款金额，正数 |
-| note | 备注，格式为 "退款：xxx" |
-
-**退款规则：**
-- 累计退款金额不能超过原交易金额
-- 退款后原交易的 refundSummary 自动更新
-- 账户余额 = 原交易扣款 + 累计退款金额
+| 字段 | 类型 | 默认值 | 说明 |
+|------|------|--------|------|
+| user_id | BIGINT | - | 主键，雪花ID |
+| username | VARCHAR(50) | - | 用户名，唯一 |
+| email | VARCHAR(100) | - | 邮箱，唯一 |
+| password | VARCHAR(100) | - | BCrypt加密后的密码 |
+| phone | VARCHAR(20) | NULL | 手机号 |
+| status | TINYINT | 1 | 1=正常，0=禁用 |
+| created_at | DATETIME | CURRENT_TIMESTAMP | 创建时间 |
+| updated_at | DATETIME | 自动更新 | 更新时间 |
 
 ---
 
-### 7. sys_preference 用户偏好表
+### 3.2 用户偏好表 (sys_preference)
+
+存储用户个性化设置。
 
 ```sql
-CREATE TABLE `sys_preference` (
-  `pref_id` BIGINT UNSIGNED PRIMARY KEY AUTO_INCREMENT COMMENT '偏好ID',
-  `user_id` BIGINT UNSIGNED NOT NULL UNIQUE COMMENT '用户ID',
-  `currency` VARCHAR(10) DEFAULT 'CNY' COMMENT '默认货币',
-  `timezone` VARCHAR(50) DEFAULT 'Asia/Shanghai' COMMENT '时区',
-  `date_format` VARCHAR(20) DEFAULT 'YYYY-MM-DD' COMMENT '日期格式',
-  `month_start` INT DEFAULT 1 COMMENT '月度开始日期',
-  `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-  `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间'
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='用户偏好表';
+CREATE TABLE sys_preference (
+    preference_id BIGINT PRIMARY KEY COMMENT '偏好ID',
+    user_id BIGINT NOT NULL COMMENT '用户ID',
+    preference_key VARCHAR(50) NOT NULL COMMENT '偏好键',
+    preference_value TEXT COMMENT '偏好值(JSON格式)',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    UNIQUE KEY uk_user_key (user_id, preference_key)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='用户偏好表';
 ```
 
 ---
 
-## 索引设计
+### 3.3 分类表 (fin_category)
 
-| 表名 | 索引字段 | 类型 | 说明 |
-|------|----------|------|------|
-| sys_user | username | UNIQUE | 唯一索引 (登录用) |
-| sys_user | phone | INDEX | 手机号索引 |
-| sys_user | email | INDEX | 邮箱索引 |
-| fin_category | user_id | INDEX | 用户索引 |
-| fin_category | type | INDEX | 类型索引 |
-| fin_category | user_id, type | INDEX | 用户+类型复合索引 |
-| fin_account | user_id | INDEX | 用户索引 |
-| fin_account | status | INDEX | 状态索引 |
-| fin_account | user_id, status | INDEX | 用户+状态复合索引 |
-| fin_account | account_type | INDEX | 账户类型索引 |
-| fin_transaction | user_id | INDEX | 用户索引 |
-| fin_transaction | account_id | INDEX | 账户索引 |
-| fin_transaction | category_id | INDEX | 分类索引 |
-| fin_transaction | user_id, type | INDEX | 用户+类型复合索引 |
-| fin_transaction | user_id, occurred_at | INDEX | 用户+时间复合索引 |
-| fin_transaction | user_id, type, occurred_at | INDEX | 用户+类型+时间复合索引 (常用) |
-| fin_budget | user_id | INDEX | 用户索引 |
-| fin_budget | status | INDEX | 状态索引 |
-| fin_budget | user_id, status | INDEX | 用户+状态复合索引 |
-| fin_budget | user_id, start_date, end_date | INDEX | 周期查询复合索引 |
-| fin_refund | user_id | INDEX | 用户索引 |
-| fin_refund | transaction_id | INDEX | 原交易索引 |
-| fin_refund | status | INDEX | 状态索引 |
-| fin_refund | user_id, status | INDEX | 用户+状态复合索引 |
-| sys_preference | user_id | UNIQUE | 用户唯一索引 |
-
----
-
-## 软删除策略
-
-系统采用**软删除**策略，通过 `status` 字段控制数据的有效性：
-
-| 表名 | status=0 含义 | status=1 含义 |
-|------|---------------|---------------|
-| sys_user | 禁用 | 正常 |
-| fin_category | 禁用 | 正常 |
-| fin_account | 禁用 | 正常 |
-| fin_transaction | 已删除 | 正常 |
-| fin_budget | 已取消 | 进行中/已完成/超支 |
-| fin_refund | 已取消 | 有效 |
-
-**查询数据时需过滤** `status = 1`（或 `status != 0`）：
+收支分类表，系统预置基础分类。
 
 ```sql
--- 查询有效数据
-SELECT * FROM fin_transaction WHERE user_id = ? AND status = 1;
+CREATE TABLE fin_category (
+    category_id BIGINT PRIMARY KEY COMMENT '分类ID',
+    user_id BIGINT NOT NULL DEFAULT 0 COMMENT '用户ID(0=系统预置)',
+    name VARCHAR(50) NOT NULL COMMENT '分类名称',
+    type VARCHAR(20) NOT NULL COMMENT '类型: INCOME/EXPENSE',
+    icon VARCHAR(10) COMMENT '图标(Emoji)',
+    sort_order INT DEFAULT 0 COMMENT '排序',
+    status TINYINT DEFAULT 1 COMMENT '状态: 1=正常, 0=禁用',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    INDEX idx_type (type),
+    INDEX idx_status (status)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='收支分类表';
 ```
 
----
+**分类类型：**
 
-## 数据初始化
+| type | 说明 | 示例 |
+|------|------|------|
+| INCOME | 收入分类 | 工资、奖金、投资 |
+| EXPENSE | 支出分类 | 餐饮、交通、购物 |
 
-### 默认分类数据
+**系统预置分类：**
 
 ```sql
 -- 收入分类
-INSERT INTO fin_category (name, type) VALUES
-('工资', 'income'),
-('奖金', 'income'),
-('投资收入', 'income'),
-('其他收入', 'income');
+INSERT INTO fin_category (category_id, user_id, name, type, icon) VALUES
+(1, 0, '工资', 'INCOME', '💰'),
+(2, 0, '奖金', 'INCOME', '🎁'),
+(3, 0, '投资', 'INCOME', '📈'),
+(4, 0, '其他收入', 'INCOME', '💵');
 
 -- 支出分类
-INSERT INTO fin_category (name, type) VALUES
-('餐饮', 'expense'),
-('交通', 'expense'),
-('购物', 'expense'),
-('居住', 'expense'),
-('娱乐', 'expense'),
-('医疗', 'expense'),
-('教育', 'expense'),
-('其他支出', 'expense');
+INSERT INTO fin_category (category_id, user_id, name, type, icon) VALUES
+(5, 0, '餐饮', 'EXPENSE', '🍔'),
+(6, 0, '交通', 'EXPENSE', '🚗'),
+(7, 0, '购物', 'EXPENSE', '🛍️'),
+(8, 0, '娱乐', 'EXPENSE', '🎬'),
+(9, 0, '居住', 'EXPENSE', '🏠'),
+(10, 0, '生活', 'EXPENSE', '🛒'),
+(11, 0, '医疗', 'EXPENSE', '💊'),
+(12, 0, '教育', 'EXPENSE', '📚'),
+(13, 0, '人情', 'EXPENSE', '🎊'),
+(14, 0, '其他支出', 'EXPENSE', '💳');
 ```
 
 ---
 
-## 字段枚举值
+### 3.4 账户表 (fin_account)
 
-### status 状态码 (通用)
+用户账户信息。
 
-| 值 | 说明 | 适用表 |
-|----|------|--------|
-| 0 | 禁用/删除/取消 | sys_user, fin_category, fin_account, fin_transaction, fin_budget |
-| 1 | 正常/进行中 | sys_user, fin_category, fin_account, fin_transaction, fin_budget |
+```sql
+CREATE TABLE fin_account (
+    account_id BIGINT PRIMARY KEY COMMENT '账户ID',
+    user_id BIGINT NOT NULL COMMENT '用户ID',
+    name VARCHAR(50) NOT NULL COMMENT '账户名称',
+    account_type VARCHAR(20) NOT NULL COMMENT '账户类型',
+    account_sub_type VARCHAR(50) COMMENT '子类型',
+    balance DECIMAL(15,2) DEFAULT 0.00 COMMENT '余额',
+    include_in_total TINYINT DEFAULT 1 COMMENT '是否计入净资产: 1=是, 0=否',
+    sort_order INT DEFAULT 0 COMMENT '排序',
+    status TINYINT DEFAULT 1 COMMENT '状态: 1=正常, 0=已删除',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    INDEX idx_user (user_id),
+    INDEX idx_type (account_type),
+    INDEX idx_status (status)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='账户表';
+```
 
-### role 用户角色
+**账户类型：**
 
-| 值 | 说明 |
-|----|------|
-| normal | 普通用户 |
-| admin | 管理员 |
-| super_admin | 超级管理员 |
-
-### type 类型
-
-| 值 | 说明 | 适用表 |
-|----|------|--------|
-| income | 收入 | fin_category, fin_transaction |
-| expense | 支出 | fin_category, fin_transaction |
-| refund | 退款 | fin_refund |
-
-### account_type 账户类型
-
-| 值 | account_sub_type | 说明 |
-|----|------------------|------|
-| bank | bank_primary / bank_secondary | 银行卡 |
-| credit | credit_card | 信用卡 |
-| cash | - | 现金 |
-| alipay | - | 支付宝 |
-| wechat | - | 微信 |
-| gold | - | 黄金 |
-| fund_accumulation | - | 公积金 |
-| fund | - | 基金 |
-| stock | - | 股票 |
-| topup | - | 充值卡 |
-| debt | - | 借款 |
-
-### budget_status 预算状态
-
-| 值 | 说明 | 触发条件 |
-|----|------|----------|
-| 0 | 已取消 | 用户手动取消 |
-| 1 | 进行中 | 正常进行中 |
-| 2 | 已完成 | 正常结束，未超支 |
-| 3 | 超支 | spent > amount |
-
-### include_in_total 是否计入总资产
-
-| 值 | 说明 |
-|----|------|
-| 0 | 不计入 |
-| 1 | 计入 |
-
-### 用户角色权限
-
-| 角色 | 权限范围 |
-|------|----------|
-| normal | 仅能操作自己的数据 |
-| admin | 仅能操作自己的数据（预留管理功能） |
-| super_admin | 仅能操作自己的数据（预留系统管理功能） |
-
-> 当前版本所有用户均为 normal 角色，角色权限功能待后续扩展。
+| account_type | 说明 | 计入净资产 |
+|--------------|------|------------|
+| bank | 银行卡 | ✅ |
+| credit | 信用卡 | ❌ |
+| cash | 现金 | ✅ |
+| digital | 数字钱包(支付宝/微信) | ✅ |
+| investment | 投资(股票/基金) | ✅ |
+| debt | 负债(借款) | ❌ |
 
 ---
 
-## Redis 数据结构设计
+### 3.5 预算表 (fin_budget)
 
-> Redis 客户端使用 Redisson，支持分布式锁和更多高级特性。
-> 本地缓存使用 Caffeine，与 Redis 配合实现多级缓存。
+预算信息。
 
-### Key 命名规范
-
-```
-mamoji:{module}:{submodule}:{identifier}
-```
-
-### 缓存场景
-
-| Key | 类型 | 说明 | 过期时间 |
-|-----|------|------|----------|
-| `mamoji:token:blacklist:{token}` | String | Token 黑名单 | 同 Token 剩余有效期 |
-| `mamoji:login:fail:{username}` | String | 登录失败次数 | 15 分钟 |
-| `mamoji:account:locked:{username}` | String | 账户锁定状态 | 15 分钟 |
-| `mamoji:captcha:{type}:{target}` | String | 验证码 | 5 分钟 |
-| `mamoji:cache:category:{userId}` | Hash | 用户分类缓存 | 30 分钟 |
-| `mamoji:cache:account:summary:{userId}` | String | 账户汇总缓存 | 30 分钟 |
-
-### 详细说明
-
-#### 1. Token 黑名单
-
-```redis
-# 登出或修改密码时，将 Token 加入黑名单
-SET mamoji:token:blacklist:{token} 1 EX {剩余秒数}
-
-# 检查 Token 是否在黑名单
-EXISTS mamoji:token:blacklist:{token}
+```sql
+CREATE TABLE fin_budget (
+    budget_id BIGINT PRIMARY KEY COMMENT '预算ID',
+    user_id BIGINT NOT NULL COMMENT '用户ID',
+    name VARCHAR(50) NOT NULL COMMENT '预算名称',
+    amount DECIMAL(15,2) NOT NULL COMMENT '预算金额',
+    spent DECIMAL(15,2) DEFAULT 0.00 COMMENT '已花费金额',
+    start_date DATE NOT NULL COMMENT '开始日期',
+    end_date DATE NOT NULL COMMENT '结束日期',
+    alert_threshold INT DEFAULT 80 COMMENT '预警阈值(百分比)',
+    status TINYINT DEFAULT 1 COMMENT '状态: 0=已取消, 1=进行中, 2=已完成, 3=超支',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    INDEX idx_user (user_id),
+    INDEX idx_status (status),
+    INDEX idx_date (start_date, end_date)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='预算表';
 ```
 
-#### 2. 登录失败计数
+**预算状态：**
 
-```redis
-# 登录失败时，递增计数
-INCR mamoji:login:fail:{username}
-EXPIRE mamoji:login:fail:{username} 900  # 15分钟
+| status | 说明 | 触发条件 |
+|--------|------|----------|
+| 0 | 已取消 | 手动取消 |
+| 1 | 进行中 | 当前日期在预算期间内 |
+| 2 | 已完成 | 预算期间结束且未超支 |
+| 3 | 超支 | 已花费 > 预算金额 |
 
-# 当计数 >= 5 时，锁定账户
-SET mamoji:account:locked:{username} 1 EX 900
+---
+
+### 3.6 交易表 (fin_transaction)
+
+交易记录表。
+
+```sql
+CREATE TABLE fin_transaction (
+    transaction_id BIGINT PRIMARY KEY COMMENT '交易ID',
+    user_id BIGINT NOT NULL COMMENT '用户ID',
+    type VARCHAR(20) NOT NULL COMMENT '类型: INCOME/EXPENSE',
+    amount DECIMAL(15,2) NOT NULL COMMENT '金额',
+    account_id BIGINT NOT NULL COMMENT '账户ID',
+    category_id BIGINT NOT NULL COMMENT '分类ID',
+    budget_id BIGINT COMMENT '预算ID(支出必填)',
+    occurred_at DATETIME NOT NULL COMMENT '交易时间',
+    note VARCHAR(255) COMMENT '备注',
+    status TINYINT DEFAULT 1 COMMENT '状态: 1=正常, 0=已删除',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    INDEX idx_user (user_id),
+    INDEX idx_type (type),
+    INDEX idx_account (account_id),
+    INDEX idx_category (category_id),
+    INDEX idx_budget (budget_id),
+    INDEX idx_occurred (occurred_at),
+    INDEX idx_status (status)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='交易记录表';
 ```
 
-#### 3. 验证码缓存
+**交易类型：**
 
-```redis
-# 发送验证码
-SET mamoji:captcha:phone:{phone} {code} EX 300  # 5分钟
-SET mamoji:captcha:email:{email} {code} EX 300
+| type | 说明 |
+|------|------|
+| INCOME | 收入 |
+| EXPENSE | 支出 |
 
-# 验证验证码
-GET mamoji:captcha:phone:{phone}
-DEL mamoji:captcha:phone:{phone}
+---
+
+### 3.7 退款表 (fin_refund)
+
+退款记录表。
+
+```sql
+CREATE TABLE fin_refund (
+    refund_id BIGINT PRIMARY KEY COMMENT '退款ID',
+    transaction_id BIGINT NOT NULL COMMENT '原交易ID',
+    user_id BIGINT NOT NULL COMMENT '用户ID',
+    amount DECIMAL(15,2) NOT NULL COMMENT '退款金额',
+    note VARCHAR(255) COMMENT '退款备注',
+    occurred_at DATETIME NOT NULL COMMENT '退款时间',
+    status TINYINT DEFAULT 1 COMMENT '状态: 1=有效, 0=已取消',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    INDEX idx_transaction (transaction_id),
+    INDEX idx_user (user_id),
+    INDEX idx_status (status)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='退款记录表';
 ```
 
-#### 4. 热点数据缓存
+---
 
-```redis
-# 用户分类缓存
-HSET mamoji:cache:category:{userId} categoryId name type
-EXPIRE mamoji:cache:category:{userId} 1800  # 30分钟
+## 4. 索引优化
 
-# 账户汇总缓存
-SET mamoji:cache:account:summary:{userId} {json} EX 1800
+### 4.1 常用查询索引
+
+| 表 | 查询场景 | 索引字段 |
+|---|----------|----------|
+| fin_transaction | 按用户查询 | user_id, status |
+| fin_transaction | 按时间范围查询 | user_id, occurred_at, status |
+| fin_transaction | 按账户查询 | account_id, status |
+| fin_budget | 按用户状态查询 | user_id, status |
+| fin_budget | 按日期查询 | start_date, end_date |
+
+### 4.2 复合索引建议
+
+```sql
+-- 交易列表查询
+INDEX idx_user_type_date (user_id, type, occurred_at)
+
+-- 预算列表查询
+INDEX idx_user_status_date (user_id, status, start_date)
 ```
+
+---
+
+## 5. 软删除机制
+
+### 5.1 实现方式
+
+所有业务表使用 `status` 字段实现软删除：
+
+| status | 说明 |
+|--------|------|
+| 1 | 正常/启用 |
+| 0 | 已删除/禁用 |
+
+### 5.2 查询规范
+
+```sql
+-- 所有查询必须添加 status = 1 条件
+SELECT * FROM fin_account WHERE user_id = 1 AND status = 1;
+
+-- 物理删除前先软删除
+UPDATE fin_account SET status = 0 WHERE account_id = 1;
+```
+
+---
+
+## 6. 数据初始化
+
+### 6.1 执行顺序
+
+```bash
+# 1. 创建数据库
+mysql -h localhost -P 3306 -u root -prootpassword \
+  -e "CREATE DATABASE mamoji DEFAULT CHARACTER SET utf8mb4"
+
+# 2. 执行初始化脚本
+mysql -h localhost -P 3306 -u root -prootpassword mamoji < db/init/*.sql
+
+# 或按顺序执行
+mysql -h localhost -P 3306 -u root -prootpassword mamoji < db/init/01_schema.sql
+mysql -h localhost -P 3306 -u root -prootpassword mamoji < db/init/02_*.sql
+```
+
+### 6.2 初始化文件
+
+| 文件 | 说明 |
+|------|------|
+| db/init/01_schema.sql | 数据库表结构 |
+| db/init/02_categories.sql | 预置分类数据 |
+| db/init/03_sample_data.sql | 示例数据(可选) |
+
+---
+
+## 7. 备份与恢复
+
+### 7.1 备份命令
+
+```bash
+# 完整备份
+mysqldump -h localhost -P 3306 -u root -prootpassword \
+  --single-transaction --routines --triggers \
+  mamoji > mamoji_backup_$(date +%Y%m%d).sql
+
+# 仅结构备份
+mysqldump -h localhost -P 3306 -u root -prootpassword \
+  --no-data mamoji > mamoji_schema.sql
+
+# 仅数据备份
+mysqldump -h localhost -P 3306 -u root -prootpassword \
+  --no-create-info mamoji > mamoji_data.sql
+```
+
+### 7.2 恢复命令
+
+```bash
+mysql -h localhost -P 3306 -u root -prootpassword mamoji < mamoji_backup_20260202.sql
+```
+
+---
+
+## 8. 常见问题
+
+### Q1: 如何添加新账户类型？
+A: 在应用层枚举中添加，数据库使用 VARCHAR 存储。
+
+### Q2: 预算状态如何自动更新？
+A: 通过定时任务每日检查，或在交易创建/退款时实时更新。
+
+### Q3: 如何处理大表分页？
+A: 使用延迟关联优化深分页查询。
+
+---
+
+**文档版本**: v1.0
+**最后更新**: 2026-02-02

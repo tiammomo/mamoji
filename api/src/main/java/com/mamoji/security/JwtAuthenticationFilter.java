@@ -17,19 +17,6 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import jakarta.servlet.FilterChain;
-import jakarta.servlet.ServletException;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-
-import jakarta.servlet.FilterChain;
-import jakarta.servlet.ServletException;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 
 /** JWT Authentication Filter Intercepts requests and validates JWT tokens */
 @Slf4j
@@ -45,25 +32,31 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             throws ServletException, IOException {
         try {
             String jwt = getJwtFromRequest(request);
+            log.debug("JWT from request: {}", jwt != null ? "present (" + jwt.length() + " chars)" : "null");
 
-            if (StringUtils.hasText(jwt) && jwtTokenProvider.validateToken(jwt)) {
-                Long userId = jwtTokenProvider.getUserIdFromToken(jwt);
-                String username = jwtTokenProvider.getUsernameFromToken(jwt);
+            if (StringUtils.hasText(jwt)) {
+                boolean isValid = jwtTokenProvider.validateToken(jwt);
+                log.debug("Token validation result: {}", isValid);
 
-                // Create authentication token
-                UsernamePasswordAuthenticationToken authentication =
-                        new UsernamePasswordAuthenticationToken(
-                                new UserPrincipal(userId, username),
-                                null,
-                                Collections.singletonList(new SimpleGrantedAuthority("ROLE_USER")));
+                if (isValid) {
+                    Long userId = jwtTokenProvider.getUserIdFromToken(jwt);
+                    String username = jwtTokenProvider.getUsernameFromToken(jwt);
+                    log.debug("Authenticated user: {} (ID: {})", username, userId);
 
-                authentication.setDetails(
-                        new WebAuthenticationDetailsSource().buildDetails(request));
+                    // Create authentication token
+                    UsernamePasswordAuthenticationToken authentication =
+                            new UsernamePasswordAuthenticationToken(
+                                    new UserPrincipal(userId, username),
+                                    null,
+                                    Collections.singletonList(new SimpleGrantedAuthority("ROLE_USER")));
 
-                // Set authentication in security context
-                SecurityContextHolder.getContext().setAuthentication(authentication);
+                    authentication.setDetails(
+                            new WebAuthenticationDetailsSource().buildDetails(request));
 
-                log.debug("Set authentication for user: {} (ID: {})", username, userId);
+                    // Set authentication in security context
+                    SecurityContextHolder.getContext().setAuthentication(authentication);
+                    log.debug("Security context authentication set for user: {}", username);
+                }
             }
         } catch (Exception ex) {
             log.error("Could not set user authentication in security context", ex);

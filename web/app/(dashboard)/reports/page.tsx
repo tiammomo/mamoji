@@ -5,8 +5,11 @@ import { DashboardLayout } from '@/components/layout/dashboard-layout';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 import { formatCurrency } from '@/lib/utils';
 import { reportApi } from '@/api';
+import { Calendar, ArrowRight } from 'lucide-react';
 import {
   PieChart,
   Pie,
@@ -24,6 +27,19 @@ import { TrendingUp, TrendingDown, Wallet, DollarSign, BarChart3, PieChart as Pi
 import { toast } from 'sonner';
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8', '#82CA9D', '#FF6B6B', '#4ECDC4'];
+
+// 生成最近 6 个月的选项
+const getRecentMonths = () => {
+  const months = [];
+  const now = new Date();
+  for (let i = 0; i < 6; i++) {
+    const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    const value = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+    const label = `${date.getFullYear()}年${date.getMonth() + 1}月`;
+    months.push({ value, label });
+  }
+  return months;
+};
 
 interface CategoryReport {
   categoryId?: number;
@@ -58,6 +74,12 @@ export default function ReportsPage() {
     netIncome: number;
     dailyData: MonthlyData[];
   } | null>(null);
+  // 上月汇总数据，用于环比对比
+  const [prevMonthData, setPrevMonthData] = useState<{
+    totalIncome: number;
+    totalExpense: number;
+    netIncome: number;
+  } | null>(null);
   const [balanceSheet, setBalanceSheet] = useState<{
     totalAssets: number;
     totalLiabilities: number;
@@ -65,26 +87,63 @@ export default function ReportsPage() {
     assets: BalanceSheetItem[];
     liabilities: BalanceSheetItem[];
   } | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [initialLoading, setInitialLoading] = useState(true);
+  const [contentLoading, setContentLoading] = useState(false);
+  // 日期筛选模式: 'month' 或 'range'
+  const [dateMode, setDateMode] = useState<'month' | 'range'>('month');
   const [currentMonth, setCurrentMonth] = useState(() => {
     const now = new Date();
-    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    // 默认显示上一个月（因为月初时当月可能没有数据）
+    const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    return `${lastMonth.getFullYear()}-${String(lastMonth.getMonth() + 1).padStart(2, '0')}`;
   });
+  const [startDate, setStartDate] = useState<string>('');
+  const [endDate, setEndDate] = useState<string>('');
 
   useEffect(() => {
     loadReports();
-  }, [currentMonth]);
+  }, [currentMonth, dateMode, startDate, endDate]);
 
   const loadReports = async () => {
-    setLoading(true);
+    // 只显示内容加载状态，不显示整个页面 loading
+    setContentLoading(true);
+
     try {
-      const [year, month] = currentMonth.split('-').map(Number);
-      const [summaryRes, incomeRes, monthlyRes, balanceRes] = await Promise.all([
-        reportApi.getSummary({}),
-        reportApi.getIncomeExpense({ year, month }),
-        reportApi.getMonthly({ year, month }),
-        reportApi.getBalanceSheet(),
-      ]);
+      let summaryRes, incomeRes, monthlyRes, prevMonthRes;
+
+      if (dateMode === 'month') {
+        const [year, month] = currentMonth.split('-').map(Number);
+        // 转换为日期范围
+        const firstDay = `${year}-${String(month).padStart(2, '0')}-01`;
+        const lastDay = new Date(year, month, 0).toISOString().split('T')[0];
+
+        [summaryRes, incomeRes, monthlyRes] = await Promise.all([
+          reportApi.getSummary({ startDate: firstDay, endDate: lastDay }),
+          reportApi.getIncomeExpense({ startDate: firstDay, endDate: lastDay }),
+          reportApi.getMonthly({ year, month }),
+        ]);
+
+        // 获取上月数据用于环比
+        const prevYear = month === 1 ? year - 1 : year;
+        const prevMonth = month === 1 ? 12 : month - 1;
+        const prevFirstDay = `${prevYear}-${String(prevMonth).padStart(2, '0')}-01`;
+        const prevLastDay = new Date(prevYear, prevMonth, 0).toISOString().split('T')[0];
+        prevMonthRes = await reportApi.getSummary({ startDate: prevFirstDay, endDate: prevLastDay });
+      } else {
+        // 日期范围模式
+        if (!startDate || !endDate) {
+          setContentLoading(false);
+          return;
+        }
+        [summaryRes, incomeRes, monthlyRes] = await Promise.all([
+          reportApi.getSummary({ startDate, endDate }),
+          reportApi.getIncomeExpense({ startDate, endDate }),
+          reportApi.getDailyByDateRange({ startDate, endDate }),
+        ]);
+        prevMonthRes = null; // 自定义模式不显示环比
+      }
+
+      const balanceRes = await reportApi.getBalanceSheet();
 
       if (summaryRes.code === 200 && summaryRes.data) {
         const data = summaryRes.data as any;
@@ -108,8 +167,8 @@ export default function ReportsPage() {
       if (monthlyRes.code === 200) {
         const data = monthlyRes.data as any;
         setMonthlyData({
-          year: data.year,
-          month: data.month,
+          year: data.year || (startDate ? parseInt(startDate.split('-')[0]) : new Date().getFullYear()),
+          month: data.month || (startDate ? parseInt(startDate.split('-')[1]) : new Date().getMonth() + 1),
           totalIncome: Number(data.totalIncome) || 0,
           totalExpense: Number(data.totalExpense) || 0,
           netIncome: Number(data.netIncome) || 0,
@@ -119,6 +178,17 @@ export default function ReportsPage() {
             expense: Number(d.expense) || 0,
           })),
         });
+      }
+      // 设置上月数据用于环比
+      if (prevMonthRes && prevMonthRes.code === 200 && prevMonthRes.data) {
+        const data = prevMonthRes.data as any;
+        setPrevMonthData({
+          totalIncome: Number(data.totalIncome) || 0,
+          totalExpense: Number(data.totalExpense) || 0,
+          netIncome: Number(data.netIncome) || 0,
+        });
+      } else {
+        setPrevMonthData(null);
       }
       if (balanceRes.code === 200) {
         const data = balanceRes.data as any;
@@ -143,12 +213,13 @@ export default function ReportsPage() {
       console.error('加载报表失败:', error);
       toast.error('加载报表失败');
     } finally {
-      setLoading(false);
+      setContentLoading(false);
+      setInitialLoading(false);
     }
   };
 
-  const incomeData = incomeExpense.filter((i) => i.type?.toLowerCase() === 'income');
-  const expenseData = incomeExpense.filter((i) => i.type?.toLowerCase() === 'expense');
+  const incomeData = incomeExpense.filter((i) => i.type?.toUpperCase() === 'INCOME');
+  const expenseData = incomeExpense.filter((i) => i.type?.toUpperCase() === 'EXPENSE');
 
   const incomePieData = incomeData.map((d) => ({
     name: d.categoryName,
@@ -165,7 +236,26 @@ export default function ReportsPage() {
     expense: d.expense,
   })) || [];
 
-  if (loading) {
+  // 计算环比变化百分比
+  const calcChangePercent = (current: number, previous: number): number => {
+    if (previous === 0) return current > 0 ? 100 : 0;
+    return Math.round(((current - previous) / previous) * 100);
+  };
+
+  // 格式化环比显示
+  const formatChange = (current: number, previous: number): { text: string; color: string } => {
+    const change = calcChangePercent(current, previous);
+    if (change > 0) {
+      return { text: `+${change}%`, color: 'text-green-600' };
+    } else if (change < 0) {
+      return { text: `${change}%`, color: 'text-red-600' };
+    } else {
+      return { text: '0%', color: 'text-gray-500' };
+    }
+  };
+
+  // 初始加载
+  if (initialLoading) {
     return (
       <DashboardLayout title="报表统计">
         <div className="flex items-center justify-center h-96">
@@ -186,88 +276,214 @@ export default function ReportsPage() {
           <div>
             <h2 className="text-2xl font-bold tracking-tight">报表统计</h2>
           </div>
-          <Select value={currentMonth} onValueChange={setCurrentMonth}>
-            <SelectTrigger className="w-44">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {Array.from({ length: 12 }, (_, i) => {
-                const date = new Date();
-                date.setMonth(date.getMonth() - i);
-                const value = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-                return (
-                  <SelectItem key={value} value={value}>
-                    {date.getFullYear()}年{date.getMonth() + 1}月
-                  </SelectItem>
-                );
-              })}
-            </SelectContent>
-          </Select>
+          <div className="flex items-center gap-2">
+            {/* 模式切换 */}
+            <div className="flex rounded-md border bg-background">
+              <Button
+                variant={dateMode === 'month' ? 'secondary' : 'ghost'}
+                size="sm"
+                onClick={() => {
+                  setDateMode('month');
+                }}
+                className="rounded-r-none"
+              >
+                按月
+              </Button>
+              <Button
+                variant={dateMode === 'range' ? 'secondary' : 'ghost'}
+                size="sm"
+                onClick={() => {
+                  setDateMode('range');
+                  // 默认设置为最近7天
+                  const end = new Date();
+                  const start = new Date();
+                  start.setDate(start.getDate() - 7);
+                  setStartDate(start.toISOString().split('T')[0]);
+                  setEndDate(end.toISOString().split('T')[0]);
+                }}
+                className="rounded-l-none"
+              >
+                自定义
+              </Button>
+            </div>
+
+            {dateMode === 'month' ? (
+              <div className="flex items-center gap-2">
+                <Select
+                  value={currentMonth}
+                  onValueChange={(value) => setCurrentMonth(value)}
+                >
+                  <SelectTrigger className="w-36">
+                    <SelectValue placeholder="选择月份" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {getRecentMonths().map((month) => (
+                      <SelectItem key={month.value} value={month.value}>
+                        {month.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2">
+                <div className="relative">
+                  <Input
+                    type="date"
+                    value={startDate}
+                    onChange={(e) => setStartDate(e.target.value)}
+                    className="w-36"
+                  />
+                </div>
+                <ArrowRight className="h-4 w-4 text-muted-foreground" />
+                <div className="relative">
+                  <Input
+                    type="date"
+                    value={endDate}
+                    onChange={(e) => setEndDate(e.target.value)}
+                    className="w-36"
+                  />
+                </div>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Summary Cards */}
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          <Card className="bg-gradient-to-br from-green-50 to-green-100 border-green-200">
+          {/* 收入卡片 */}
+          <Card className="bg-white border-green-200 rounded-2xl shadow-sm hover:shadow-md transition-shadow">
             <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
+              {contentLoading ? (
+                <div className="animate-pulse">
+                  <div className="h-4 w-20 bg-green-200 rounded mb-2"></div>
+                  <div className="h-8 w-32 bg-green-200 rounded"></div>
+                </div>
+              ) : (
                 <div>
-                  <p className="text-sm text-green-700 font-medium">本月收入</p>
-                  <p className="text-2xl font-bold text-green-800">
-                    {formatCurrency(monthlyData?.totalIncome || 0)}
-                  </p>
+                  <div className="flex items-center justify-between mb-1">
+                    <p className="text-sm text-green-700 font-medium">
+                      {dateMode === 'month' ? '本月收入' : '收入合计'}
+                    </p>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <p className="text-2xl font-bold text-green-800">
+                      {formatCurrency(monthlyData?.totalIncome || 0)}
+                    </p>
+                    <div className="p-3 bg-green-200 rounded-full">
+                      <TrendingUp className="h-6 w-6 text-green-700" />
+                    </div>
+                  </div>
+                  {dateMode === 'month' && prevMonthData && (
+                    <div className="flex items-center justify-between mt-2">
+                      <p className="text-xs text-muted-foreground">
+                        上月 {formatCurrency(prevMonthData.totalIncome)}
+                      </p>
+                      <span className={`text-xs font-medium ${formatChange(monthlyData?.totalIncome || 0, prevMonthData.totalIncome).color}`}>
+                        {formatChange(monthlyData?.totalIncome || 0, prevMonthData.totalIncome).text}
+                      </span>
+                    </div>
+                  )}
                 </div>
-                <div className="p-3 bg-green-200 rounded-full">
-                  <TrendingUp className="h-6 w-6 text-green-700" />
-                </div>
-              </div>
+              )}
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-to-br from-red-50 to-red-100 border-red-200">
+          {/* 支出卡片 */}
+          <Card className="bg-white border-red-200 rounded-2xl shadow-sm hover:shadow-md transition-shadow">
             <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
+              {contentLoading ? (
+                <div className="animate-pulse">
+                  <div className="h-4 w-20 bg-red-200 rounded mb-2"></div>
+                  <div className="h-8 w-32 bg-red-200 rounded"></div>
+                </div>
+              ) : (
                 <div>
-                  <p className="text-sm text-red-700 font-medium">本月支出</p>
-                  <p className="text-2xl font-bold text-red-800">
-                    {formatCurrency(monthlyData?.totalExpense || 0)}
-                  </p>
+                  <div className="flex items-center justify-between mb-1">
+                    <p className="text-sm text-red-700 font-medium">
+                      {dateMode === 'month' ? '本月支出' : '支出合计'}
+                    </p>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <p className="text-2xl font-bold text-red-800">
+                      {formatCurrency(monthlyData?.totalExpense || 0)}
+                    </p>
+                    <div className="p-3 bg-red-200 rounded-full">
+                      <TrendingDown className="h-6 w-6 text-red-700" />
+                    </div>
+                  </div>
+                  {dateMode === 'month' && prevMonthData && (
+                    <div className="flex items-center justify-between mt-2">
+                      <p className="text-xs text-muted-foreground">
+                        上月 {formatCurrency(prevMonthData.totalExpense)}
+                      </p>
+                      <span className={`text-xs font-medium ${formatChange(monthlyData?.totalExpense || 0, prevMonthData.totalExpense).color}`}>
+                        {formatChange(monthlyData?.totalExpense || 0, prevMonthData.totalExpense).text}
+                      </span>
+                    </div>
+                  )}
                 </div>
-                <div className="p-3 bg-red-200 rounded-full">
-                  <TrendingDown className="h-6 w-6 text-red-700" />
-                </div>
-              </div>
+              )}
             </CardContent>
           </Card>
 
-          <Card className={`bg-gradient-to-br ${(monthlyData?.netIncome || 0) >= 0 ? 'from-blue-50 to-blue-100 border-blue-200' : 'from-orange-50 to-orange-100 border-orange-200'}`}>
+          {/* 净收入卡片 */}
+          <Card className={`bg-white ${(monthlyData?.netIncome || 0) >= 0 ? 'border-blue-200' : 'border-orange-200'} rounded-2xl shadow-sm hover:shadow-md transition-shadow`}>
             <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
+              {contentLoading ? (
+                <div className="animate-pulse">
+                  <div className="h-4 w-16 bg-blue-200 rounded mb-2"></div>
+                  <div className="h-8 w-28 bg-blue-200 rounded"></div>
+                </div>
+              ) : (
                 <div>
-                  <p className="text-sm font-medium">净收入</p>
-                  <p className={`text-2xl font-bold ${(monthlyData?.netIncome || 0) >= 0 ? 'text-blue-800' : 'text-orange-800'}`}>
-                    {formatCurrency(monthlyData?.netIncome || 0)}
-                  </p>
+                  <div className="flex items-center justify-between mb-1">
+                    <p className="text-sm font-medium">净收入</p>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <p className={`text-2xl font-bold ${(monthlyData?.netIncome || 0) >= 0 ? 'text-blue-800' : 'text-orange-800'}`}>
+                      {formatCurrency(monthlyData?.netIncome || 0)}
+                    </p>
+                    <div className="p-3 bg-blue-200 rounded-full">
+                      <DollarSign className="h-6 w-6 text-blue-700" />
+                    </div>
+                  </div>
+                  {dateMode === 'month' && prevMonthData && (
+                    <div className="flex items-center justify-between mt-2">
+                      <p className="text-xs text-muted-foreground">
+                        上月 {formatCurrency(prevMonthData.netIncome)}
+                      </p>
+                      <span className={`text-xs font-medium ${formatChange(monthlyData?.netIncome || 0, prevMonthData.netIncome).color}`}>
+                        {formatChange(monthlyData?.netIncome || 0, prevMonthData.netIncome).text}
+                      </span>
+                    </div>
+                  )}
                 </div>
-                <div className="p-3 bg-blue-200 rounded-full">
-                  <DollarSign className="h-6 w-6 text-blue-700" />
-                </div>
-              </div>
+              )}
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200">
+          {/* 净资产卡片 */}
+          <Card className="bg-white border-purple-200 rounded-2xl shadow-sm hover:shadow-md transition-shadow">
             <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-purple-700 font-medium">净资产</p>
-                  <p className="text-2xl font-bold text-purple-800">
-                    {formatCurrency(balanceSheet?.netAssets || 0)}
-                  </p>
+              {contentLoading ? (
+                <div className="animate-pulse">
+                  <div className="h-4 w-16 bg-purple-200 rounded mb-2"></div>
+                  <div className="h-8 w-28 bg-purple-200 rounded"></div>
                 </div>
-                <div className="p-3 bg-purple-200 rounded-full">
-                  <Wallet className="h-6 w-6 text-purple-700" />
+              ) : (
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-purple-700 font-medium">净资产</p>
+                    <p className="text-2xl font-bold text-purple-800">
+                      {formatCurrency(balanceSheet?.netAssets || 0)}
+                    </p>
+                  </div>
+                  <div className="p-3 bg-purple-200 rounded-full">
+                    <Wallet className="h-6 w-6 text-purple-700" />
+                  </div>
                 </div>
-              </div>
+              )}
             </CardContent>
           </Card>
         </div>
@@ -300,10 +516,14 @@ export default function ReportsPage() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  {incomePieData.length === 0 ? (
+                  {contentLoading ? (
+                    <div className="w-full h-[300px] bg-muted animate-pulse rounded flex items-center justify-center">
+                      <p className="text-muted-foreground">加载中...</p>
+                    </div>
+                  ) : incomePieData.length === 0 ? (
                     <div className="text-center py-12">
                       <TrendingUp className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                      <p className="text-muted-foreground">本月暂无收入</p>
+                      <p className="text-muted-foreground">{dateMode === 'month' ? '本月暂无收入' : '暂无收入记录'}</p>
                     </div>
                   ) : (
                     <ResponsiveContainer width="100%" height={300}>
@@ -339,10 +559,14 @@ export default function ReportsPage() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  {expensePieData.length === 0 ? (
+                  {contentLoading ? (
+                    <div className="w-full h-[300px] bg-muted animate-pulse rounded flex items-center justify-center">
+                      <p className="text-muted-foreground">加载中...</p>
+                    </div>
+                  ) : expensePieData.length === 0 ? (
                     <div className="text-center py-12">
                       <TrendingDown className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                      <p className="text-muted-foreground">本月暂无支出</p>
+                      <p className="text-muted-foreground">{dateMode === 'month' ? '本月暂无支出' : '暂无支出记录'}</p>
                     </div>
                   ) : (
                     <ResponsiveContainer width="100%" height={300}>
@@ -371,9 +595,9 @@ export default function ReportsPage() {
             </div>
 
             {/* Income/Expense Details */}
-            <Card>
-              <CardHeader>
-                <CardTitle>收支明细</CardTitle>
+            <Card className="bg-white rounded-2xl shadow-sm">
+              <CardHeader className="border-b">
+                <CardTitle className="text-lg">收支明细</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="grid gap-4 md:grid-cols-2">
@@ -424,15 +648,19 @@ export default function ReportsPage() {
           </TabsContent>
 
           <TabsContent value="trend" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
+            <Card className="bg-white rounded-2xl shadow-sm">
+              <CardHeader className="border-b">
+                <CardTitle className="flex items-center gap-2 text-lg">
                   <Activity className="h-5 w-5 text-blue-600" />
                   每日收支趋势
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                {trendChartData.length > 0 ? (
+                {contentLoading ? (
+                  <div className="w-full h-[400px] bg-muted animate-pulse rounded flex items-center justify-center">
+                    <p className="text-muted-foreground">加载中...</p>
+                  </div>
+                ) : trendChartData.length > 0 ? (
                   <ResponsiveContainer width="100%" height={400}>
                     <LineChart data={trendChartData}>
                       <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
@@ -479,74 +707,91 @@ export default function ReportsPage() {
           </TabsContent>
 
           <TabsContent value="balance" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
+            <Card className="bg-white rounded-2xl shadow-sm">
+              <CardHeader className="border-b">
+                <CardTitle className="flex items-center gap-2 text-lg">
                   <BarChart3 className="h-5 w-5 text-purple-600" />
                   资产负债表
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="grid gap-6 md:grid-cols-2">
-                  <div>
-                    <h4 className="font-medium mb-3 flex items-center gap-2">
-                      <TrendingUp className="h-4 w-4 text-green-600" />
-                      资产
-                    </h4>
-                    {balanceSheet?.assets && balanceSheet.assets.length > 0 ? (
-                      <div className="space-y-2">
-                        {balanceSheet.assets.map((asset, index) => (
-                          <div key={index} className="flex justify-between items-center p-3 bg-green-50 rounded-lg">
-                            <span>{asset.name}</span>
-                            <span className="font-medium text-green-700">
-                              {formatCurrency(asset.balance)}
+                {contentLoading ? (
+                  <div className="grid gap-6 md:grid-cols-2">
+                    <div className="space-y-2">
+                      <div className="h-6 w-16 bg-muted animate-pulse rounded"></div>
+                      {[1, 2, 3].map((i) => (
+                        <div key={i} className="h-12 bg-muted animate-pulse rounded-lg"></div>
+                      ))}
+                    </div>
+                    <div className="space-y-2">
+                      <div className="h-6 w-16 bg-muted animate-pulse rounded"></div>
+                      {[1, 2].map((i) => (
+                        <div key={i} className="h-12 bg-muted animate-pulse rounded-lg"></div>
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="grid gap-6 md:grid-cols-2">
+                    <div>
+                      <h4 className="font-medium mb-3 flex items-center gap-2">
+                        <TrendingUp className="h-4 w-4 text-green-600" />
+                        资产
+                      </h4>
+                      {balanceSheet?.assets && balanceSheet.assets.length > 0 ? (
+                        <div className="space-y-2">
+                          {balanceSheet.assets.map((asset, index) => (
+                            <div key={index} className="flex justify-between items-center p-3 bg-green-50 rounded-lg">
+                              <span>{asset.name}</span>
+                              <span className="font-medium text-green-700">
+                                {formatCurrency(asset.balance)}
+                              </span>
+                            </div>
+                          ))}
+                          <div className="flex justify-between items-center p-3 font-bold bg-green-100 rounded-lg border-t-2 border-green-200">
+                            <span>资产合计</span>
+                            <span className="text-green-800">
+                              {formatCurrency(balanceSheet.totalAssets)}
                             </span>
                           </div>
-                        ))}
-                        <div className="flex justify-between items-center p-3 font-bold bg-green-100 rounded-lg border-t-2 border-green-200">
-                          <span>资产合计</span>
-                          <span className="text-green-800">
-                            {formatCurrency(balanceSheet.totalAssets)}
-                          </span>
                         </div>
-                      </div>
-                    ) : (
-                      <div className="text-center py-8 bg-green-50 rounded-lg">
-                        <p className="text-muted-foreground">暂无资产</p>
-                      </div>
-                    )}
-                  </div>
-                  <div>
-                    <h4 className="font-medium mb-3 flex items-center gap-2">
-                      <TrendingDown className="h-4 w-4 text-red-600" />
-                      负债
-                    </h4>
-                    {balanceSheet?.liabilities && balanceSheet.liabilities.length > 0 ? (
-                      <div className="space-y-2">
-                        {balanceSheet.liabilities.map((liability, index) => (
-                          <div key={index} className="flex justify-between items-center p-3 bg-red-50 rounded-lg">
-                            <span>{liability.name}</span>
-                            <span className="font-medium text-red-700">
-                              {formatCurrency(liability.balance)}
+                      ) : (
+                        <div className="text-center py-8 bg-green-50 rounded-lg">
+                          <p className="text-muted-foreground">暂无资产</p>
+                        </div>
+                      )}
+                    </div>
+                    <div>
+                      <h4 className="font-medium mb-3 flex items-center gap-2">
+                        <TrendingDown className="h-4 w-4 text-red-600" />
+                        负债
+                      </h4>
+                      {balanceSheet?.liabilities && balanceSheet.liabilities.length > 0 ? (
+                        <div className="space-y-2">
+                          {balanceSheet.liabilities.map((liability, index) => (
+                            <div key={index} className="flex justify-between items-center p-3 bg-red-50 rounded-lg">
+                              <span>{liability.name}</span>
+                              <span className="font-medium text-red-700">
+                                {formatCurrency(liability.balance)}
+                              </span>
+                            </div>
+                          ))}
+                          <div className="flex justify-between items-center p-3 font-bold bg-red-100 rounded-lg border-t-2 border-red-200">
+                            <span>负债合计</span>
+                            <span className="text-red-800">
+                              {formatCurrency(balanceSheet.totalLiabilities)}
                             </span>
                           </div>
-                        ))}
-                        <div className="flex justify-between items-center p-3 font-bold bg-red-100 rounded-lg border-t-2 border-red-200">
-                          <span>负债合计</span>
-                          <span className="text-red-800">
-                            {formatCurrency(balanceSheet.totalLiabilities)}
-                          </span>
                         </div>
-                      </div>
-                    ) : (
-                      <div className="text-center py-8 bg-red-50 rounded-lg">
-                        <p className="text-muted-foreground">暂无负债</p>
-                      </div>
-                    )}
+                      ) : (
+                        <div className="text-center py-8 bg-red-50 rounded-lg">
+                          <p className="text-muted-foreground">暂无负债</p>
+                        </div>
+                      )}
+                    </div>
                   </div>
-                </div>
+                )}
 
-                <div className="mt-6 p-6 bg-gradient-to-r from-purple-50 to-blue-50 rounded-xl border border-purple-200">
+                <div className="mt-6 p-6 bg-white rounded-xl border border-purple-200 shadow-sm">
                   <div className="flex justify-between items-center">
                     <span className="text-lg font-semibold">净资产</span>
                     <span className="text-3xl font-bold text-purple-700">

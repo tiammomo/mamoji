@@ -15,16 +15,26 @@ import javax.sql.DataSource;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.test.context.ActiveProfiles;
 
+import com.mamoji.config.TestSecurityConfig;
+
 /**
- * MySQL Database Performance Tests
+ * MySQL 数据库性能测试
  *
- * <p>Tests for MySQL query performance: - Simple queries - Complex queries with joins - Batch
- * operations - Transaction performance - Connection pool efficiency
+ * <p>测试内容包括：
+ * <ul>
+ *   <li>简单查询</li>
+ *   <li>复杂查询（JOIN）</li>
+ *   <li>批量操作</li>
+ *   <li>事务性能</li>
+ *   <li>连接池效率</li>
+ * </ul>
  */
 @SpringBootTest
 @ActiveProfiles("test")
+@Import(TestSecurityConfig.class)
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class MySQLPerformanceTest {
 

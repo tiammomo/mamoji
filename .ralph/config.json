@@ -1,0 +1,88 @@
+{
+  "auth": {
+    "testUser": "",
+    "testPassword": "",
+    "loginEndpoint": "/api/auth/login",
+    "loginMethod": "POST",
+    "tokenType": "session",
+    "tokenHeader": "Authorization",
+    "tokenPrefix": "Bearer"
+  },
+
+  "docker": {
+    "enabled": false,
+    "composeFile": "docker-compose.yml",
+    "serviceName": "app",
+    "execPrefix": "docker compose exec -T"
+  },
+
+  "paths": {
+    "src": "src",
+    "tests": "tests",
+    "e2e": "tests/e2e"
+  },
+
+  "commands": {
+    "dev": "",
+    "install": "cd api && mvn compile && cd ../web && npm install",
+    "seed": "",
+    "resetDb": "cd api && mvn flyway:repair && mvn flyway:migrate"
+  },
+
+  "migrations": {
+    "command": "",
+    "pattern": ""
+  },
+
+  "checks": {
+    "lint": "cd web && npm run lint",
+    "typecheck": "cd web && npm run type-check",
+    "build": "cd api && mvn compile -q",
+    "test": "cd api && mvn test -Dtest=*MapperTest,JwtTokenProviderTest,RefundServiceTest,EntityValidatorTest,AuthControllerTest -q && cd ../web && npm test -- --passWithNoTests",
+    "requireTests": false,
+    "fastapi": false
+  },
+
+  "tests": {
+    "directory": "",
+    "patterns": ""
+  },
+
+  "api": {
+    "baseUrl": "http://localhost:48080",
+    "healthEndpoint": "/actuator/health",
+    "timeout": 30
+  },
+
+  "playwright": {
+    "enabled": false,
+    "testDir": "tests/e2e",
+    "projects": ["chromium"],
+    "baseUrl": "http://localhost:3000"
+  },
+
+  "verification": {
+    "codeReviewEnabled": false,
+    "browserEnabled": false,
+    "a11yEnabled": false,
+    "mobileViewport": 375,
+    "screenshotOnFailure": false
+  },
+
+  "urls": {
+    "app": "http://localhost:43000"
+  },
+
+  "env": {
+    "required": [],
+    "optional": []
+  },
+
+  "maxIterations": 20,
+  "maxSessionSeconds": 600,
+
+  "contextRotThreshold": {
+    "maxStories": 10,
+    "maxFilesChanged": 20
+  }
+}

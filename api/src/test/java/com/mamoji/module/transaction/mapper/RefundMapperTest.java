@@ -8,12 +8,15 @@ import java.util.List;
 
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Import;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.mamoji.MySqlIntegrationTestBase;
+import com.mamoji.config.TestSecurityConfig;
 import com.mamoji.module.transaction.entity.FinRefund;
 
 /** Refund Mapper Integration Tests */
+@Import(TestSecurityConfig.class)
 class RefundMapperTest extends MySqlIntegrationTestBase {
 
     @Autowired private FinRefundMapper refundMapper;

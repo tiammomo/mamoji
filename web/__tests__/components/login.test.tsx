@@ -18,13 +18,22 @@ jest.mock('@/api', () => ({
   },
 }));
 
+// Mock store with setState as a property
+const mockAuthStore = {
+  isAuthenticated: false,
+  user: null,
+  token: null,
+  login: jest.fn(),
+  isLoading: false,
+};
+
+// Create a mock function that returns the store and has setState as a property
+const mockUseAuthStore: any = () => mockAuthStore;
+mockUseAuthStore.setState = jest.fn();
+
 jest.mock('@/hooks/useAuth', () => ({
-  useAuthStore: jest.fn(() => ({
-    isAuthenticated: false,
-    user: null,
-    token: null,
-    login: jest.fn(),
-  })),
+  useAuthStore: mockUseAuthStore,
+  useIsAuthReady: () => true,  // Mock persist ready state
 }));
 
 jest.mock('sonner', () => ({

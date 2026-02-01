@@ -23,7 +23,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { formatCurrency, getAccountTypeLabel } from '@/lib/utils';
+import { formatCurrency } from '@/lib/utils';
+import { getAccountTypeLabel } from '@/lib/icons';
 import { accountApi } from '@/api';
 import type { Account, AccountType } from '@/types';
 import { Plus, Edit, Trash2, Wallet, CreditCard, Banknote, Building2, Smartphone, PiggyBank, TrendingUp, TrendingDown } from 'lucide-react';
@@ -38,12 +39,13 @@ const accountTypeOptions: { value: AccountType; label: string; icon: React.React
 ];
 
 const getTypeIcon = (type: string) => {
-  const option = accountTypeOptions.find(o => o.value === type);
+  const option = accountTypeOptions.find(o => o.value === type?.toLowerCase());
   return option?.icon || <Wallet className="h-4 w-4" />;
 };
 
 const getTypeColorClass = (type: string) => {
-  switch (type) {
+  const t = type?.toLowerCase();
+  switch (t) {
     case 'bank': return 'bg-blue-100 text-blue-600';
     case 'credit': return 'bg-orange-100 text-orange-600';
     case 'cash': return 'bg-green-100 text-green-600';
@@ -63,7 +65,7 @@ export default function AccountsPage() {
     accountType: 'bank' as AccountType,
     currency: 'CNY',
     balance: '0',
-    includeInTotal: true,
+    includeInTotal: 1 as number, // backend: Integer (0/1)
   });
 
   useEffect(() => {
@@ -94,7 +96,7 @@ export default function AccountsPage() {
           name: formData.name,
           accountType: formData.accountType,
           balance: parseFloat(formData.balance) || 0,
-          includeInTotal: formData.includeInTotal,
+          includeInTotal: formData.includeInTotal as number,
         });
         toast.success('账户更新成功');
       } else {
@@ -103,7 +105,7 @@ export default function AccountsPage() {
           accountType: formData.accountType,
           currency: formData.currency,
           balance: parseFloat(formData.balance) || 0,
-          includeInTotal: formData.includeInTotal,
+          includeInTotal: formData.includeInTotal as number,
         });
         toast.success('账户创建成功');
       }
@@ -145,7 +147,7 @@ export default function AccountsPage() {
       accountType: 'bank',
       currency: 'CNY',
       balance: '0',
-      includeInTotal: true,
+      includeInTotal: 1,
     });
   };
 
@@ -160,10 +162,10 @@ export default function AccountsPage() {
 
   const netAssets = totalAssets - totalLiabilities;
 
-  const bankAccounts = accounts.filter(a => a.accountType === 'bank');
-  const creditAccounts = accounts.filter(a => a.accountType === 'credit');
-  const digitalAccounts = accounts.filter(a => ['alipay', 'wechat'].includes(a.accountType));
-  const cashAccounts = accounts.filter(a => a.accountType === 'cash');
+  const bankAccounts = accounts.filter(a => a.accountType?.toLowerCase() === 'bank');
+  const creditAccounts = accounts.filter(a => a.accountType?.toLowerCase() === 'credit');
+  const digitalAccounts = accounts.filter(a => ['alipay', 'wechat'].includes(a.accountType?.toLowerCase()));
+  const cashAccounts = accounts.filter(a => a.accountType?.toLowerCase() === 'cash');
 
   if (loading) {
     return (
@@ -195,46 +197,46 @@ export default function AccountsPage() {
 
         {/* Summary Cards */}
         <div className="grid gap-4 md:grid-cols-3">
-          <Card className="bg-gradient-to-br from-green-50 to-green-100 border-green-200">
+          <Card className="bg-white border-green-200 rounded-2xl shadow-sm hover:shadow-md transition-shadow">
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-green-700 font-medium">总资产</p>
-                  <p className="text-3xl font-bold text-green-800">{formatCurrency(totalAssets)}</p>
+                  <p className="text-3xl font-bold text-green-700">{formatCurrency(totalAssets)}</p>
                   <p className="text-xs text-green-600 mt-1">计入净资产</p>
                 </div>
-                <div className="p-3 bg-green-200 rounded-full">
-                  <TrendingUp className="h-8 w-8 text-green-700" />
+                <div className="p-3 bg-green-50 rounded-full">
+                  <TrendingUp className="h-8 w-8 text-green-600" />
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-to-br from-red-50 to-red-100 border-red-200">
+          <Card className="bg-white border-red-200 rounded-2xl shadow-sm hover:shadow-md transition-shadow">
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-red-700 font-medium">总负债</p>
-                  <p className="text-3xl font-bold text-red-800">{formatCurrency(totalLiabilities)}</p>
+                  <p className="text-3xl font-bold text-red-700">{formatCurrency(totalLiabilities)}</p>
                   <p className="text-xs text-red-600 mt-1">信用卡等</p>
                 </div>
-                <div className="p-3 bg-red-200 rounded-full">
-                  <TrendingDown className="h-8 w-8 text-red-700" />
+                <div className="p-3 bg-red-50 rounded-full">
+                  <TrendingDown className="h-8 w-8 text-red-600" />
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
+          <Card className="bg-white border-blue-200 rounded-2xl shadow-sm hover:shadow-md transition-shadow">
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-blue-700 font-medium">净资产</p>
-                  <p className="text-3xl font-bold text-blue-800">{formatCurrency(netAssets)}</p>
+                  <p className="text-3xl font-bold text-blue-700">{formatCurrency(netAssets)}</p>
                   <p className="text-xs text-blue-600 mt-1">{accounts.length} 个账户</p>
                 </div>
-                <div className="p-3 bg-blue-200 rounded-full">
-                  <PiggyBank className="h-8 w-8 text-blue-700" />
+                <div className="p-3 bg-blue-50 rounded-full">
+                  <PiggyBank className="h-8 w-8 text-blue-600" />
                 </div>
               </div>
             </CardContent>
@@ -253,19 +255,18 @@ export default function AccountsPage() {
 
           {/* All Accounts */}
           <TabsContent value="all" className="mt-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Wallet className="h-5 w-5" />
+            <Card className="bg-white rounded-2xl shadow-sm">
+              <CardHeader className="border-b">
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <Wallet className="h-5 w-5 text-primary" />
                   账户列表
                   <Badge variant="secondary">{accounts.length}</Badge>
                 </CardTitle>
-                <CardDescription>您所有的账户资产概览</CardDescription>
               </CardHeader>
-              <CardContent>
+              <CardContent className="pt-6">
                 {accounts.length === 0 ? (
                   <div className="text-center py-12">
-                    <Wallet className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                    <Wallet className="h-12 w-12 mx-auto text-muted-foreground/50 mb-4" />
                     <p className="text-muted-foreground mb-4">暂无账户</p>
                     <Button onClick={() => { resetForm(); setDialogOpen(true); }} variant="outline">
                       <Plus className="h-4 w-4 mr-2" />
@@ -275,17 +276,17 @@ export default function AccountsPage() {
                 ) : (
                   <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                     {accounts.map((account) => (
-                      <Card key={account.accountId} className="hover:shadow-md transition-shadow">
+                      <Card key={account.accountId} className="bg-white hover:shadow-md transition-all rounded-xl border shadow-sm">
                         <CardContent className="pt-6">
                           <div className="flex items-start justify-between mb-4">
                             <div className="flex items-center gap-3">
-                              <div className={`p-3 rounded-full ${getTypeColorClass(account.accountType)}`}>
-                                {getTypeIcon(account.accountType)}
+                              <div className={`p-3 rounded-full ${getTypeColorClass(account.accountType?.toLowerCase() || '')}`}>
+                                {getTypeIcon(account.accountType?.toLowerCase() || '')}
                               </div>
                               <div>
                                 <p className="font-semibold">{account.name}</p>
                                 <p className="text-xs text-muted-foreground">
-                                  {getAccountTypeLabel(account.accountType)}
+                                  {getAccountTypeLabel(account.accountType?.toLowerCase() || '')}
                                 </p>
                               </div>
                             </div>
@@ -344,7 +345,7 @@ export default function AccountsPage() {
           <TabsContent value="bank" className="mt-6">
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               {bankAccounts.map((account) => (
-                <Card key={account.accountId} className="hover:shadow-md transition-shadow">
+                <Card key={account.accountId} className="bg-white hover:shadow-md transition-shadow rounded-xl border shadow-sm">
                   <CardContent className="pt-6">
                     <div className="flex items-start justify-between mb-4">
                       <div className="flex items-center gap-3">
@@ -376,7 +377,7 @@ export default function AccountsPage() {
           <TabsContent value="credit" className="mt-6">
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               {creditAccounts.map((account) => (
-                <Card key={account.accountId} className="hover:shadow-md transition-shadow border-orange-200">
+                <Card key={account.accountId} className="bg-white hover:shadow-md transition-shadow rounded-xl border shadow-sm">
                   <CardContent className="pt-6">
                     <div className="flex items-start justify-between mb-4">
                       <div className="flex items-center gap-3">
@@ -408,7 +409,7 @@ export default function AccountsPage() {
           <TabsContent value="digital" className="mt-6">
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               {digitalAccounts.map((account) => (
-                <Card key={account.accountId} className="hover:shadow-md transition-shadow">
+                <Card key={account.accountId} className="bg-white hover:shadow-md transition-shadow rounded-xl border shadow-sm">
                   <CardContent className="pt-6">
                     <div className="flex items-start justify-between mb-4">
                       <div className="flex items-center gap-3">
@@ -442,7 +443,7 @@ export default function AccountsPage() {
           <TabsContent value="cash" className="mt-6">
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               {cashAccounts.map((account) => (
-                <Card key={account.accountId} className="hover:shadow-md transition-shadow">
+                <Card key={account.accountId} className="bg-white hover:shadow-md transition-shadow rounded-xl border shadow-sm">
                   <CardContent className="pt-6">
                     <div className="flex items-start justify-between mb-4">
                       <div className="flex items-center gap-3">
@@ -526,8 +527,8 @@ export default function AccountsPage() {
               <input
                 type="checkbox"
                 id="includeInTotal"
-                checked={formData.includeInTotal}
-                onChange={(e) => setFormData({ ...formData, includeInTotal: e.target.checked })}
+                checked={!!formData.includeInTotal}
+                onChange={(e) => setFormData({ ...formData, includeInTotal: e.target.checked ? 1 : 0 })}
                 className="rounded"
               />
               <Label htmlFor="includeInTotal">计入总资产</Label>

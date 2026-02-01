@@ -12,20 +12,28 @@ import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.test.context.ActiveProfiles;
 
+import com.mamoji.config.TestSecurityConfig;
 import com.mamoji.module.budget.dto.BudgetDTO;
 import com.mamoji.module.budget.dto.BudgetVO;
 import com.mamoji.module.budget.service.BudgetService;
 
 /**
- * Performance Tests for Budget Service Operations
+ * 预算服务性能测试
  *
- * <p>Tests the performance of core budget operations: - getBudget() - listBudgets() -
- * listActiveBudgets() - createBudget()
+ * <p>测试核心预算操作性能：
+ * <ul>
+ *   <li>getBudget() - 获取预算</li>
+ *   <li>listBudgets() - 列出预算</li>
+ *   <li>listActiveBudgets() - 列出激活的预算</li>
+ *   <li>createBudget() - 创建预算</li>
+ * </ul>
  */
 @SpringBootTest
 @ActiveProfiles("test")
+@Import(TestSecurityConfig.class)
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class BudgetPerformanceTest {
 

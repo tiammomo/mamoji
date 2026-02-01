@@ -4,7 +4,6 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
-import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -14,9 +13,10 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.mamoji.common.exception.BusinessException;
+import com.mamoji.common.factory.DtoConverter;
 import com.mamoji.common.result.PageResult;
 import com.mamoji.common.result.ResultCode;
-import com.mamoji.module.account.entity.FinAccount;
+import com.mamoji.common.utils.DateRangeUtils;
 import com.mamoji.module.account.service.AccountService;
 import com.mamoji.module.budget.service.BudgetService;
 import com.mamoji.module.category.entity.FinCategory;
@@ -26,14 +26,12 @@ import com.mamoji.module.transaction.dto.TransactionQueryDTO;
 import com.mamoji.module.transaction.dto.TransactionVO;
 import com.mamoji.module.transaction.entity.FinTransaction;
 import com.mamoji.module.transaction.mapper.FinTransactionMapper;
+import com.mamoji.module.transaction.strategy.TransactionStrategyFactory;
+import com.mamoji.module.transaction.strategy.TransactionTypeStrategy;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 
 /** Transaction Service Implementation */
 @Slf4j
@@ -45,6 +43,8 @@ public class TransactionServiceImpl extends ServiceImpl<FinTransactionMapper, Fi
     private final FinCategoryMapper categoryMapper;
     private final AccountService accountService;
     private final BudgetService budgetService;
+    private final TransactionStrategyFactory strategyFactory;
+    private final DtoConverter dtoConverter;
 
     @Override
     public PageResult<TransactionVO> listTransactions(Long userId, TransactionQueryDTO request) {
@@ -58,28 +58,29 @@ public class TransactionServiceImpl extends ServiceImpl<FinTransactionMapper, Fi
                         .eq(FinTransaction::getUserId, userId)
                         .eq(FinTransaction::getStatus, 1);
 
-        // Apply filters
         if (request.getType() != null && !request.getType().isEmpty()) {
             wrapper.eq(FinTransaction::getType, request.getType());
         }
-        if (request.getAccountId() != null) {
+        if (request.getAccountId() != null)
             wrapper.eq(FinTransaction::getAccountId, request.getAccountId());
-        }
-        if (request.getCategoryId() != null) {
+        if (request.getCategoryId() != null)
             wrapper.eq(FinTransaction::getCategoryId, request.getCategoryId());
-        }
         if (request.getStartDate() != null && request.getEndDate() != null) {
-            wrapper.ge(FinTransaction::getOccurredAt, request.getStartDate().atStartOfDay())
-                    .le(FinTransaction::getOccurredAt, request.getEndDate().atTime(23, 59, 59));
+            wrapper.ge(
+                            FinTransaction::getOccurredAt,
+                            DateRangeUtils.startOfDay(request.getStartDate()))
+                    .le(
+                            FinTransaction::getOccurredAt,
+                            DateRangeUtils.endOfDay(request.getEndDate()));
         }
-
         wrapper.orderByDesc(FinTransaction::getOccurredAt);
 
         IPage<FinTransaction> result = this.page(page, wrapper);
-
-        List<TransactionVO> voList = result.getRecords().stream().map(this::toVO).toList();
-
-        return PageResult.of(result.getCurrent(), result.getSize(), result.getTotal(), voList);
+        return PageResult.of(
+                result.getCurrent(),
+                result.getSize(),
+                result.getTotal(),
+                dtoConverter.convertTransactionList(result.getRecords()));
     }
 
     @Override
@@ -90,7 +91,7 @@ public class TransactionServiceImpl extends ServiceImpl<FinTransactionMapper, Fi
                 || transaction.getStatus() != 1) {
             throw new BusinessException(ResultCode.TRANSACTION_NOT_FOUND);
         }
-        return toVO(transaction);
+        return dtoConverter.convertTransaction(transaction);
     }
 
     @Override
@@ -101,26 +102,9 @@ public class TransactionServiceImpl extends ServiceImpl<FinTransactionMapper, Fi
     @Override
     @Transactional(rollbackFor = Exception.class)
     public Long createTransaction(Long userId, TransactionDTO request) {
-        // Verify account exists and belongs to user
-        FinAccount account =
-                accountService.listAccounts(userId).stream()
-                        .filter(a -> a.getAccountId().equals(request.getAccountId()))
-                        .findFirst()
-                        .map(
-                                a -> {
-                                    FinAccount entity = new FinAccount();
-                                    BeanUtils.copyProperties(a, entity);
-                                    return entity;
-                                })
-                        .orElseThrow(() -> new BusinessException(ResultCode.ACCOUNT_NOT_FOUND));
+        validateAccount(userId, request.getAccountId());
+        validateCategory(request.getCategoryId());
 
-        // Verify category exists
-        FinCategory category = categoryMapper.selectById(request.getCategoryId());
-        if (category == null || category.getStatus() != 1) {
-            throw new BusinessException(ResultCode.CATEGORY_NOT_FOUND);
-        }
-
-        // Create transaction
         FinTransaction transaction =
                 FinTransaction.builder()
                         .userId(userId)
@@ -140,37 +124,14 @@ public class TransactionServiceImpl extends ServiceImpl<FinTransactionMapper, Fi
                         .build();
 
         this.save(transaction);
-
-        // Update account balance
-        BigDecimal balanceChange;
-        if ("income".equals(request.getType()) || "refund".equals(request.getType())) {
-            // Income and refund increase balance
-            balanceChange = request.getAmount();
-        } else {
-            // Expense decreases balance
-            balanceChange = request.getAmount().negate();
-        }
-        accountService.updateBalance(request.getAccountId(), balanceChange);
-
-        // Recalculate budget spent if expense transaction linked to budget
-        if (request.getBudgetId() != null && "expense".equals(request.getType())) {
-            budgetService.recalculateSpent(request.getBudgetId());
-        }
-
-        // If this is a refund, recalculate the original transaction's budget spent
-        if (request.getRefundId() != null && "refund".equals(request.getType())) {
-            FinTransaction originalTransaction = this.getById(request.getRefundId());
-            if (originalTransaction != null && originalTransaction.getBudgetId() != null) {
-                budgetService.recalculateSpent(originalTransaction.getBudgetId());
-            }
-        }
+        applyBalanceChange(request.getAccountId(), request.getType(), request.getAmount(), true);
+        handleBudgetUpdate(request, transaction);
 
         log.info(
                 "Transaction created: userId={}, type={}, amount={}",
                 userId,
                 request.getType(),
                 request.getAmount());
-
         return transaction.getTransactionId();
     }
 
@@ -182,35 +143,29 @@ public class TransactionServiceImpl extends ServiceImpl<FinTransactionMapper, Fi
             throw new BusinessException(ResultCode.TRANSACTION_NOT_FOUND);
         }
 
-        // If account changed, need to adjust balances
         if (!transaction.getAccountId().equals(request.getAccountId())) {
-            // Revert old account balance
-            BigDecimal oldChange =
-                    "income".equals(transaction.getType())
-                            ? transaction.getAmount()
-                            : transaction.getAmount().negate();
-            accountService.updateBalance(transaction.getAccountId(), oldChange.negate());
-
-            // Update new account balance
-            BigDecimal newChange =
-                    "income".equals(request.getType())
-                            ? request.getAmount()
-                            : request.getAmount().negate();
-            accountService.updateBalance(request.getAccountId(), newChange);
+            applyBalanceChange(
+                    transaction.getAccountId(),
+                    transaction.getType(),
+                    transaction.getAmount(),
+                    false);
+            applyBalanceChange(
+                    request.getAccountId(), request.getType(), request.getAmount(), true);
         } else if (!transaction.getAmount().equals(request.getAmount())
                 || !transaction.getType().equals(request.getType())) {
-            // Same account but amount/type changed
             BigDecimal oldChange =
-                    "income".equals(transaction.getType())
-                            ? transaction.getAmount()
-                            : transaction.getAmount().negate();
+                    strategyFactory
+                            .getStrategy(transaction.getType())
+                            .calculateBalanceChange(transaction.getAmount());
             BigDecimal newChange =
-                    "income".equals(request.getType())
-                            ? request.getAmount()
-                            : request.getAmount().negate();
-
+                    strategyFactory
+                            .getStrategy(request.getType())
+                            .calculateBalanceChange(request.getAmount());
             accountService.updateBalance(request.getAccountId(), newChange.subtract(oldChange));
         }
+
+        handleBudgetUpdateOnDelete(transaction);
+        handleBudgetUpdate(request, transaction);
 
         this.update(
                 new LambdaUpdateWrapper<FinTransaction>()
@@ -237,19 +192,11 @@ public class TransactionServiceImpl extends ServiceImpl<FinTransactionMapper, Fi
             throw new BusinessException(ResultCode.TRANSACTION_NOT_FOUND);
         }
 
-        // Revert account balance
-        BigDecimal balanceChange =
-                "income".equals(transaction.getType())
-                        ? transaction.getAmount().negate()
-                        : transaction.getAmount();
-        accountService.updateBalance(transaction.getAccountId(), balanceChange);
-
-        // Recalculate budget spent if expense transaction was linked to budget
-        if (transaction.getBudgetId() != null && "expense".equals(transaction.getType())) {
+        applyBalanceChange(
+                transaction.getAccountId(), transaction.getType(), transaction.getAmount(), false);
+        if (transaction.getBudgetId() != null)
             budgetService.recalculateSpent(transaction.getBudgetId());
-        }
 
-        // Soft delete
         this.update(
                 new LambdaUpdateWrapper<FinTransaction>()
                         .eq(FinTransaction::getTransactionId, transactionId)
@@ -266,13 +213,8 @@ public class TransactionServiceImpl extends ServiceImpl<FinTransactionMapper, Fi
                         .eq(FinTransaction::getStatus, 1)
                         .orderByDesc(FinTransaction::getOccurredAt)
                         .last("LIMIT " + (limit != null ? limit : 10));
-
-        if (accountId != null) {
-            wrapper.eq(FinTransaction::getAccountId, accountId);
-        }
-
-        List<FinTransaction> transactions = this.list(wrapper);
-        return transactions.stream().map(this::toVO).toList();
+        if (accountId != null) wrapper.eq(FinTransaction::getAccountId, accountId);
+        return dtoConverter.convertTransactionList(this.list(wrapper));
     }
 
     @Override
@@ -285,51 +227,42 @@ public class TransactionServiceImpl extends ServiceImpl<FinTransactionMapper, Fi
         if (startDate != null && !startDate.isEmpty()) {
             wrapper.ge(
                     FinTransaction::getOccurredAt,
-                    java.time.LocalDate.parse(startDate).atStartOfDay());
+                    DateRangeUtils.startOfDay(java.time.LocalDate.parse(startDate)));
         }
         if (endDate != null && !endDate.isEmpty()) {
             wrapper.le(
                     FinTransaction::getOccurredAt,
-                    java.time.LocalDate.parse(endDate).atTime(23, 59, 59));
+                    DateRangeUtils.endOfDay(java.time.LocalDate.parse(endDate)));
         }
-        if (type != null && !type.isEmpty()) {
-            wrapper.eq(FinTransaction::getType, type);
-        }
-
+        if (type != null && !type.isEmpty()) wrapper.eq(FinTransaction::getType, type);
         wrapper.orderByDesc(FinTransaction::getOccurredAt);
 
         List<FinTransaction> transactions = this.list(wrapper);
-
-        // Build CSV content
-        StringBuilder csv = new StringBuilder();
-        csv.append("日期,类型,金额,分类,账户,备注\n");
-
-        for (FinTransaction tx : transactions) {
-            String typeLabel = "income".equals(tx.getType()) ? "收入" : "支出";
-            csv.append(tx.getOccurredAt().toLocalDate()).append(",");
-            csv.append(typeLabel).append(",");
-            csv.append(tx.getAmount()).append(",");
-            csv.append(tx.getCategoryId()).append(",");
-            csv.append(tx.getAccountId()).append(",");
-            csv.append(tx.getNote() != null ? tx.getNote() : "").append("\n");
-        }
-
+        StringBuilder csv = new StringBuilder("日期,类型,金额,分类,账户,备注\n");
+        transactions.forEach(
+                tx ->
+                        csv.append(tx.getOccurredAt().toLocalDate())
+                                .append(",")
+                                .append("income".equals(tx.getType()) ? "收入" : "支出")
+                                .append(",")
+                                .append(tx.getAmount())
+                                .append(",")
+                                .append(tx.getCategoryId())
+                                .append(",")
+                                .append(tx.getAccountId())
+                                .append(",")
+                                .append(tx.getNote() != null ? tx.getNote() : "")
+                                .append("\n"));
         return csv.toString();
     }
 
     @Override
     public List<TransactionDTO> previewImport(Long userId, List<TransactionDTO> transactions) {
-        // Validate each transaction without saving
         return transactions.stream()
                 .peek(
                         tx -> {
-                            // Set default values if missing
-                            if (tx.getCurrency() == null) {
-                                tx.setCurrency("CNY");
-                            }
-                            if (tx.getOccurredAt() == null) {
-                                tx.setOccurredAt(java.time.LocalDateTime.now());
-                            }
+                            if (tx.getCurrency() == null) tx.setCurrency("CNY");
+                            if (tx.getOccurredAt() == null) tx.setOccurredAt(LocalDateTime.now());
                         })
                 .toList();
     }
@@ -339,23 +272,46 @@ public class TransactionServiceImpl extends ServiceImpl<FinTransactionMapper, Fi
         return transactions.stream().map(tx -> createTransaction(userId, tx)).toList();
     }
 
-    /** Convert entity to VO */
-    private TransactionVO toVO(FinTransaction transaction) {
-        TransactionVO vo = new TransactionVO();
-        BeanUtils.copyProperties(transaction, vo);
+    // ==================== Private Helper Methods ====================
 
-        // Get account name
-        accountService.listAccounts(transaction.getUserId()).stream()
-                .filter(a -> a.getAccountId().equals(transaction.getAccountId()))
-                .findFirst()
-                .ifPresent(a -> vo.setAccountName(a.getName()));
-
-        // Get category name
-        FinCategory category = categoryMapper.selectById(transaction.getCategoryId());
-        if (category != null) {
-            vo.setCategoryName(category.getName());
+    private void validateAccount(Long userId, Long accountId) {
+        if (accountService.listAccounts(userId).stream()
+                .noneMatch(a -> a.getAccountId().equals(accountId))) {
+            throw new BusinessException(ResultCode.ACCOUNT_NOT_FOUND);
         }
+    }
 
-        return vo;
+    private void validateCategory(Long categoryId) {
+        FinCategory category = categoryMapper.selectById(categoryId);
+        if (category == null || category.getStatus() != 1) {
+            throw new BusinessException(ResultCode.CATEGORY_NOT_FOUND);
+        }
+    }
+
+    private void applyBalanceChange(
+            Long accountId, String type, BigDecimal amount, boolean isPositive) {
+        TransactionTypeStrategy strategy = strategyFactory.getStrategy(type);
+        BigDecimal change = strategy.calculateBalanceChange(amount);
+        accountService.updateBalance(accountId, isPositive ? change : change.negate());
+    }
+
+    private void handleBudgetUpdate(TransactionDTO request, FinTransaction transaction) {
+        TransactionTypeStrategy strategy = strategyFactory.getStrategy(request.getType());
+        if (strategy.affectsBudget() && request.getBudgetId() != null) {
+            budgetService.recalculateSpent(request.getBudgetId());
+        }
+        if ("refund".equals(request.getType()) && request.getRefundId() != null) {
+            FinTransaction original = this.getById(request.getRefundId());
+            if (original != null && original.getBudgetId() != null) {
+                budgetService.recalculateSpent(original.getBudgetId());
+            }
+        }
+    }
+
+    private void handleBudgetUpdateOnDelete(FinTransaction transaction) {
+        TransactionTypeStrategy strategy = strategyFactory.getStrategy(transaction.getType());
+        if (strategy.affectsBudget() && transaction.getBudgetId() != null) {
+            budgetService.recalculateSpent(transaction.getBudgetId());
+        }
     }
 }

@@ -112,13 +112,13 @@ class ReportServiceTest {
                         .status(1)
                         .build();
 
-        FinCategory category1 = FinCategory.builder().categoryId(1L).name("Salary").build();
-
-        FinCategory category2 = FinCategory.builder().categoryId(2L).name("Food").build();
-
         when(transactionMapper.selectList(any())).thenReturn(Arrays.asList(incomeTx, expenseTx));
-        when(categoryMapper.selectById(1L)).thenReturn(category1);
-        when(categoryMapper.selectById(2L)).thenReturn(category2);
+
+        // Mock category names
+        when(categoryMapper.selectById(1L))
+                .thenReturn(FinCategory.builder().categoryId(1L).name("Salary").build());
+        when(categoryMapper.selectById(2L))
+                .thenReturn(FinCategory.builder().categoryId(2L).name("Food").build());
 
         // When
         List<CategoryReportVO> result = reportService.getIncomeExpenseReport(1L, request);

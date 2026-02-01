@@ -31,6 +31,8 @@ import com.mamoji.module.transaction.dto.TransactionVO;
 import com.mamoji.module.transaction.entity.FinRefund;
 import com.mamoji.module.transaction.entity.FinTransaction;
 import com.mamoji.module.transaction.mapper.FinRefundMapper;
+import com.mamoji.module.transaction.strategy.ExpenseTransactionStrategy;
+import com.mamoji.module.transaction.strategy.TransactionStrategyFactory;
 
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
@@ -43,6 +45,8 @@ class RefundServiceTest {
 
     @Mock private TransactionService transactionService;
 
+    @Mock private TransactionStrategyFactory strategyFactory;
+
     private RefundServiceImpl refundService;
 
     private TransactionVO testTransaction;
@@ -51,7 +55,13 @@ class RefundServiceTest {
     @BeforeEach
     void setUp() {
         // Create service with mocked dependencies
-        refundService = new RefundServiceImpl(refundMapper, accountService, transactionService);
+        refundService =
+                new RefundServiceImpl(
+                        refundMapper, accountService, transactionService, strategyFactory);
+
+        // Mock strategy factory for expense transactions
+        ExpenseTransactionStrategy expenseStrategy = new ExpenseTransactionStrategy();
+        when(strategyFactory.getStrategy("expense")).thenReturn(expenseStrategy);
 
         testTransaction =
                 TransactionVO.builder()
@@ -109,8 +119,8 @@ class RefundServiceTest {
     }
 
     @Test
-    @DisplayName("getTransactionRefunds - Should throw exception for non-expense transaction")
-    void getTransactionRefunds_NonExpenseTransaction_ThrowsException() {
+    @DisplayName("getTransactionRefunds - Should return empty for non-expense transaction")
+    void getTransactionRefunds_NonExpenseTransaction_ReturnsEmpty() {
         // Given
         Long userId = 999L;
         Long transactionId = 1L;
@@ -124,14 +134,16 @@ class RefundServiceTest {
 
         when(transactionService.getTransaction(userId, transactionId))
                 .thenReturn(incomeTransaction);
+        when(refundMapper.selectList(any(LambdaQueryWrapper.class))).thenReturn(List.of());
 
-        // When & Then
-        BusinessException exception =
-                assertThrows(
-                        BusinessException.class,
-                        () -> refundService.getTransactionRefunds(userId, transactionId));
+        // When
+        TransactionRefundResponseVO result =
+                refundService.getTransactionRefunds(userId, transactionId);
 
-        assertEquals(ResultCode.VALIDATION_ERROR.getCode(), exception.getCode());
+        // Then - query method works for any transaction type, just returns empty
+        assertNotNull(result);
+        assertEquals(0, result.getRefunds().size());
+        assertEquals(BigDecimal.ZERO, result.getSummary().getTotalRefunded());
     }
 
     @Test

@@ -35,7 +35,7 @@ export const authApi = {
   login: (data: LoginRequest) => post<LoginResponse>('/auth/login', data),
   register: (data: RegisterRequest) => post<void>('/auth/register', data),
   logout: () => post<void>('/auth/logout'),
-  profile: () => get<User>('/auth/profile'),
+  profile: () => get<User>('/auth/me'),
 };
 
 // ===========================================
@@ -113,6 +113,8 @@ export const reportApi = {
     get<CategoryReport[]>('/reports/income-expense', params),
   getMonthly: (params: { year: number; month: number; accountId?: number }) =>
     get<MonthlyReport>('/reports/monthly', params),
+  getDailyByDateRange: (params: { startDate: string; endDate: string }) =>
+    get<any>('/reports/daily', params),
   getBalanceSheet: () => get<BalanceSheet>('/reports/balance-sheet'),
   getTrend: (params: { startDate: string; endDate: string; period?: 'daily' | 'weekly' | 'monthly' }) =>
     get<TrendData[]>('/reports/trend', params),

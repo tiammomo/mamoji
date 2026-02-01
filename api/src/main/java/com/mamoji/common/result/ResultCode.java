@@ -2,11 +2,7 @@ package com.mamoji.common.result;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
 
 /** Result Code Enumeration */
 @Getter

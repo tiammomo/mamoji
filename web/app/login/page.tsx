@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
-import { useAuthStore } from '@/hooks/useAuth';
+import { useAuthStore, useIsAuthReady } from '@/hooks/useAuth';
 import { Toaster, toast } from 'sonner';
 
 const loginSchema = z.object({
@@ -23,27 +23,51 @@ type LoginForm = z.infer<typeof loginSchema>;
 export default function LoginPage() {
   const router = useRouter();
   const { login, isLoading, isAuthenticated } = useAuthStore();
+  const isReady = useIsAuthReady();
   const [showPassword, setShowPassword] = useState(false);
+  const [hasRedirected, setHasRedirected] = useState(false);
 
-  // 清除旧的认证状态，避免 403 错误
+  // 首次加载时检查是否已登录（等待 persist 恢复完成）
   useEffect(() => {
-    // 清除 localStorage 中的旧 token
-    localStorage.removeItem('mamoji-auth');
-    // 重置 Zustand 状态
-    useAuthStore.setState({
-      token: null,
-      user: null,
-      isAuthenticated: false,
-      error: null,
-    });
-  }, []);
+    if (hasRedirected) return;
 
-  // 如果已登录，跳转到仪表盘
-  useEffect(() => {
-    if (isAuthenticated) {
-      router.push('/dashboard');
+    // 等待 persist 恢复
+    if (!isReady) {
+      console.log('[LoginPage] Waiting for persist to be ready...');
+      return;
     }
-  }, [isAuthenticated, router]);
+
+    // 已登录用户直接跳转到仪表盘
+    if (isAuthenticated) {
+      console.log('[LoginPage] Already authenticated, redirecting to dashboard...');
+      setHasRedirected(true);
+      router.replace('/dashboard');
+      return;
+    }
+
+    // 检查 localStorage（作为后备）
+    const storedAuth = localStorage.getItem('mamoji-auth');
+    if (storedAuth) {
+      try {
+        const parsed = JSON.parse(storedAuth);
+        if (parsed.state?.token && parsed.state?.isAuthenticated) {
+          console.log('[LoginPage] Found auth in localStorage, waiting for restore...');
+          return; // 等待 checkAuth 恢复
+        }
+      } catch (e) {
+        localStorage.removeItem('mamoji-auth');
+      }
+    }
+
+    setHasRedirected(true);
+  }, [isReady, isAuthenticated, router, hasRedirected]);
+
+  // 登录成功后跳转到仪表盘
+  useEffect(() => {
+    if (isAuthenticated && isReady) {
+      router.replace('/dashboard');
+    }
+  }, [isAuthenticated, isReady, router]);
 
   const {
     register,

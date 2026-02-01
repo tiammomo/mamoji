@@ -11,6 +11,8 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
+import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.data.redis.core.RedisTemplate;
 
 /** JwtTokenProvider Unit Tests */
 @ExtendWith(MockitoExtension.class)
@@ -19,7 +21,7 @@ class JwtTokenProviderTest {
 
     @Mock private com.mamoji.config.JwtConfig jwtConfig;
 
-    @Mock private org.springframework.data.redis.core.RedisTemplate<String, Object> redisTemplate;
+    @Mock private RedisTemplate<String, Object> redisTemplate;
 
     private JwtTokenProvider jwtTokenProvider;
 
@@ -30,7 +32,22 @@ class JwtTokenProviderTest {
                 .thenReturn("test-secret-key-for-jwt-token-generation-min-256-bits-required");
         when(jwtConfig.getExpiration()).thenReturn(86400000L);
 
-        jwtTokenProvider = new JwtTokenProvider(jwtConfig, redisTemplate);
+        // Create ObjectProvider that returns the mock redisTemplate
+        ObjectProvider<RedisTemplate<String, Object>> redisProvider = new ObjectProvider<>() {
+            @Override
+            public RedisTemplate<String, Object> getObject() {
+                return redisTemplate;
+            }
+            @Override
+            public RedisTemplate<String, Object> getIfAvailable() {
+                return redisTemplate;
+            }
+            @Override
+            public RedisTemplate<String, Object> getIfUnique() {
+                return redisTemplate;
+            }
+        };
+        jwtTokenProvider = new JwtTokenProvider(jwtConfig, redisProvider);
         jwtTokenProvider.init();
     }
 

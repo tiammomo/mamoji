@@ -1,0 +1,173 @@
+{
+  "version": "1.0",
+  "prompts": {
+    "new_feature": {
+      "description": "新建功能开发的标准流程",
+      "template": [
+        "## 开发任务：${feature_name}",
+        "",
+        "### 1. 设计阶段",
+        "- [ ] 确认需求细节",
+        "- [ ] 设计数据库变更（如需要）",
+        "- [ ] 设计 API 接口",
+        "- [ ] 设计前端组件",
+        "",
+        "### 2. 后端实现",
+        "- [ ] 创建/更新 DTO",
+        "- [ ] 创建/更新 Mapper",
+        "- [ ] 创建/更新 Service",
+        "- [ ] 创建/更新 Controller",
+        "- [ ] 添加单元测试",
+        "",
+        "### 3. 前端实现",
+        "- [ ] 添加 API 调用（api/index.ts）",
+        "- [ ] 创建/更新页面组件",
+        "- [ ] 添加类型定义",
+        "",
+        "### 4. 测试验证",
+        "- [ ] 后端测试通过：mvn test",
+        "- [ ] 前端测试通过：npm test",
+        "- [ ] 手动功能测试",
+        "",
+        "### 5. 代码质量",
+        "- [ ] 运行格式化工：mvn spotless:apply && npm run format",
+        "- [ ] 运行检查：npm run lint",
+        ""
+      ]
+    },
+    "bug_fix": {
+      "description": "修复 Bug 的标准流程",
+      "template": [
+        "## Bug 修复：${bug_description}",
+        "",
+        "### 1. 问题定位",
+        "- [ ] 复现问题",
+        "- [ ] 分析日志",
+        "- [ ] 定位代码位置",
+        "",
+        "### 2. 修复方案",
+        "- [ ] 分析根本原因",
+        "- [ ] 设计修复方案",
+        "- [ ] 编写修复代码",
+        "",
+        "### 3. 验证修复",
+        "- [ ] 重新测试确认问题已修复",
+        "- [ ] 运行相关单元测试",
+        "- [ ] 检查是否有副作用",
+        "",
+        "### 4. 提交代码",
+        "- [ ] 编写清晰的 commit message",
+        "- [ ] 包含测试用例",
+        ""
+      ]
+    },
+    "api_change": {
+      "description": "API 变更的标准流程",
+      "template": [
+        "## API 变更：${api_path} ${method}",
+        "",
+        "### 1. 变更说明",
+        "- 变更类型：新增 / 修改 / 废弃",
+        "- 变更原因：",
+        "- 影响范围：",
+        "",
+        "### 2. 后端变更",
+        "- [ ] 更新 Controller",
+        "- [ ] 更新 DTO/VO",
+        "- [ ] 更新 Service",
+        "- [ ] 更新文档：docs/api.md",
+        "",
+        "### 3. 前端变更",
+        "- [ ] 更新 api/index.ts",
+        "- [ ] 更新类型定义 types/*.ts",
+        "- [ ] 更新相关页面组件",
+        "",
+        "### 4. 兼容性",
+        "- [ ] 是否需要版本兼容",
+        "- [ ] 是否需要迁移脚本",
+        ""
+      ]
+    },
+    "database_change": {
+      "description": "数据库变更的标准流程",
+      "template": [
+        "## 数据库变更",
+        "",
+        "### 1. 变更类型",
+        "- [ ] 新增表",
+        "- [ ] 修改表结构",
+        "- [ ] 新增字段",
+        "- [ ] 新增索引",
+        "",
+        "### 2. SQL 脚本",
+        "- [ ] 编写升级脚本：db/codes/${timestamp}_${description}.sql",
+        "- [ ] 编写回滚脚本：db/codes/${timestamp}_${description}_rollback.sql",
+        "",
+        "### 3. 代码适配",
+        "- [ ] 更新 Entity",
+        "- [ ] 更新 Mapper",
+        "- [ ] 更新 DTO",
+        "- [ ] 更新文档：docs/db.md",
+        "",
+        "### 4. 测试验证",
+        "- [ ] 执行升级脚本测试",
+        "- [ ] 执行回滚脚本测试",
+        "- [ ] 运行集成测试",
+        ""
+      ]
+    }
+  },
+  "coding_standards": {
+    "java": [
+      "遵循 Spring Boot 3.x 最佳实践",
+      "使用 Lombok 简化代码",
+      "Service 层方法不超过 50 行",
+      "使用 DTO/VO 分离接口和内部模型",
+      "所有 API 接口添加 Swagger 文档注释"
+    ],
+    "typescript": [
+      "遵循 React Hooks 最佳实践",
+      "组件代码不超过 150 行",
+      "使用 interface 定义类型",
+      "hooks 顺序：useState → useEffect → useCallback → useMemo → 其他",
+      "导入顺序：React → 第三方 → 本地"
+    ],
+    "git": [
+      "commit message 遵循 Conventional Commits",
+      "每次提交聚焦单一变更",
+      "提交前运行格式化代码",
+      "推送前运行测试"
+    ]
+  },
+  "quick_commands": {
+    "start_dev": {
+      "description": "启动本地开发环境",
+      "commands": [
+        "docker-compose up -d mysql redis",
+        "cd api && mvn spring-boot:run",
+        "cd web && npm run dev"
+      ]
+    },
+    "stop_dev": {
+      "description": "停止本地开发环境",
+      "commands": [
+        "docker-compose down",
+        "fuser -k 48080/tcp"
+      ]
+    },
+    "run_tests": {
+      "description": "运行所有测试",
+      "commands": [
+        "cd api && mvn test",
+        "cd web && npm test"
+      ]
+    },
+    "format_code": {
+      "description": "格式化所有代码",
+      "commands": [
+        "cd api && mvn spotless:apply",
+        "cd web && npm run format"
+      ]
+    }
+  }
+}

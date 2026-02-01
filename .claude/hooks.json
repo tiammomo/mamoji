@@ -22,6 +22,25 @@
       ],
       "continueOnError": false
     },
+    "post-commit": {
+      "commands": [
+        {
+          "name": "Show Git Status",
+          "run": "git status --short"
+        }
+      ],
+      "continueOnError": true
+    },
+    "pre-merge": {
+      "commands": [
+        {
+          "name": "Run Backend Tests",
+          "run": "cd api && mvn test -Dspring.profiles.active=test -q",
+          "continueOnError": false
+        }
+      ],
+      "continueOnError": false
+    },
     "pre-push": {
       "commands": [
         {

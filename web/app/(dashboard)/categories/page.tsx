@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { DashboardLayout } from '@/components/layout/dashboard-layout';
-import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -166,41 +166,41 @@ export default function CategoriesPage() {
 
         {/* Stats Cards */}
         <div className="grid gap-4 md:grid-cols-3">
-          <Card>
+          <Card className="bg-white border-green-200 rounded-2xl shadow-sm hover:shadow-md transition-shadow">
             <CardContent className="pt-6">
               <div className="flex items-center gap-4">
-                <div className="p-3 bg-green-100 rounded-full">
+                <div className="p-3 bg-green-50 rounded-full">
                   <TrendingUp className="h-6 w-6 text-green-600" />
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">收入分类</p>
-                  <p className="text-2xl font-bold">{incomeCategories.length}</p>
+                  <p className="text-sm text-green-700 font-medium">收入分类</p>
+                  <p className="text-2xl font-bold text-green-700">{incomeCategories.length}</p>
                 </div>
               </div>
             </CardContent>
           </Card>
-          <Card>
+          <Card className="bg-white border-red-200 rounded-2xl shadow-sm hover:shadow-md transition-shadow">
             <CardContent className="pt-6">
               <div className="flex items-center gap-4">
-                <div className="p-3 bg-red-100 rounded-full">
+                <div className="p-3 bg-red-50 rounded-full">
                   <TrendingDown className="h-6 w-6 text-red-600" />
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">支出分类</p>
-                  <p className="text-2xl font-bold">{expenseCategories.length}</p>
+                  <p className="text-sm text-red-700 font-medium">支出分类</p>
+                  <p className="text-2xl font-bold text-red-700">{expenseCategories.length}</p>
                 </div>
               </div>
             </CardContent>
           </Card>
-          <Card>
+          <Card className="bg-white border-blue-200 rounded-2xl shadow-sm hover:shadow-md transition-shadow">
             <CardContent className="pt-6">
               <div className="flex items-center gap-4">
-                <div className="p-3 bg-blue-100 rounded-full">
+                <div className="p-3 bg-blue-50 rounded-full">
                   <Tag className="h-6 w-6 text-blue-600" />
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">分类总数</p>
-                  <p className="text-2xl font-bold">{categories.length}</p>
+                  <p className="text-sm text-blue-700 font-medium">分类总数</p>
+                  <p className="text-2xl font-bold text-blue-700">{categories.length}</p>
                 </div>
               </div>
             </CardContent>
@@ -222,14 +222,13 @@ export default function CategoriesPage() {
 
           {/* Income Categories */}
           <TabsContent value="income" className="mt-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <TrendingUp className="h-5 w-5 text-green-600" />
+            <Card className="bg-white rounded-2xl shadow-sm hover:shadow-md transition-shadow">
+              <CardHeader className="border-b">
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <TrendingUp className="h-5 w-5 text-primary" />
                   收入分类
                   <Badge variant="secondary">{incomeCategories.length}</Badge>
                 </CardTitle>
-                <CardDescription>管理您的收入来源分类</CardDescription>
               </CardHeader>
               <CardContent>
                 {incomeCategories.length === 0 ? (
@@ -285,14 +284,13 @@ export default function CategoriesPage() {
 
           {/* Expense Categories */}
           <TabsContent value="expense" className="mt-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <TrendingDown className="h-5 w-5 text-red-600" />
+            <Card className="bg-white rounded-2xl shadow-sm hover:shadow-md transition-shadow">
+              <CardHeader className="border-b">
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <TrendingDown className="h-5 w-5 text-primary" />
                   支出分类
                   <Badge variant="secondary">{expenseCategories.length}</Badge>
                 </CardTitle>
-                <CardDescription>管理您的支出分类</CardDescription>
               </CardHeader>
               <CardContent>
                 {expenseCategories.length === 0 ? (

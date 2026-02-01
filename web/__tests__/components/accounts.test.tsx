@@ -114,8 +114,8 @@ import { accountApi } from '@/api';
 
 describe('AccountsPage', () => {
   const mockAccounts = [
-    { accountId: 1, name: '主账户', accountType: 'bank', currency: 'CNY', balance: 10000, includeInTotal: true, status: 1 },
-    { accountId: 2, name: '储蓄卡', accountType: 'bank', currency: 'CNY', balance: 5000, includeInTotal: true, status: 1 },
+    { accountId: 1, name: '主账户', accountType: 'bank', currency: 'CNY', balance: 10000, includeInTotal: 1, status: 1 },
+    { accountId: 2, name: '储蓄卡', accountType: 'bank', currency: 'CNY', balance: 5000, includeInTotal: 1, status: 1 },
   ];
 
   beforeEach(() => {

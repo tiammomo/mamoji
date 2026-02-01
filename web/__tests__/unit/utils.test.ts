@@ -1,4 +1,5 @@
-import { cn, formatCurrency, formatDate, getAccountTypeLabel, getTransactionTypeLabel } from '@/lib/utils';
+import { cn, formatCurrency, formatDate } from '@/lib/utils';
+import { getAccountTypeLabel, getTransactionTypeLabel } from '@/lib/icons';
 
 describe('Utils', () => {
   describe('cn', () => {

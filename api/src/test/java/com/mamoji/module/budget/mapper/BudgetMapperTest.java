@@ -8,12 +8,15 @@ import java.util.List;
 
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Import;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.mamoji.MySqlIntegrationTestBase;
+import com.mamoji.config.TestSecurityConfig;
 import com.mamoji.module.budget.entity.FinBudget;
 
 /** Budget Mapper Integration Tests */
+@Import(TestSecurityConfig.class)
 class BudgetMapperTest extends MySqlIntegrationTestBase {
 
     @Autowired private FinBudgetMapper budgetMapper;
@@ -218,10 +221,10 @@ class BudgetMapperTest extends MySqlIntegrationTestBase {
                 budgetMapper.selectList(
                         new LambdaQueryWrapper<FinBudget>()
                                 .eq(FinBudget::getUserId, testUserId)
-                                .orderByDesc(FinBudget::getCreatedAt));
+                                .orderByDesc(FinBudget::getBudgetId));
 
         assertThat(results).hasSize(3);
-        // Most recently created should be first
+        // Most recently inserted (highest ID) should be first
         assertThat(results.get(0).getName()).isEqualTo("Budget 3");
     }
 

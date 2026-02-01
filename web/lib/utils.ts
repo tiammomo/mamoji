@@ -5,6 +5,8 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+// ==================== Formatting Functions ====================
+
 export function formatCurrency(
   amount: number,
   currency: string = 'CNY',
@@ -40,6 +42,8 @@ export function formatDate(
     .replace('ss', seconds);
 }
 
+// ==================== Date Range Functions ====================
+
 export function getMonthRange(date: Date = new Date()) {
   const year = date.getFullYear();
   const month = date.getMonth();
@@ -52,6 +56,87 @@ export function getCurrentMonth(): string {
   const now = new Date();
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
 }
+
+// Date range preset type
+export type DateRangePreset = 'today' | 'week' | 'month' | 'year' | 'last7days' | 'last30days' | 'last90days' | 'all';
+
+// Date range preset configuration
+export const DATE_PRESETS: { key: DateRangePreset; label: string; shortLabel: string }[] = [
+  { key: 'today', label: '今天', shortLabel: '今天' },
+  { key: 'week', label: '本周', shortLabel: '本周' },
+  { key: 'month', label: '本月', shortLabel: '本月' },
+  { key: 'year', label: '本年', shortLabel: '本年' },
+  { key: 'last7days', label: '最近7天', shortLabel: '7天' },
+  { key: 'last30days', label: '最近30天', shortLabel: '30天' },
+  { key: 'last90days', label: '最近90天', shortLabel: '90天' },
+  { key: 'all', label: '全部', shortLabel: '全部' },
+];
+
+// Get date range from preset
+export function getDateRangeFromPreset(preset: DateRangePreset): { startDate: string; endDate: string } | null {
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+  switch (preset) {
+    case 'today':
+      return {
+        startDate: formatDate(today, 'YYYY-MM-DD'),
+        endDate: formatDate(today, 'YYYY-MM-DD'),
+      };
+    case 'week': {
+      const weekStart = new Date(today);
+      weekStart.setDate(today.getDate() - today.getDay());
+      return {
+        startDate: formatDate(weekStart, 'YYYY-MM-DD'),
+        endDate: formatDate(today, 'YYYY-MM-DD'),
+      };
+    }
+    case 'month': {
+      const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+      return {
+        startDate: formatDate(monthStart, 'YYYY-MM-DD'),
+        endDate: formatDate(today, 'YYYY-MM-DD'),
+      };
+    }
+    case 'year': {
+      const yearStart = new Date(now.getFullYear(), 0, 1);
+      return {
+        startDate: formatDate(yearStart, 'YYYY-MM-DD'),
+        endDate: formatDate(today, 'YYYY-MM-DD'),
+      };
+    }
+    case 'last7days': {
+      const last7 = new Date(today);
+      last7.setDate(today.getDate() - 6);
+      return {
+        startDate: formatDate(last7, 'YYYY-MM-DD'),
+        endDate: formatDate(today, 'YYYY-MM-DD'),
+      };
+    }
+    case 'last30days': {
+      const last30 = new Date(today);
+      last30.setDate(today.getDate() - 29);
+      return {
+        startDate: formatDate(last30, 'YYYY-MM-DD'),
+        endDate: formatDate(today, 'YYYY-MM-DD'),
+      };
+    }
+    case 'last90days': {
+      const last90 = new Date(today);
+      last90.setDate(today.getDate() - 89);
+      return {
+        startDate: formatDate(last90, 'YYYY-MM-DD'),
+        endDate: formatDate(today, 'YYYY-MM-DD'),
+      };
+    }
+    case 'all':
+      return null;
+    default:
+      return null;
+  }
+}
+
+// ==================== Utility Functions ====================
 
 export function calculatePercentage(value: number, total: number): number {
   if (total === 0) return 0;
@@ -71,40 +156,4 @@ export function debounce<T extends (...args: unknown[]) => unknown>(
     if (timeout) clearTimeout(timeout);
     timeout = setTimeout(() => func(...args), wait);
   };
-}
-
-export function getAccountTypeLabel(type: string): string {
-  const labels: Record<string, string> = {
-    bank: '银行账户',
-    credit: '信用卡',
-    cash: '现金',
-    alipay: '支付宝',
-    wechat: '微信钱包',
-    gold: '黄金',
-    fund_accumulation: '公积金',
-    fund: '基金',
-    stock: '股票',
-    topup: '储值卡',
-    debt: '负债',
-  };
-  return labels[type] || type;
-}
-
-export function getTransactionTypeLabel(type: string): string {
-  const labels: Record<string, string> = {
-    income: '收入',
-    expense: '支出',
-    transfer: '转账',
-  };
-  return labels[type] || type;
-}
-
-export function getBudgetStatusLabel(status: number): string {
-  const labels: Record<number, string> = {
-    0: '已取消',
-    1: '进行中',
-    2: '已完成',
-    3: '已超支',
-  };
-  return labels[status] || '未知';
 }

@@ -2,6 +2,7 @@ package com.mamoji.module.account.service;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
 
 import com.mamoji.module.account.dto.AccountDTO;
 import com.mamoji.module.account.dto.AccountVO;
@@ -28,5 +29,5 @@ public interface AccountService {
     void updateBalance(Long accountId, BigDecimal amount);
 
     /** Get account summary */
-    Object getAccountSummary(Long userId);
+    Map<String, Object> getAccountSummary(Long userId);
 }

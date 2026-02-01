@@ -3,22 +3,16 @@ package com.mamoji.module.transaction.dto;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
-import jakarta.validation.constraints.NotNull;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-import jakarta.validation.constraints.NotNull;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import com.fasterxml.jackson.annotation.JsonFormat;
 
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import jakarta.validation.constraints.NotNull;
+
+import jakarta.validation.constraints.NotNull;
 
 /** Refund Request DTO */
 @Data
@@ -27,8 +21,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class RefundDTO {
 
-    /** Original transaction ID */
-    @NotNull(message = "原交易ID不能为空")
+    /** Original transaction ID (set from URL path variable, not required in body) */
     private Long transactionId;
 
     /** Refund amount */
@@ -37,6 +30,7 @@ public class RefundDTO {
 
     /** Occurred time */
     @NotNull(message = "发生时间不能为空")
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime occurredAt;
 
     /** Note */

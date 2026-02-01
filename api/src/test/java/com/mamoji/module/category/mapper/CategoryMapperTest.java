@@ -6,12 +6,15 @@ import java.util.List;
 
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Import;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.mamoji.MySqlIntegrationTestBase;
+import com.mamoji.config.TestSecurityConfig;
 import com.mamoji.module.category.entity.FinCategory;
 
 /** Category Mapper Integration Tests Tests CRUD operations using real H2 database */
+@Import(TestSecurityConfig.class)
 class CategoryMapperTest extends MySqlIntegrationTestBase {
 
     @Autowired private FinCategoryMapper categoryMapper;

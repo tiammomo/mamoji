@@ -17,7 +17,8 @@ import {
   DialogDescription,
   DialogFooter,
 } from '@/components/ui/dialog';
-import { formatCurrency, getBudgetStatusLabel } from '@/lib/utils';
+import { formatCurrency } from '@/lib/utils';
+import { getBudgetStatusLabel } from '@/lib/icons';
 import { budgetApi } from '@/api';
 import type { Budget } from '@/types';
 import { Plus, Edit, Trash2, AlertTriangle, CheckCircle, Clock, Target, TrendingUp, DollarSign, PieChart, Calendar } from 'lucide-react';
@@ -74,7 +75,6 @@ export default function BudgetsPage() {
           amount: parseFloat(formData.amount),
           startDate: formData.startDate,
           endDate: formData.endDate,
-          alertThreshold: formData.alertThreshold,
         });
         toast.success('预算更新成功');
       } else {
@@ -83,7 +83,6 @@ export default function BudgetsPage() {
           amount: parseFloat(formData.amount),
           startDate: formData.startDate,
           endDate: formData.endDate,
-          alertThreshold: formData.alertThreshold,
         });
         toast.success('预算创建成功');
       }
@@ -113,7 +112,7 @@ export default function BudgetsPage() {
       amount: budget.amount.toString(),
       startDate: budget.startDate.split('T')[0],
       endDate: budget.endDate.split('T')[0],
-      alertThreshold: budget.alertThreshold,
+      alertThreshold: budget.alertThreshold ?? 80,
     });
     setDialogOpen(true);
   };
@@ -133,7 +132,7 @@ export default function BudgetsPage() {
     const percentage = budget.amount > 0 ? (budget.spent / budget.amount) * 100 : 0;
     if (budget.status === 0) return { icon: <Clock className="h-4 w-4" />, variant: 'secondary' as const, label: '已取消' };
     if (percentage > 100) return { icon: <AlertTriangle className="h-4 w-4" />, variant: 'destructive' as const, label: '已超支' };
-    if (percentage >= budget.alertThreshold) return { icon: <AlertTriangle className="h-4 w-4" />, variant: 'warning' as const, label: '预警' };
+    if (percentage >= (budget.alertThreshold ?? 80)) return { icon: <AlertTriangle className="h-4 w-4" />, variant: 'warning' as const, label: '预警' };
     return { icon: <CheckCircle className="h-4 w-4" />, variant: 'success' as const, label: '正常' };
   };
 
@@ -197,57 +196,57 @@ export default function BudgetsPage() {
 
         {/* Summary Cards */}
         <div className="grid gap-4 md:grid-cols-4">
-          <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
+          <Card className="bg-white border-blue-200 rounded-2xl shadow-sm hover:shadow-md transition-shadow">
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-blue-700 font-medium">总预算</p>
-                  <p className="text-2xl font-bold text-blue-800">{formatCurrency(totalBudget)}</p>
+                  <p className="text-2xl font-bold text-blue-700">{formatCurrency(totalBudget)}</p>
                 </div>
-                <div className="p-3 bg-blue-200 rounded-full">
-                  <Target className="h-6 w-6 text-blue-700" />
+                <div className="p-3 bg-blue-50 rounded-full">
+                  <Target className="h-6 w-6 text-blue-600" />
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-to-br from-orange-50 to-orange-100 border-orange-200">
+          <Card className="bg-white border-orange-200 rounded-2xl shadow-sm hover:shadow-md transition-shadow">
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-orange-700 font-medium">已支出</p>
-                  <p className="text-2xl font-bold text-orange-800">{formatCurrency(totalSpent)}</p>
+                  <p className="text-2xl font-bold text-orange-700">{formatCurrency(totalSpent)}</p>
                 </div>
-                <div className="p-3 bg-orange-200 rounded-full">
-                  <TrendingUp className="h-6 w-6 text-orange-700" />
+                <div className="p-3 bg-orange-50 rounded-full">
+                  <TrendingUp className="h-6 w-6 text-orange-600" />
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-to-br from-green-50 to-green-100 border-green-200">
+          <Card className="bg-white border-green-200 rounded-2xl shadow-sm hover:shadow-md transition-shadow">
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-green-700 font-medium">进行中</p>
-                  <p className="text-2xl font-bold text-green-800">{activeBudgets.length} 个</p>
+                  <p className="text-2xl font-bold text-green-700">{activeBudgets.length} 个</p>
                 </div>
-                <div className="p-3 bg-green-200 rounded-full">
-                  <PieChart className="h-6 w-6 text-green-700" />
+                <div className="p-3 bg-green-50 rounded-full">
+                  <PieChart className="h-6 w-6 text-green-600" />
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card className={`bg-gradient-to-br ${overBudgetCount > 0 ? 'from-red-50 to-red-100 border-red-200' : 'from-gray-50 to-gray-100 border-gray-200'}`}>
+          <Card className={`bg-white ${overBudgetCount > 0 ? 'border-red-200' : 'border-gray-200'} rounded-2xl shadow-sm hover:shadow-md transition-shadow`}>
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-gray-700 font-medium">超支预算</p>
-                  <p className={`text-2xl font-bold ${overBudgetCount > 0 ? 'text-red-800' : 'text-gray-800'}`}>{overBudgetCount} 个</p>
+                  <p className={`text-2xl font-bold ${overBudgetCount > 0 ? 'text-red-700' : 'text-gray-700'}`}>{overBudgetCount} 个</p>
                 </div>
-                <div className={`p-3 rounded-full ${overBudgetCount > 0 ? 'bg-red-200' : 'bg-gray-200'}`}>
-                  <AlertTriangle className={`h-6 w-6 ${overBudgetCount > 0 ? 'text-red-700' : 'text-gray-700'}`} />
+                <div className={`p-3 rounded-full ${overBudgetCount > 0 ? 'bg-red-50' : 'bg-gray-50'}`}>
+                  <AlertTriangle className={`h-6 w-6 ${overBudgetCount > 0 ? 'text-red-600' : 'text-gray-600'}`} />
                 </div>
               </div>
             </CardContent>
@@ -264,19 +263,18 @@ export default function BudgetsPage() {
           </TabsList>
 
           <TabsContent value={filterStatus} className="mt-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Target className="h-5 w-5" />
+            <Card className="bg-white rounded-2xl shadow-sm">
+              <CardHeader className="border-b pb-6">
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <Target className="h-5 w-5 text-primary" />
                   预算列表
                 </CardTitle>
-                <CardDescription>管理您的各项预算</CardDescription>
               </CardHeader>
-              <CardContent>
-                <div className="grid gap-4 md:grid-cols-2">
+              <CardContent className="pt-6">
+                <div className="grid gap-6 md:grid-cols-2">
                   {filteredBudgets.length === 0 ? (
                     <div className="col-span-2 text-center py-12">
-                      <Target className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                      <Target className="h-12 w-12 mx-auto text-muted-foreground/50 mb-4" />
                       <p className="text-muted-foreground mb-4">暂无预算</p>
                       <Button onClick={() => { resetForm(); setDialogOpen(true); }} variant="outline">
                         <Plus className="h-4 w-4 mr-2" />
@@ -291,7 +289,7 @@ export default function BudgetsPage() {
                       const remaining = budget.amount - budget.spent;
 
                       return (
-                        <Card key={budget.budgetId} className="hover:shadow-md transition-shadow">
+                        <Card key={budget.budgetId} className="bg-white hover:shadow-md transition-all rounded-xl border shadow-sm">
                           <CardContent className="pt-6">
                             <div className="flex items-start justify-between mb-4">
                               <div className="flex-1">
@@ -302,7 +300,7 @@ export default function BudgetsPage() {
                                 </div>
                               </div>
                               <div className="flex gap-1">
-                                <Button variant="ghost" size="icon" onClick={() => openEditDialog(budget)}>
+                                <Button variant="ghost" size="icon" onClick={() => openEditDialog(budget)} className="hover:bg-gray-100">
                                   <Edit className="h-4 w-4" />
                                 </Button>
                                 <Button variant="ghost" size="icon" onClick={() => handleDelete(budget.budgetId)} className="hover:bg-red-50 text-destructive hover:text-destructive">
@@ -311,40 +309,65 @@ export default function BudgetsPage() {
                               </div>
                             </div>
 
+                            {/* Progress Bar Section */}
                             <div className="space-y-3">
                               <div className="flex justify-between items-end">
                                 <div>
                                   <p className="text-sm text-muted-foreground">已花费 / 预算</p>
-                                  <p className="text-lg font-semibold">
-                                    {formatCurrency(budget.spent)} <span className="text-muted-foreground">/</span> {formatCurrency(budget.amount)}
+                                  <p className="text-xl font-bold">
+                                    <span className={actualPercentage > 100 ? 'text-red-600' : actualPercentage >= (budget.alertThreshold ?? 80) ? 'text-orange-600' : 'text-green-600'}>
+                                      {formatCurrency(budget.spent)}
+                                    </span>
+                                    <span className="text-muted-foreground"> / </span>
+                                    <span>{formatCurrency(budget.amount)}</span>
                                   </p>
                                 </div>
                                 <div className="text-right">
                                   <p className="text-sm text-muted-foreground">使用率</p>
-                                  <p className={`text-lg font-semibold ${actualPercentage > 100 ? 'text-red-600' : actualPercentage >= budget.alertThreshold ? 'text-orange-600' : 'text-green-600'}`}>
+                                  <p className={`text-2xl font-bold ${actualPercentage > 100 ? 'text-red-600' : actualPercentage >= (budget.alertThreshold ?? 80) ? 'text-orange-600' : 'text-green-600'}`}>
                                     {actualPercentage.toFixed(1)}%
                                   </p>
                                 </div>
                               </div>
 
-                              <div className="relative">
-                                <Progress
-                                  value={percentage}
-                                  className="h-3"
-                                />
-                                {/* Alert threshold marker */}
-                                <div
-                                  className="absolute top-0 w-0.5 h-3 bg-orange-400"
-                                  style={{ left: `${budget.alertThreshold}%` }}
-                                />
+                              {/* Beautiful Progress Bar */}
+                              <div className="relative h-4 mt-2">
+                                {/* Background track */}
+                                <div className="absolute inset-0 h-4 bg-gray-100 rounded-full overflow-hidden">
+                                  {/* Used portion with gradient */}
+                                  <div
+                                    className={`h-full rounded-full transition-all duration-500 ${
+                                      actualPercentage > 100
+                                        ? 'bg-gradient-to-r from-red-400 to-red-600'
+                                        : actualPercentage >= (budget.alertThreshold ?? 80)
+                                        ? 'bg-gradient-to-r from-orange-400 to-orange-500'
+                                        : actualPercentage >= (budget.alertThreshold ?? 80) * 0.7
+                                        ? 'bg-gradient-to-r from-yellow-400 to-yellow-500'
+                                        : 'bg-gradient-to-r from-green-400 to-green-500'
+                                    }`}
+                                    style={{ width: `${Math.min(percentage, 100)}%` }}
+                                  />
+                                  {/* Striped pattern overlay */}
+                                  <div
+                                    className="absolute inset-0 opacity-20"
+                                    style={{
+                                      backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 4px, rgba(255,255,255,0.3) 4px, rgba(255,255,255,0.3) 8px)',
+                                    }}
+                                  />
+                                </div>
                               </div>
 
-                              <div className="flex justify-between items-center pt-2">
-                                <Badge variant={status.variant} className="flex items-center gap-1">
+                              {/* Status and remaining */}
+                              <div className="flex justify-between items-center pt-1">
+                                <Badge variant={status.variant} className="flex items-center gap-1 rounded-full px-3">
                                   {status.icon}
                                   {status.label}
                                 </Badge>
-                                <span className={`text-sm font-medium ${remaining < 0 ? 'text-red-600' : 'text-green-600'}`}>
+                                <span className={`text-sm font-medium px-3 py-1 rounded-full ${
+                                  remaining < 0
+                                    ? 'bg-red-50 text-red-600'
+                                    : 'bg-green-50 text-green-600'
+                                }`}>
                                   {remaining < 0 ? (
                                     <>超支 {formatCurrency(Math.abs(remaining))}</>
                                   ) : (

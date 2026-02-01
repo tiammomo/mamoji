@@ -6,12 +6,15 @@ import java.util.List;
 
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Import;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.mamoji.MySqlIntegrationTestBase;
+import com.mamoji.config.TestSecurityConfig;
 import com.mamoji.module.auth.entity.SysUser;
 
 /** User Mapper Integration Tests */
+@Import(TestSecurityConfig.class)
 class UserMapperTest extends MySqlIntegrationTestBase {
 
     @Autowired private SysUserMapper userMapper;

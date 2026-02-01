@@ -1,36 +1,33 @@
 'use client';
 
-import React, { useEffect } from 'react';
-import { useRouter, usePathname } from 'next/navigation';
-import { useAuthStore } from '@/hooks/useAuth';
+import React from 'react';
+import { usePathname } from 'next/navigation';
+import { useIsAuthReady, useIsAuthenticated } from '@/hooks/useAuth';
 
 export default function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const router = useRouter();
   const pathname = usePathname();
-  const { isAuthenticated, checkAuth } = useAuthStore();
+  const isReady = useIsAuthReady();
+  const isAuthenticated = useIsAuthenticated();
 
-  useEffect(() => {
-    // Skip auth check for login page
-    if (pathname === '/login') return;
-
-    if (!isAuthenticated) {
-      checkAuth().then(() => {
-        if (!useAuthStore.getState().isAuthenticated) {
-          router.push('/login');
-        }
-      });
-    }
-  }, [isAuthenticated, checkAuth, router, pathname]);
-
-  // Don't render children if not authenticated (will redirect)
+  // 登录页不需要检查认证
   if (pathname === '/login') {
     return <>{children}</>;
   }
 
+  // 等待 auth 恢复
+  if (!isReady) {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
+  // 未认证会由 AuthGuard 重定向
   if (!isAuthenticated) {
     return (
       <div className="flex h-screen items-center justify-center">

@@ -1,0 +1,43 @@
+{
+  "id": "fix-mapper-tests",
+  "title": "Fix All Mapper Tests - Add @Import(TestSecurityConfig)",
+  "description": "Add @Import(TestSecurityConfig.class) to all Mapper test classes that extend MySqlIntegrationTestBase.",
+  "globalConstraints": [
+    "Follow existing code patterns",
+    "KISS principle",
+    "No breaking changes"
+  ],
+  "testing": {
+    "approach": "test-after",
+    "types": ["integration"]
+  },
+  "stories": [
+    {
+      "id": "FIX-MAPPER-001",
+      "title": "Add @Import to all Mapper Tests",
+      "description": "Add @Import(TestSecurityConfig.class) to RefundMapperTest, AccountMapperTest, BudgetMapperTest, CategoryMapperTest",
+      "files": [
+        "api/src/test/java/com/mamoji/module/transaction/mapper/RefundMapperTest.java",
+        "api/src/test/java/com/mamoji/module/account/mapper/AccountMapperTest.java",
+        "api/src/test/java/com/mamoji/module/budget/mapper/BudgetMapperTest.java",
+        "api/src/test/java/com/mamoji/module/category/mapper/CategoryMapperTest.java"
+      ],
+      "contextFiles": [
+        "api/src/test/java/com/mamoji/module/transaction/mapper/TransactionMapperTest.java"
+      ],
+      "acceptanceCriteria": [
+        "All Mapper tests have @Import(TestSecurityConfig.class)",
+        "All Mapper tests pass"
+      ],
+      "testing": {
+        "types": ["integration"],
+        "files": []
+      },
+      "prerequisites": [],
+      "testSteps": [
+        "cd /home/ubuntu/deploy_projects/mamoji/api && mvn test -Dtest=*MapperTest -q"
+      ],
+      "techStack": ["Java", "Spring Boot", "JUnit 5"]
+    }
+  ]
+}

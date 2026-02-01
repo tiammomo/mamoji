@@ -89,4 +89,15 @@ public class ReportController {
                 reportService.getTrendReport(user.userId(), startDate, endDate, period);
         return Result.success(report);
     }
+
+    /** Get daily data by date range (for custom date range mode) */
+    @GetMapping("/daily")
+    public Result<Map<String, Object>> getDailyDataByDateRange(
+            @AuthenticationPrincipal UserPrincipal user,
+            @RequestParam LocalDate startDate,
+            @RequestParam LocalDate endDate) {
+        Map<String, Object> report =
+                reportService.getDailyDataByDateRange(user.userId(), startDate, endDate);
+        return Result.success(report);
+    }
 }

@@ -1,13 +1,13 @@
 # Test Environment Configuration
-# Using Docker MySQL for real database integration testing
+# Uses Docker MySQL for integration testing
 spring:
   config:
     activate:
       on-profile: test
 
-  # DataSource Configuration - Docker MySQL
+  # Docker MySQL Configuration (127.0.0.1 via port forwarding)
   datasource:
-    url: jdbc:mysql://localhost:3306/mamoji_test?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true
+    url: jdbc:mysql://127.0.0.1:3306/mamoji_test?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true
     username: root
     password: rootpassword
     driver-class-name: com.mysql.cj.jdbc.Driver
@@ -20,10 +20,10 @@ spring:
       connection-timeout: 30000
       connection-init-sql: SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci
 
-  # Redis Configuration - Docker Redis
+  # Redis Configuration (127.0.0.1 via port forwarding)
   data:
     redis:
-      host: localhost
+      host: 127.0.0.1
       port: 6379
       database: 0
       timeout: 5000ms
@@ -37,13 +37,13 @@ mybatis-plus:
     db-config:
       id-type: auto
 
-# Redisson Configuration
+# Redisson Configuration (127.0.0.1)
 redisson:
-  address: redis://localhost:6379
+  enabled: true
+  address: redis://127.0.0.1:6379
   timeout: 3000
   connection-pool-size: 10
   connection-minimum-idle-size: 2
-  enabled: false
 
 # JWT Configuration for tests
 jwt:

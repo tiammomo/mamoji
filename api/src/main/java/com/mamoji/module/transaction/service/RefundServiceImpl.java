@@ -18,14 +18,12 @@ import com.mamoji.module.transaction.dto.*;
 import com.mamoji.module.transaction.entity.FinRefund;
 import com.mamoji.module.transaction.entity.FinTransaction;
 import com.mamoji.module.transaction.mapper.FinRefundMapper;
+import com.mamoji.module.transaction.strategy.TransactionStrategyFactory;
+import com.mamoji.module.transaction.strategy.TransactionTypeStrategy;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 
 /** Refund Service Implementation */
 @Slf4j
@@ -37,6 +35,7 @@ public class RefundServiceImpl extends ServiceImpl<FinRefundMapper, FinRefund>
     private final FinRefundMapper refundMapper;
     private final AccountService accountService;
     private final TransactionService transactionService;
+    private final TransactionStrategyFactory strategyFactory;
 
     @Override
     public TransactionRefundResponseVO getTransactionRefunds(Long userId, Long transactionId) {
@@ -44,11 +43,6 @@ public class RefundServiceImpl extends ServiceImpl<FinRefundMapper, FinRefund>
         TransactionVO transaction = transactionService.getTransaction(userId, transactionId);
         if (transaction == null) {
             throw new BusinessException(ResultCode.TRANSACTION_NOT_FOUND);
-        }
-
-        // Only expense transactions can have refunds
-        if (!"expense".equals(transaction.getType())) {
-            throw new BusinessException(ResultCode.VALIDATION_ERROR.getCode(), "只有支出交易可以退款");
         }
 
         // Get refund list - use mapper directly
@@ -98,9 +92,9 @@ public class RefundServiceImpl extends ServiceImpl<FinRefundMapper, FinRefund>
             throw new BusinessException(ResultCode.TRANSACTION_NOT_FOUND);
         }
 
-        // Only expense transactions can have refunds
+        // Only expense transactions can be refunded
         if (!"expense".equals(originalTransaction.getType())) {
-            throw new BusinessException(ResultCode.VALIDATION_ERROR.getCode(), "只有支出交易可以退款");
+            throw new BusinessException(ResultCode.VALIDATION_ERROR.getCode(), "只有支出交易可退款");
         }
 
         // Calculate total refunded amount
@@ -145,14 +139,21 @@ public class RefundServiceImpl extends ServiceImpl<FinRefundMapper, FinRefund>
 
         refundMapper.insert(refund);
 
-        // Update account balance (increase by refund amount)
-        accountService.updateBalance(originalTransaction.getAccountId(), request.getAmount());
+        // Use strategy pattern for balance update
+        // Refund reverses the original transaction's balance effect:
+        // - Refund of expense (original was negative): money comes back (positive)
+        // - Refund of income (original was positive): money goes back (negative)
+        TransactionTypeStrategy strategy =
+                strategyFactory.getStrategy(originalTransaction.getType());
+        BigDecimal balanceChange = strategy.calculateBalanceChange(request.getAmount()).negate();
+        accountService.updateBalance(originalTransaction.getAccountId(), balanceChange);
 
         log.info(
-                "Refund created: userId={}, transactionId={}, amount={}",
+                "Refund created: userId={}, transactionId={}, amount={}, originalType={}",
                 userId,
                 request.getTransactionId(),
-                request.getAmount());
+                request.getAmount(),
+                originalTransaction.getType());
 
         return toVO(refund);
     }
@@ -185,14 +186,20 @@ public class RefundServiceImpl extends ServiceImpl<FinRefundMapper, FinRefund>
         updateRefund.setStatus(0);
         refundMapper.updateById(updateRefund);
 
-        // Update account balance (decrease by refund amount)
-        accountService.updateBalance(refund.getAccountId(), refund.getAmount().negate());
+        // Use strategy pattern for balance reversal
+        // This reverses the balance change made when the refund was created
+        // Refund added money back (+), cancel should remove money (-)
+        TransactionTypeStrategy strategy =
+                strategyFactory.getStrategy(originalTransaction.getType());
+        BigDecimal balanceChange = strategy.calculateBalanceChange(refund.getAmount());
+        accountService.updateBalance(refund.getAccountId(), balanceChange);
 
         log.info(
-                "Refund cancelled: userId={}, refundId={}, amount={}",
+                "Refund cancelled: userId={}, refundId={}, amount={}, originalType={}",
                 userId,
                 refundId,
-                refund.getAmount());
+                refund.getAmount(),
+                originalTransaction.getType());
 
         // Return updated summary
         return getRefundSummary(transactionId);

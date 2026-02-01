@@ -2,7 +2,12 @@ import axios, { AxiosError, InternalAxiosRequestConfig, AxiosResponse } from 'ax
 import { useAuthStore } from '@/hooks/useAuth';
 
 // API Base URL - can be overridden via environment variable
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:48080/api/v1';
+// Ensure trailing /api/v1
+const getApiBaseUrl = () => {
+  const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:48080';
+  return baseUrl.replace(/\/$/, '') + '/api/v1';
+};
+const API_BASE_URL = getApiBaseUrl();
 
 // Create axios instance
 const api = axios.create({
@@ -35,10 +40,21 @@ api.interceptors.response.use(
     return response;
   },
   (error: AxiosError<{ message: string; code: number }>) => {
-    if (error.response?.status === 401) {
-      // Token expired or invalid
-      useAuthStore.getState().logout();
-      window.location.href = '/login';
+    if (error.response?.status === 401 || error.response?.status === 403) {
+      // Token expired, invalid, or blacklisted - clear auth state
+      console.warn('Auth error, clearing token and redirecting to login');
+      useAuthStore.setState({
+        token: null,
+        user: null,
+        isAuthenticated: false,
+        error: null,
+      });
+      // Clear localStorage
+      localStorage.removeItem('mamoji-auth');
+      // Redirect to login if not already there
+      if (typeof window !== 'undefined' && !window.location.pathname.includes('/login')) {
+        window.location.href = '/login';
+      }
     }
     const message = error.response?.data?.message || error.message || 'An error occurred';
     console.error('API Error:', message);

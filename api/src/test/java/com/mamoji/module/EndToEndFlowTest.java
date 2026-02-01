@@ -10,10 +10,12 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.mamoji.config.TestSecurityConfig;
 import com.mamoji.module.account.dto.AccountDTO;
 import com.mamoji.module.account.dto.AccountVO;
 import com.mamoji.module.account.service.AccountService;
@@ -28,12 +30,14 @@ import com.mamoji.module.transaction.service.TransactionService;
 /**
  * 端到端连贯操作测试
  *
+ * <p>测试完整的业务流程：账户 -> 分类 -> 预算 -> 交易
  * <p>测试完整的记账流程，验证各模块之间的数据联动： 1. 添加钱包 -> 2. 添加预算 -> 3. 添加分类 -> 4. 添加收入 -> 5. 添加支出(关联预算) -> 6. 验证汇总
  * -> 7. 删除支出(回滚) -> 8. 删除收入(回滚)
  */
 @SpringBootTest
 @ActiveProfiles("test")
-@Transactional // Each test method runs in a transaction that rolls back at the end
+@Import(TestSecurityConfig.class)
+@Transactional // 每个测试方法在事务中运行，结束后回滚
 public class EndToEndFlowTest {
 
     @Autowired private AccountService accountService;

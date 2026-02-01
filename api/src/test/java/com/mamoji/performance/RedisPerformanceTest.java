@@ -10,17 +10,28 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.test.context.ActiveProfiles;
 
+import com.mamoji.config.TestSecurityConfig;
+
 /**
- * Redis Cache Performance Tests
+ * Redis 性能测试 - 测试 Redis 操作性能
  *
- * <p>Tests for Redis operations performance: - Basic operations (GET/SET) - Hash operations - List
- * operations - Set operations - TTL operations - Concurrent access
+ * <p>测试内容包括：
+ * <ul>
+ *   <li>基本操作 (GET/SET)</li>
+ *   <li>Hash 操作</li>
+ *   <li>列表操作</li>
+ *   <li>集合操作</li>
+ *   <li>TTL 操作</li>
+ *   <li>并发访问</li>
+ * </ul>
  */
 @SpringBootTest
 @ActiveProfiles("test")
+@Import(TestSecurityConfig.class)
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class RedisPerformanceTest {
 

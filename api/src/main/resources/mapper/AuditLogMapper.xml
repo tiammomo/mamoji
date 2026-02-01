@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mamoji.common.decorator.AuditLogMapper">
+    <resultMap id="BaseResultMap" type="com.mamoji.common.decorator.AuditLogEntity">
+        <id property="id" column="id"/>
+        <result property="action" column="action"/>
+        <result property="entityType" column="entity_type"/>
+        <result property="entityId" column="entity_id"/>
+        <result property="userId" column="user_id"/>
+        <result property="method" column="method"/>
+        <result property="parameters" column="parameters"/>
+        <result property="duration" column="duration"/>
+        <result property="success" column="success"/>
+        <result property="errorMessage" column="error_message"/>
+        <result property="createdAt" column="created_at"/>
+    </resultMap>
+    <sql id="Base_Column_List">
+        id, action, entity_type, entity_id, user_id, method, parameters, duration, success, error_message, created_at
+    </sql>
+    <insert id="insert" parameterType="com.mamoji.common.decorator.AuditLogEntity" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO sys_audit_log (action, entity_type, entity_id, user_id, method, parameters, duration, success, error_message, created_at)
+        VALUES (#{action}, #{entityType}, #{entityId}, #{userId}, #{method}, #{parameters}, #{duration}, #{success}, #{errorMessage}, #{createdAt})
+    </insert>
+    <select id="selectByUserId" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/> FROM sys_audit_log WHERE user_id = #{userId} ORDER BY created_at DESC
+    </select>
+    <select id="selectByEntityTypeAndEntityId" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/> FROM sys_audit_log WHERE entity_type = #{entityType} AND entity_id = #{entityId} ORDER BY created_at DESC
+    </select>
+</mapper>

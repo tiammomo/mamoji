@@ -33,7 +33,7 @@ import lombok.RequiredArgsConstructor;
 @EnableWebSecurity
 @EnableMethodSecurity
 @RequiredArgsConstructor
-@Profile("!integration")
+@Profile("!test")
 public class SecurityConfig {
 
     private final JwtTokenProvider jwtTokenProvider;

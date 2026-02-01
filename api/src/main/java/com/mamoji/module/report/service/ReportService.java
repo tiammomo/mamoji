@@ -27,4 +27,8 @@ public interface ReportService {
     /** Get trend report */
     List<TrendVO> getTrendReport(
             Long userId, LocalDate startDate, LocalDate endDate, String period);
+
+    /** Get daily data by date range */
+    Map<String, Object> getDailyDataByDateRange(
+            Long userId, LocalDate startDate, LocalDate endDate);
 }

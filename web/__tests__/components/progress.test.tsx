@@ -12,11 +12,9 @@ describe('Progress Component', () => {
   });
 
   it('displays progress value correctly', () => {
-    render(<Progress value={75} />);
+    const { container } = render(<Progress value={75} />);
     // The progress bar should be rendered
-    expect(container => {
-      const progress = container.querySelector('[role="progressbar"]');
-      return progress;
-    });
+    const progress = container.querySelector('[role="progressbar"]');
+    expect(progress).toBeInTheDocument();
   });
 });
