@@ -1,0 +1,101 @@
+# ===========================================
+# Mamoji Docker Compose Development Override
+# ===========================================
+# Copy this file to docker-compose.override.yml and modify as needed
+#
+# Usage:
+#   docker-compose up -d
+#   或指定配置文件:
+#   docker-compose -f docker-compose.yml -f docker-compose.example.override.yml up -d
+# ===========================================
+
+services:
+  # MySQL Development Configuration
+  mysql:
+    environment:
+      # 建议在生产环境使用强密码
+      MYSQL_ROOT_PASSWORD: ${MYSQL_DEV_PASSWORD:-rootpassword}
+      # 字符集配置
+      MYSQL_CHARSET: utf8mb4
+      MYSQL_COLLATION: utf8mb4_unicode_ci
+    # 开发环境端口映射
+    ports:
+      - "${MYSQL_DEV_PORT:-3306}:3306"
+    # 开发环境卷挂载（可选，用于数据持久化）
+    volumes:
+      # 映射初始化脚本
+      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+      # 持久化数据（取消注释）
+      # - mysql_data:/var/lib/mysql
+
+  # Redis Development Configuration
+  redis:
+    ports:
+      - "${REDIS_DEV_PORT:-6379}:6379"
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis_data:/data
+
+  # Backend API Development Configuration
+  api:
+    environment:
+      # 激活开发模式
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-dev}
+      # 使用 Docker 内部网络连接 MySQL
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/mamoji?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: ${MYSQL_DEV_PASSWORD:-rootpassword}
+      # 使用 Docker 内部网络连接 Redis
+      SPRING_REDIS_HOST: redis
+      SPRING_REDIS_PORT: 6379
+      # JWT 配置（生产环境使用强密码）
+      JWT_SECRET: ${JWT_SECRET:-mamoji-jwt-secret-key-2024-must-be-at-least-256-bits}
+      JWT_EXPIRATION: ${JWT_EXPIRATION:-86400000}
+    ports:
+      - "${API_DEV_PORT:-48080}:8080"
+    # 开发环境挂载配置
+    volumes:
+      # 挂载日志目录
+      - api_logs:/app/logs
+      # 挂载应用配置（取消注释以覆盖容器内配置）
+      # - ./api/src/main/resources/application-dev-local.yml:/app/config/application-dev.yml:ro
+
+  # Frontend Development Configuration
+  web:
+    environment:
+      # API 地址（开发环境使用本地 API）
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:48080}
+    ports:
+      - "${WEB_DEV_PORT:-43000}:3000"
+    # 开发环境卷挂载
+    volumes:
+      # 挂载 Next.js 配置（取消注释以启用热重载）
+      # - ./web/next.config.js:/app/next.config.js:ro
+
+  # Nginx Configuration (Optional)
+  nginx:
+    # 开发环境可禁用 Nginx（直接访问前端）
+    # 先在 docker-compose.yml 中注释掉 nginx 服务
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx.d:/etc/nginx/conf.d:ro
+      - nginx_logs:/var/log/nginx
+
+# 命名卷（取消注释以持久化数据）
+volumes:
+  mysql_data:
+    driver: local
+  redis_data:
+    driver: local
+  api_logs:
+    driver: local
+  nginx_logs:
+    driver: local
+
+# 网络配置（通常不需要修改）
+networks:
+  default:
+    name: mamoji-network
