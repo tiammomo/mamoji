@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useAuthStore } from '@/hooks/useAuth';
 import { useRouter } from 'next/navigation';
+import { LedgerSelector } from '@/components/ledger/ledger-selector';
 
 interface HeaderProps {
   title?: string;
@@ -28,7 +29,11 @@ export function Header({ title }: HeaderProps) {
 
   return (
     <header className="flex h-16 items-center justify-between border-b bg-card px-6">
-      <h2 className="text-lg font-semibold">{title}</h2>
+      <div className="flex items-center gap-4">
+        <h2 className="text-lg font-semibold">{title}</h2>
+        {/* Ledger Selector */}
+        <LedgerSelector />
+      </div>
 
       <div className="flex items-center gap-4">
         {/* Search */}

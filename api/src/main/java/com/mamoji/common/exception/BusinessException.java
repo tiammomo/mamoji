@@ -3,9 +3,6 @@ package com.mamoji.common.exception;
 import com.mamoji.common.result.ResultCode;
 
 import lombok.Getter;
-import lombok.Getter;
-
-import lombok.Getter;
 
 /** Business Exception */
 @Getter
