@@ -1,0 +1,48 @@
+# Development Environment Configuration
+# Copy this file to application-dev-local.yml and modify as needed
+spring:
+  config:
+    activate:
+      on-profile: dev
+
+  # DataSource Configuration - Local MySQL
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/mamoji?useUnicode=true&characterEncoding=UTF-8&zeroDateTimeBehavior=convertToNull&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
+    username: root
+    password: ${MYSQL_DEV_PASSWORD:rootpassword}
+    hikari:
+      minimum-idle: 5
+      maximum-pool-size: 10
+      idle-timeout: 30000
+      pool-name: MamojiHikariCP
+      max-lifetime: 1800000
+      connection-timeout: 30000
+      connection-init-sql: SET NAMES utf8mb4
+
+  # Redis Configuration - Local Redis
+  data:
+    redis:
+      host: ${REDIS_DEV_HOST:localhost}
+      port: ${REDIS_DEV_PORT:6379}
+      database: 0
+      timeout: 5000ms
+
+# MyBatis-Plus Configuration (dev-specific: SQL logging enabled)
+mybatis-plus:
+  configuration:
+    map-underscore-to-camel-case: true
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+
+# Redisson Configuration
+redisson:
+  address: redis://${REDIS_DEV_HOST:localhost}:${REDIS_DEV_PORT:6379}
+  timeout: 3000
+  connection-pool-size: 10
+  connection-minimum-idle-size: 2
+
+# Logging Configuration
+logging:
+  level:
+    com.mamoji: debug
+    com.mamoji.module: debug
