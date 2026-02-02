@@ -12,41 +12,42 @@ import com.mamoji.common.result.ResultCode;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * Abstract CRUD service providing common operations for all entities. Uses Template Method Pattern
- * to reduce boilerplate code.
+ * 抽象 CRUD 服务基类
+ * 使用模板方法模式封装通用的实体操作，减少重复代码
  *
- * @param <M> the mapper type extending BaseMapper
- * @param <E> the entity type
- * @param <VO> the response VO type
+ * @param <M> Mapper 类型，继承自 BaseMapper
+ * @param <E> 实体类型
+ * @param <VO> 响应 VO 类型
  */
 @Slf4j
 public abstract class AbstractCrudService<M extends BaseMapper<E>, E, VO>
         extends ServiceImpl<M, E> {
 
     /**
-     * Convert entity to VO.
+     * 将实体转换为 VO 对象
      *
-     * @param entity the entity to convert
-     * @return the VO
+     * @param entity 实体对象
+     * @return VO 对象
      */
     protected abstract VO toVO(E entity);
 
     /**
-     * Validate that the entity belongs to the specified user.
+     * 验证实体归属权
+     * 确保用户有权操作该实体
      *
-     * @param userId the user ID
-     * @param entity the entity to validate
-     * @throws BusinessException if entity doesn't belong to user or doesn't exist
+     * @param userId 用户ID
+     * @param entity 待验证的实体
+     * @throws BusinessException 实体不属于该用户或不存在
      */
     protected abstract void validateOwnership(Long userId, E entity);
 
     /**
-     * Get entity by ID and validate ownership.
+     * 根据 ID 获取实体并验证归属权
      *
-     * @param userId the user ID
-     * @param id the entity ID
-     * @return the entity
-     * @throws BusinessException if not found or ownership invalid
+     * @param userId 用户ID
+     * @param id 实体ID
+     * @return 实体对象
+     * @throws BusinessException 记录不存在或归属权验证失败
      */
     protected E getByIdWithValidation(Long userId, Long id) {
         E entity = getById(id);
@@ -58,11 +59,11 @@ public abstract class AbstractCrudService<M extends BaseMapper<E>, E, VO>
     }
 
     /**
-     * Get a single record by user ID and ID.
+     * 根据用户 ID 和记录 ID 获取单条记录
      *
-     * @param userId the user ID
-     * @param id the record ID
-     * @return the VO or null if not found
+     * @param userId 用户ID
+     * @param id 记录ID
+     * @return VO 对象，记录不存在时返回 null
      */
     public VO get(Long userId, Long id) {
         E entity = getByIdWithValidation(userId, id);
@@ -70,12 +71,12 @@ public abstract class AbstractCrudService<M extends BaseMapper<E>, E, VO>
     }
 
     /**
-     * Paginate records with pagination.
+     * 分页查询
      *
-     * @param page the page number (1-based)
-     * @param size the page size
-     * @param queryWrapper the query wrapper
-     * @return paginated result
+     * @param page 当前页码，从1开始
+     * @param size 每页大小
+     * @param queryWrapper 查询条件包装器
+     * @return 分页结果
      */
     protected PageResult<VO> paginate(int page, int size, LambdaQueryWrapper<E> queryWrapper) {
         IPage<E> ipage = this.page(new Page<>(page, size), queryWrapper);

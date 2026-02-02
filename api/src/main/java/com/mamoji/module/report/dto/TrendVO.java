@@ -9,40 +9,43 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 
-/** Trend Report VO */
+/**
+ * 趋势报表 VO
+ * 按周期展示收支趋势，用于报表页面的趋势图表展示
+ */
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
 public class TrendVO {
 
-    /** Period identifier (date string based on period type) */
+    /** 周期标识符，根据周期类型生成（如 2024-01、2024-W01、2024-01-15） */
     private String period;
 
-    /** Start date of the period */
+    /** 周期开始日期 */
     private LocalDate startDate;
 
-    /** End date of the period */
+    /** 周期结束日期 */
     private LocalDate endDate;
 
-    /** Total income for the period */
+    /** 该周期内的总收入 */
     private BigDecimal income;
 
-    /** Total expense for the period */
+    /** 该周期内的总支出 */
     private BigDecimal expense;
 
-    /** Net income (income - expense) */
+    /** 该周期的净收入（收入 - 支出） */
     private BigDecimal netIncome;
 
-    /** Transaction count */
+    /** 该周期的交易笔数 */
     private Integer transactionCount;
 
-    /** Income change percentage compared to previous period */
+    /** 收入较上一周期的变化百分比 */
     private Double incomeChangePercent;
 
-    /** Expense change percentage compared to previous period */
+    /** 支出较上一周期的变化百分比 */
     private Double expenseChangePercent;
 
-    /** Net income change percentage compared to previous period */
+    /** 净收入较上一周期的变化百分比 */
     private Double netIncomeChangePercent;
 }

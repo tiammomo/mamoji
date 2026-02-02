@@ -12,21 +12,24 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
-/** Category Request DTO */
+/**
+ * 分类请求 DTO
+ * 用于创建和更新分类的请求参数
+ */
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
 public class CategoryDTO {
 
-    /** Category ID (for update) */
+    /** 分类ID，更新时必传 */
     private Long categoryId;
 
-    /** Category name */
+    /** 分类名称，必填 */
     @NotBlank(message = "分类名称不能为空")
     private String name;
 
-    /** Category type: income, expense */
+    /** 分类类型：income（收入）、expense（支出），必填 */
     @NotNull(message = "分类类型不能为空")
     private String type;
 }

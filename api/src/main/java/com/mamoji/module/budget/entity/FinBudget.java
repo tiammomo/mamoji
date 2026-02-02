@@ -14,7 +14,10 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 
-/** Budget Entity (预算) */
+/**
+ * 预算实体类
+ * 对应数据库表 fin_budget，存储用户预算信息
+ */
 @Data
 @Builder
 @NoArgsConstructor
@@ -24,39 +27,39 @@ public class FinBudget implements Serializable {
 
     @Serial private static final long serialVersionUID = 1L;
 
-    /** Budget ID */
+    /** 预算ID，自增主键 */
     @TableId(type = IdType.AUTO)
     private Long budgetId;
 
-    /** User ID */
+    /** 所属用户ID */
     private Long userId;
 
-    /** Ledger ID (账本ID) */
+    /** 所属账本ID，用于多账本场景下的数据隔离 */
     private Long ledgerId;
 
-    /** Budget name */
+    /** 预算名称 */
     private String name;
 
-    /** Budget amount */
+    /** 预算金额 */
     private BigDecimal amount;
 
-    /** Spent amount (real-time updated) */
+    /** 已花费金额，实时更新 */
     private BigDecimal spent;
 
-    /** Start date */
+    /** 预算开始日期 */
     private LocalDate startDate;
 
-    /** End date */
+    /** 预算结束日期 */
     private LocalDate endDate;
 
-    /** Status: 0=canceled, 1=active, 2=completed, 3=over-budget */
+    /** 状态：0=已取消，1=进行中，2=已完成，3=超预算 */
     private Integer status;
 
-    /** Creation time */
+    /** 创建时间 */
     @TableField(fill = FieldFill.INSERT)
     private LocalDateTime createdAt;
 
-    /** Last update time */
+    /** 最后更新时间 */
     @TableField(fill = FieldFill.INSERT_UPDATE)
     private LocalDateTime updatedAt;
 }

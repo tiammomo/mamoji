@@ -1,40 +1,100 @@
+/**
+ * 项目名称: Mamoji 记账系统
+ * 文件名: LedgerServiceImpl.java
+ * 功能描述: 账本服务实现类，提供账本的 CRUD、成员管理、邀请码等业务逻辑
+ *
+ * 创建日期: 2024-01-01
+ * 作者: tiammomo
+ * 版本: 1.0.0
+ */
 package com.mamoji.module.ledger.service;
 
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.mamoji.module.auth.entity.SysUser;
-import com.mamoji.module.auth.mapper.SysUserMapper;
-import com.mamoji.module.ledger.dto.*;
-import com.mamoji.module.ledger.entity.*;
-import com.mamoji.module.ledger.exception.LedgerErrorCode;
-import com.mamoji.module.ledger.exception.LedgerException;
-import com.mamoji.module.ledger.mapper.*;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import java.time.LocalDateTime;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
+import java.util.Set;
+import java.util.stream.Collectors;
+
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
-import java.util.*;
-import java.util.stream.Collectors;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.mamoji.module.auth.entity.SysUser;
+import com.mamoji.module.auth.mapper.SysUserMapper;
+import com.mamoji.module.ledger.dto.CreateInvitationRequest;
+import com.mamoji.module.ledger.dto.CreateLedgerRequest;
+import com.mamoji.module.ledger.dto.InvitationVO;
+import com.mamoji.module.ledger.dto.LedgerVO;
+import com.mamoji.module.ledger.dto.MemberVO;
+import com.mamoji.module.ledger.entity.FinInvitation;
+import com.mamoji.module.ledger.entity.FinLedger;
+import com.mamoji.module.ledger.entity.FinLedgerMember;
+import com.mamoji.module.ledger.exception.LedgerErrorCode;
+import com.mamoji.module.ledger.exception.LedgerException;
+import com.mamoji.module.ledger.mapper.FinInvitationMapper;
+import com.mamoji.module.ledger.mapper.FinLedgerMapper;
+import com.mamoji.module.ledger.mapper.FinLedgerMemberMapper;
+import com.mamoji.module.ledger.service.LedgerPermissionChecker;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 /**
- * 账本服务实现
+ * 账本服务实现类
+ *
+ * 负责处理多用户共享账本的业务逻辑：
+ * - 账本管理：创建、更新、删除、设置默认
+ * - 成员管理：查看成员、修改角色、移除成员、退出账本
+ * - 邀请管理：创建邀请码、使用邀请码加入、撤销邀请
+ *
+ * 账本角色说明：
+ * - owner: 账本所有者，拥有所有权限
+ * - admin: 管理员，可管理成员和邀请
+ * - editor: 编辑者，可编辑账本数据
+ * - viewer: 查看者，仅能查看数据
+ *
+ * @see LedgerService 账本服务接口
+ * @see LedgerPermissionChecker 权限检查器
  */
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class LedgerServiceImpl implements LedgerService {
 
+    /** 账本 Mapper */
     private final FinLedgerMapper ledgerMapper;
+
+    /** 账本成员 Mapper */
     private final FinLedgerMemberMapper memberMapper;
+
+    /** 邀请记录 Mapper */
     private final FinInvitationMapper invitationMapper;
+
+    /** 用户 Mapper，用于获取用户信息 */
     private final SysUserMapper userMapper;
+
+    /** 权限检查器 */
     private final LedgerPermissionChecker permissionChecker;
 
+    /** 应用域名，用于生成邀请链接 */
     @Value("${app.domain:http://localhost:43000}")
     private String appDomain;
 
+    // ==================== 账本查询方法 ====================
+
+    /**
+     * 获取当前用户的所有账本列表
+     *
+     * 返回用户所属的所有账本信息，
+     * 包括账本名称、角色、成员数量等
+     *
+     * @param userId 当前用户ID
+     * @return 账本列表
+     */
     @Override
     public List<LedgerVO> getLedgers(Long userId) {
         // 获取用户所属的所有账本
@@ -54,7 +114,7 @@ public class LedgerServiceImpl implements LedgerService {
 
         List<FinLedger> ledgers = ledgerMapper.selectBatchIds(ledgerIds);
 
-        // 获取默认账本
+        // 获取默认账本ID
         Long defaultLedgerId = ledgers.stream()
             .filter(l -> Integer.valueOf(1).equals(l.getIsDefault()))
             .map(FinLedger::getLedgerId)
@@ -93,6 +153,14 @@ public class LedgerServiceImpl implements LedgerService {
             .collect(Collectors.toList());
     }
 
+    /**
+     * 获取单个账本详情
+     *
+     * @param ledgerId 账本ID
+     * @param userId   当前用户ID
+     * @return 账本详情
+     * @throws LedgerException 账本不存在或无权限
+     */
     @Override
     public LedgerVO getLedger(Long ledgerId, Long userId) {
         // 校验访问权限
@@ -118,6 +186,19 @@ public class LedgerServiceImpl implements LedgerService {
             .build();
     }
 
+    // ==================== 账本 CRUD 方法 ====================
+
+    /**
+     * 创建新账本
+     *
+     * 创建流程：
+     * 1. 创建账本记录
+     * 2. 创建者自动成为 owner 角色
+     *
+     * @param request 创建请求（账本名称、描述、货币）
+     * @param userId  当前用户ID
+     * @return 创建成功的账本ID
+     */
     @Override
     @Transactional
     public Long createLedger(CreateLedgerRequest request, Long userId) {
@@ -145,10 +226,21 @@ public class LedgerServiceImpl implements LedgerService {
 
         memberMapper.insert(member);
 
-        log.info("User {} created ledger {}", userId, ledger.getLedgerId());
+        log.info("用户 {} 创建账本 {}", userId, ledger.getLedgerId());
         return ledger.getLedgerId();
     }
 
+    /**
+     * 更新账本信息
+     *
+     * 可更新字段：名称、描述
+     * 仅 owner 或 admin 可执行此操作
+     *
+     * @param ledgerId 账本ID
+     * @param request  更新请求
+     * @param userId   当前用户ID
+     * @throws LedgerException 无权限或账本不存在
+     */
     @Override
     @Transactional
     public void updateLedger(Long ledgerId, CreateLedgerRequest request, Long userId) {
@@ -170,6 +262,18 @@ public class LedgerServiceImpl implements LedgerService {
         ledgerMapper.updateById(ledger);
     }
 
+    /**
+     * 删除账本
+     *
+     * 仅 owner 可删除账本。
+     * 删除规则：
+     * - 仅当账本只有 owner 一个成员时可删除
+     * - 使用软删除（状态改为 0）
+     *
+     * @param ledgerId 账本ID
+     * @param userId   当前用户ID
+     * @throws LedgerException 无权限或有其他成员
+     */
     @Override
     @Transactional
     public void deleteLedger(Long ledgerId, Long userId) {
@@ -186,9 +290,18 @@ public class LedgerServiceImpl implements LedgerService {
         ledgerMapper.updateStatus(ledgerId, 0);
         memberMapper.updateStatusByLedgerId(ledgerId);
 
-        log.info("User {} deleted ledger {}", userId, ledgerId);
+        log.info("用户 {} 删除账本 {}", userId, ledgerId);
     }
 
+    /**
+     * 设置默认账本
+     *
+     * 将指定账本设为用户的默认账本
+     *
+     * @param ledgerId 账本ID
+     * @param userId   当前用户ID
+     * @throws LedgerException 无权限
+     */
     @Override
     @Transactional
     public void setDefaultLedger(Long ledgerId, Long userId) {
@@ -219,6 +332,16 @@ public class LedgerServiceImpl implements LedgerService {
         ledgerMapper.setDefault(ledgerId);
     }
 
+    // ==================== 成员管理方法 ====================
+
+    /**
+     * 获取账本成员列表
+     *
+     * @param ledgerId 账本ID
+     * @param userId   当前用户ID
+     * @return 成员列表
+     * @throws LedgerException 无权限
+     */
     @Override
     public List<MemberVO> getMembers(Long ledgerId, Long userId) {
         // 校验访问权限
@@ -253,6 +376,18 @@ public class LedgerServiceImpl implements LedgerService {
             .collect(Collectors.toList());
     }
 
+    /**
+     * 修改成员角色
+     *
+     * 仅 admin 以上权限可执行。
+     * 注意：不能修改 owner 的角色
+     *
+     * @param ledgerId     账本ID
+     * @param targetUserId 目标用户ID
+     * @param newRole      新角色
+     * @param operatorId   操作者ID
+     * @throws LedgerException 无权限或不能修改 owner
+     */
     @Override
     @Transactional
     public void updateMemberRole(Long ledgerId, Long targetUserId, String newRole, Long operatorId) {
@@ -282,10 +417,21 @@ public class LedgerServiceImpl implements LedgerService {
             memberMapper.updateById(member);
         }
 
-        log.info("User {} updated role of user {} in ledger {} to {}",
-            operatorId, targetUserId, ledgerId, newRole);
+        log.info("用户 {} 在账本 {} 中将用户 {} 角色更新为 {}",
+            operatorId, ledgerId, targetUserId, newRole);
     }
 
+    /**
+     * 移除成员
+     *
+     * 仅 admin 以上权限可执行。
+     * 注意：不能移除 owner
+     *
+     * @param ledgerId     账本ID
+     * @param targetUserId 要移除的用户ID
+     * @param operatorId   操作者ID
+     * @throws LedgerException 无权限或不能移除 owner
+     */
     @Override
     @Transactional
     public void removeMember(Long ledgerId, Long targetUserId, Long operatorId) {
@@ -299,9 +445,19 @@ public class LedgerServiceImpl implements LedgerService {
         }
 
         memberMapper.removeMember(ledgerId, targetUserId);
-        log.info("User {} removed user {} from ledger {}", operatorId, targetUserId, ledgerId);
+        log.info("用户 {} 将用户 {} 从账本 {} 中移除", operatorId, targetUserId, ledgerId);
     }
 
+    /**
+     * 退出账本
+     *
+     * 普通成员可主动退出账本。
+     * 注意：owner 不能退出，需要先转移所有权或删除账本
+     *
+     * @param ledgerId 账本ID
+     * @param userId   当前用户ID
+     * @throws LedgerException owner 不能退出
+     */
     @Override
     @Transactional
     public void quitLedger(Long ledgerId, Long userId) {
@@ -312,9 +468,22 @@ public class LedgerServiceImpl implements LedgerService {
         }
 
         memberMapper.removeMember(ledgerId, userId);
-        log.info("User {} quit ledger {}", userId, ledgerId);
+        log.info("用户 {} 退出账本 {}", userId, ledgerId);
     }
 
+    // ==================== 邀请管理方法 ====================
+
+    /**
+     * 创建邀请码
+     *
+     * 生成邀请链接，支持设置角色和使用次数
+     *
+     * @param ledgerId 账本ID
+     * @param request  邀请请求（角色、最大使用次数、过期时间）
+     * @param userId   创建者ID
+     * @return 邀请信息
+     * @throws LedgerException 无邀请权限
+     */
     @Override
     @Transactional
     public InvitationVO createInvitation(Long ledgerId, CreateInvitationRequest request, Long userId) {
@@ -350,6 +519,14 @@ public class LedgerServiceImpl implements LedgerService {
             .build();
     }
 
+    /**
+     * 获取邀请列表
+     *
+     * @param ledgerId 账本ID
+     * @param userId   当前用户ID
+     * @return 邀请列表
+     * @throws LedgerException 无权限
+     */
     @Override
     public List<InvitationVO> getInvitations(Long ledgerId, Long userId) {
         // 校验权限
@@ -372,6 +549,16 @@ public class LedgerServiceImpl implements LedgerService {
             .collect(Collectors.toList());
     }
 
+    /**
+     * 撤销邀请码
+     *
+     * 将邀请码设为无效（软删除）
+     *
+     * @param ledgerId   账本ID
+     * @param inviteCode 邀请码
+     * @param userId     操作者ID
+     * @throws LedgerException 无权限或邀请不存在
+     */
     @Override
     @Transactional
     public void revokeInvitation(Long ledgerId, String inviteCode, Long userId) {
@@ -386,9 +573,19 @@ public class LedgerServiceImpl implements LedgerService {
         }
 
         invitationMapper.disable(invitation.getInviteId());
-        log.info("User {} revoked invitation {} in ledger {}", userId, inviteCode, ledgerId);
+        log.info("用户 {} 撤销账本 {} 中的邀请 {}", userId, ledgerId, inviteCode);
     }
 
+    /**
+     * 使用邀请码加入账本
+     *
+     * 验证邀请码有效性后将用户添加为账本成员
+     *
+     * @param inviteCode 邀请码
+     * @param userId     用户ID
+     * @return 加入的账本ID
+     * @throws LedgerException 邀请不存在/已禁用/已过期/已达上限/已是成员
+     */
     @Override
     @Transactional
     public Long joinByInvitation(String inviteCode, Long userId) {
@@ -438,22 +635,45 @@ public class LedgerServiceImpl implements LedgerService {
         // 更新邀请使用次数
         invitationMapper.incrementUsedCount(invitation.getInviteId());
 
-        log.info("User {} joined ledger {} via invitation", userId, invitation.getLedgerId());
+        log.info("用户 {} 通过邀请加入账本 {}", userId, invitation.getLedgerId());
         return invitation.getLedgerId();
     }
 
+    // ==================== 权限查询方法 ====================
+
+    /**
+     * 检查用户是否有账本访问权限
+     *
+     * @param ledgerId 账本ID
+     * @param userId   用户ID
+     * @return true 表示有权限
+     */
     @Override
     public boolean hasAccess(Long ledgerId, Long userId) {
         return permissionChecker.hasAccess(ledgerId, userId);
     }
 
+    /**
+     * 获取用户在账本中的角色
+     *
+     * @param ledgerId 账本ID
+     * @param userId   用户ID
+     * @return 角色名称
+     */
     @Override
     public String getUserRole(Long ledgerId, Long userId) {
         return permissionChecker.getUserRole(ledgerId, userId);
     }
 
+    // ==================== 私有辅助方法 ====================
+
     /**
      * 生成邀请码
+     *
+     * 生成 8 位随机邀请码，
+     * 排除易混淆的字符（0、O、I、1、L）
+     *
+     * @return 邀请码
      */
     private String generateInviteCode() {
         String chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
@@ -467,6 +687,9 @@ public class LedgerServiceImpl implements LedgerService {
 
     /**
      * 批量获取用户名
+     *
+     * @param userIds 用户ID 集合
+     * @return 用户ID 到用户名的映射
      */
     private Map<Long, String> getUserNames(Set<Long> userIds) {
         if (userIds.isEmpty()) {

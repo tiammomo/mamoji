@@ -9,37 +9,40 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 
-/** Account Response VO */
+/**
+ * 账户响应 VO
+ * 用于展示账户的详细信息
+ */
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
 public class AccountVO {
 
-    /** Account ID */
+    /** 账户ID */
     private Long accountId;
 
-    /** Account name */
+    /** 账户名称 */
     private String name;
 
-    /** Account type */
+    /** 账户类型 */
     private String accountType;
 
-    /** Account sub type */
+    /** 账户子类型 */
     private String accountSubType;
 
-    /** Currency */
+    /** 币种 */
     private String currency;
 
-    /** Balance */
+    /** 当前余额 */
     private BigDecimal balance;
 
-    /** Include in total assets */
+    /** 是否计入净资产：0=不计入，1=计入 */
     private Integer includeInTotal;
 
-    /** Status */
+    /** 状态：0=禁用，1=正常 */
     private Integer status;
 
-    /** Creation time */
+    /** 创建时间 */
     private LocalDateTime createdAt;
 }

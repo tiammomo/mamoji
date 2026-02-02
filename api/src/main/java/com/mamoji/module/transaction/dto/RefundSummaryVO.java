@@ -8,22 +8,25 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 
-/** Refund Summary VO (included in transaction response) */
+/**
+ * 退款汇总 VO
+ * 包含在交易响应中，展示退款统计信息
+ */
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
 public class RefundSummaryVO {
 
-    /** Total refunded amount */
+    /** 已退款总金额 */
     private BigDecimal totalRefunded;
 
-    /** Remaining refundable amount */
+    /** 剩余可退款金额 */
     private BigDecimal remainingRefundable;
 
-    /** Whether there are refund records */
+    /** 是否有退款记录 */
     private Boolean hasRefund;
 
-    /** Number of refund records */
+    /** 退款记录数量 */
     private Integer refundCount;
 }

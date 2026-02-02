@@ -9,29 +9,36 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 
-/** Transaction Refund Response VO (for GET /transactions/{id}/refunds) */
+/**
+ * 交易退款响应 VO
+ * 用于 GET /transactions/{id}/refunds 接口，展示原交易及退款记录
+ */
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
 public class TransactionRefundResponseVO {
 
-    /** Original transaction info */
+    /** 原交易信息 */
     private TransactionBasicVO transaction;
 
-    /** Refund records list */
+    /** 退款记录列表 */
     private List<RefundVO> refunds;
 
-    /** Refund summary */
+    /** 退款汇总信息 */
     private RefundSummaryVO summary;
 
+    /** 原交易基本信息（内部类） */
     @Data
     @Builder
     @NoArgsConstructor
     @AllArgsConstructor
     public static class TransactionBasicVO {
+        /** 交易ID */
         private Long transactionId;
+        /** 交易金额 */
         private BigDecimal amount;
+        /** 交易类型 */
         private String type;
     }
 }

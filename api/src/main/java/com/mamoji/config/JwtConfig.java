@@ -5,22 +5,24 @@ import org.springframework.context.annotation.Configuration;
 
 import lombok.Data;
 
-
-/** JWT Configuration Properties */
+/**
+ * JWT 配置属性类
+ * 用于读取 application.yml 中 JWT 相关的配置项
+ */
 @Data
 @Configuration
 @ConfigurationProperties(prefix = "jwt")
 public class JwtConfig {
 
-    /** JWT Secret Key */
+    /** JWT 签名密钥 */
     private String secret;
 
-    /** JWT Expiration Time (milliseconds) */
+    /** JWT 过期时间（毫秒） */
     private Long expiration;
 
-    /** JWT Header Name */
+    /** JWT 请求头名称 */
     private String header;
 
-    /** JWT Token Prefix */
+    /** JWT Token 前缀 */
     private String prefix;
 }

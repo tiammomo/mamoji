@@ -24,11 +24,11 @@ import com.mamoji.security.JwtAuthenticationFilter;
 import com.mamoji.security.JwtTokenProvider;
 
 import lombok.RequiredArgsConstructor;
-import lombok.RequiredArgsConstructor;
 
-import lombok.RequiredArgsConstructor;
-
-/** Spring Security Configuration - disabled for integration tests */
+/**
+ * Spring Security 配置类
+ * 配置 JWT 认证策略、跨域规则和请求授权规则
+ */
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity
@@ -38,22 +38,48 @@ public class SecurityConfig {
 
     private final JwtTokenProvider jwtTokenProvider;
 
+    /**
+     * 创建密码编码器
+     * 使用 BCrypt 算法加密密码
+     *
+     * @return 密码编码器实例
+     */
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
 
+    /**
+     * 创建认证管理器
+     * 用于处理认证请求
+     *
+     * @param authConfig 认证配置
+     * @return 认证管理器
+     * @throws Exception 认证配置异常
+     */
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration authConfig)
             throws Exception {
         return authConfig.getAuthenticationManager();
     }
 
+    /**
+     * 创建 JWT 认证过滤器
+     * 从请求头中提取并验证 JWT Token
+     *
+     * @return JWT 认证过滤器实例
+     */
     @Bean
     public JwtAuthenticationFilter jwtAuthenticationFilter() {
         return new JwtAuthenticationFilter(jwtTokenProvider);
     }
 
+    /**
+     * 配置跨域资源共享规则
+     * 允许指定来源的前端应用访问 API
+     *
+     * @return CORS 配置源
+     */
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
@@ -70,37 +96,47 @@ public class SecurityConfig {
         return source;
     }
 
+    /**
+     * 配置安全过滤链
+     * 定义认证授权规则和过滤器顺序
+     *
+     * @param http HttpSecurity 配置
+     * @return 安全过滤链
+     * @throws Exception 配置异常
+     */
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-                // Disable CSRF (not needed for stateless JWT authentication)
+                // 禁用 CSRF（JWT 无状态认证不需要）
                 .csrf(AbstractHttpConfigurer::disable)
 
-                // Configure CORS
+                // 配置 CORS
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
 
-                // Configure session management to stateless
+                // 配置会话管理为无状态
                 .sessionManagement(
                         session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 
-                // Configure authorization rules
+                // 配置授权规则
                 .authorizeHttpRequests(
                         auth ->
                                 auth
-                                        // Public endpoints
+                                        // 公开接口：认证相关
                                         .requestMatchers("/api/v1/auth/**")
                                         .permitAll()
+                                        // 公开接口：Swagger 文档
                                         .requestMatchers("/swagger-ui/**")
                                         .permitAll()
                                         .requestMatchers("/v3/api-docs/**")
                                         .permitAll()
+                                        // 公开接口：健康检查
                                         .requestMatchers("/actuator/health")
                                         .permitAll()
-                                        // All other endpoints require authentication
+                                        // 其他接口都需要认证
                                         .anyRequest()
                                         .authenticated())
 
-                // Add JWT filter before UsernamePasswordAuthenticationFilter
+                // 在 UsernamePasswordAuthenticationFilter 之前添加 JWT 过滤器
                 .addFilterBefore(
                         jwtAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class);
 

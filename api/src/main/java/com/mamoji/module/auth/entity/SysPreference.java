@@ -12,7 +12,10 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 
-/** User Preference Entity */
+/**
+ * 用户偏好设置实体类
+ * 对应数据库表 sys_preference，存储用户的个性化配置
+ */
 @Data
 @Builder
 @NoArgsConstructor
@@ -22,30 +25,30 @@ public class SysPreference implements Serializable {
 
     @Serial private static final long serialVersionUID = 1L;
 
-    /** Preference ID */
+    /** 偏好设置ID，自增主键 */
     @TableId(type = IdType.AUTO)
     private Long prefId;
 
-    /** User ID (unique) */
+    /** 所属用户ID，唯一 */
     private Long userId;
 
-    /** Default currency */
+    /** 默认货币，如 CNY、USD 等 */
     private String currency;
 
-    /** Timezone */
+    /** 时区，如 Asia/Shanghai */
     private String timezone;
 
-    /** Date format */
+    /** 日期格式，如 yyyy-MM-dd */
     private String dateFormat;
 
-    /** Month start day */
+    /** 月份起始日期，1-28 之间的整数 */
     private Integer monthStart;
 
-    /** Creation time */
+    /** 创建时间 */
     @TableField(fill = FieldFill.INSERT)
     private LocalDateTime createdAt;
 
-    /** Last update time */
+    /** 最后更新时间 */
     @TableField(fill = FieldFill.INSERT_UPDATE)
     private LocalDateTime updatedAt;
 }

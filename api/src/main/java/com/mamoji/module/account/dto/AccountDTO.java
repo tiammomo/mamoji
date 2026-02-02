@@ -14,33 +14,36 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
-/** Account Request DTO */
+/**
+ * 账户请求 DTO
+ * 用于创建和更新账户的请求参数
+ */
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
 public class AccountDTO {
 
-    /** Account ID (for update) */
+    /** 账户ID，更新时必传 */
     private Long accountId;
 
-    /** Account name */
+    /** 账户名称，必填 */
     @NotBlank(message = "账户名称不能为空")
     private String name;
 
-    /** Account type */
+    /** 账户类型，必填 */
     @NotNull(message = "账户类型不能为空")
     private String accountType;
 
-    /** Account sub type */
+    /** 账户子类型 */
     private String accountSubType;
 
-    /** Currency */
+    /** 币种 */
     private String currency;
 
-    /** Balance */
+    /** 初始余额 */
     private BigDecimal balance;
 
-    /** Include in total assets */
+    /** 是否计入净资产：0=不计入，1=计入 */
     private Integer includeInTotal;
 }

@@ -11,46 +11,49 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-/** Transaction Request DTO */
+/**
+ * 交易请求 DTO
+ * 用于创建和更新交易记录的请求参数
+ */
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
 public class TransactionDTO {
 
-    /** Transaction ID (for update) */
+    /** 交易ID，更新时必传 */
     private Long transactionId;
 
-    /** Account ID */
+    /** 账户ID，必填 */
     @NotNull(message = "账户不能为空")
     private Long accountId;
 
-    /** Category ID (required) */
+    /** 分类ID，必填 */
     @NotNull(message = "分类不能为空")
     private Long categoryId;
 
-    /** Budget ID (optional) */
+    /** 预算ID，可选 */
     private Long budgetId;
 
-    /** Transaction type: income, expense */
+    /** 交易类型：income（收入）、expense（支出），必填 */
     @NotNull(message = "交易类型不能为空")
     private String type;
 
-    /** Amount */
+    /** 交易金额，必填 */
     @NotNull(message = "金额不能为空")
     private BigDecimal amount;
 
-    /** Currency */
+    /** 币种，可选 */
     private String currency;
 
-    /** Occurred time */
+    /** 交易发生时间，必填 */
     @NotNull(message = "发生时间不能为空")
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime occurredAt;
 
-    /** Note */
+    /** 备注说明 */
     private String note;
 
-    /** Refund transaction ID (for refund transactions) */
+    /** 原交易ID（退款交易专用） */
     private Long refundId;
 }

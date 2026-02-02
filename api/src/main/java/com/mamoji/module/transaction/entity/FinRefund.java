@@ -13,7 +13,10 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 
-/** Refund Entity (退款记录) */
+/**
+ * 退款记录实体类
+ * 对应数据库表 fin_refund，存储退款交易信息
+ */
 @Data
 @Builder
 @NoArgsConstructor
@@ -23,42 +26,42 @@ public class FinRefund implements Serializable {
 
     @Serial private static final long serialVersionUID = 1L;
 
-    /** Refund ID */
+    /** 退款记录ID，自增主键 */
     @TableId(type = IdType.AUTO)
     private Long refundId;
 
-    /** User ID */
+    /** 所属用户ID */
     private Long userId;
 
-    /** Original transaction ID */
+    /** 原交易ID，指向被退款的交易记录 */
     private Long transactionId;
 
-    /** Account ID (refund to this account) */
+    /** 退款到的账户ID */
     private Long accountId;
 
-    /** Category ID (usually same as original transaction) */
+    /** 关联的分类ID，通常与原交易分类相同 */
     private Long categoryId;
 
-    /** Refund amount (positive number) */
+    /** 退款金额（正数） */
     private BigDecimal amount;
 
-    /** Currency */
+    /** 币种 */
     private String currency;
 
-    /** Occurred time */
+    /** 退款实际发生时间 */
     private LocalDateTime occurredAt;
 
-    /** Note (format: "退款：xxx") */
+    /** 备注信息，格式：退款：xxx */
     private String note;
 
-    /** Status: 0=cancelled, 1=valid */
+    /** 状态：0=已取消，1=有效 */
     private Integer status;
 
-    /** Creation time */
+    /** 创建时间 */
     @TableField(fill = FieldFill.INSERT)
     private LocalDateTime createdAt;
 
-    /** Last update time */
+    /** 最后更新时间 */
     @TableField(fill = FieldFill.INSERT_UPDATE)
     private LocalDateTime updatedAt;
 }

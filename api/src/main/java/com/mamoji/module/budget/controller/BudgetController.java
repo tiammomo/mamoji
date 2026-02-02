@@ -22,7 +22,10 @@ import lombok.RequiredArgsConstructor;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
-/** Budget Controller */
+/**
+ * 预算控制器
+ * 提供预算管理的 REST API 接口，包括预算的增删改查和进度查询
+ */
 @RestController
 @RequestMapping("/api/v1/budgets")
 @RequiredArgsConstructor
@@ -30,7 +33,12 @@ public class BudgetController {
 
     private final BudgetService budgetService;
 
-    /** Get all budgets for current user */
+    /**
+     * 获取当前用户的所有预算列表
+     * @param user 当前登录用户
+     * @param activeOnly 是否仅返回进行中的预算
+     * @return 预算列表
+     */
     @GetMapping
     public Result<List<BudgetVO>> listBudgets(
             @AuthenticationPrincipal UserPrincipal user,
@@ -44,7 +52,12 @@ public class BudgetController {
         return Result.success(budgets);
     }
 
-    /** Get budget by ID */
+    /**
+     * 获取单个预算详情
+     * @param user 当前登录用户
+     * @param id 预算ID
+     * @return 预算详情
+     */
     @GetMapping("/{id}")
     public Result<BudgetVO> getBudget(
             @AuthenticationPrincipal UserPrincipal user, @PathVariable Long id) {
@@ -52,7 +65,12 @@ public class BudgetController {
         return Result.success(budget);
     }
 
-    /** Get budget progress details */
+    /**
+     * 获取预算进度详情
+     * @param user 当前登录用户
+     * @param id 预算ID
+     * @return 预算进度信息
+     */
     @GetMapping("/{id}/progress")
     public Result<BudgetProgressVO> getBudgetProgress(
             @AuthenticationPrincipal UserPrincipal user, @PathVariable Long id) {

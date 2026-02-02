@@ -8,28 +8,31 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 
-/** Category Response VO */
+/**
+ * 分类响应 VO
+ * 用于展示分类的详细信息
+ */
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
 public class CategoryVO {
 
-    /** Category ID */
+    /** 分类ID */
     private Long categoryId;
 
-    /** User ID */
+    /** 用户ID */
     private Long userId;
 
-    /** Category name */
+    /** 分类名称 */
     private String name;
 
-    /** Category type: income, expense */
+    /** 分类类型：income（收入）、expense（支出） */
     private String type;
 
-    /** Status */
+    /** 状态：0=禁用，1=正常 */
     private Integer status;
 
-    /** Creation time */
+    /** 创建时间 */
     private LocalDateTime createdAt;
 }

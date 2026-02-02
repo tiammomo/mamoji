@@ -10,52 +10,55 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 
-/** Budget Progress Response VO */
+/**
+ * 预算进度响应 VO
+ * 用于展示预算的详细进度信息，包括分析和预测数据
+ */
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
 public class BudgetProgressVO {
 
-    /** Budget ID */
+    /** 预算ID */
     private Long budgetId;
 
-    /** Budget name */
+    /** 预算名称 */
     private String name;
 
-    /** Total budget amount */
+    /** 预算总金额 */
     private BigDecimal amount;
 
-    /** Spent amount */
+    /** 已花费金额 */
     private BigDecimal spent;
 
-    /** Remaining amount */
+    /** 剩余金额 */
     private BigDecimal remaining;
 
-    /** Progress percentage (0-100) */
+    /** 进度百分比（0-100） */
     private Double progress;
 
-    /** Status: 0=canceled, 1=active, 2=completed, 3=over-budget */
+    /** 状态：0=已取消，1=进行中，2=已完成，3=超预算 */
     private Integer status;
 
-    /** Status text */
+    /** 状态文本 */
     private String statusText;
 
-    /** Start date */
+    /** 开始日期 */
     private LocalDate startDate;
 
-    /** End date */
+    /** 结束日期 */
     private LocalDate endDate;
 
-    /** Days remaining */
+    /** 剩余天数 */
     private Integer daysRemaining;
 
-    /** Average daily spend */
+    /** 日均支出 */
     private BigDecimal averageDailySpend;
 
-    /** Projected end balance */
+    /** 预计结束余额（预测值） */
     private BigDecimal projectedBalance;
 
-    /** Creation time */
+    /** 创建时间 */
     private LocalDateTime createdAt;
 }

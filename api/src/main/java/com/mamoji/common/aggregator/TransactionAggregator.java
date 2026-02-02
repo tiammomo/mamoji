@@ -14,21 +14,21 @@ import com.mamoji.module.report.dto.CategoryReportVO;
 import com.mamoji.module.transaction.entity.FinTransaction;
 
 /**
- * Transaction aggregation utilities for report generation. Extracts common aggregation patterns
- * from ReportServiceImpl.
+ * 交易聚合工具类
+ * 用于报表生成时的数据聚合，提取 ReportServiceImpl 中的通用聚合逻辑
  */
 public final class TransactionAggregator {
 
-    private TransactionAggregator() {
-        // Utility class, no instantiation
-    }
+    /** 私有构造方法，防止实例化 */
+    private TransactionAggregator() {}
 
     /**
-     * Aggregate transactions by category with income/expense totals.
+     * 按分类聚合交易数据
+     * 计算每个分类的收入合计、支出合计和交易笔数
      *
-     * @param transactions the transactions to aggregate
-     * @param categoryMapper the category mapper for category names
-     * @return list of category reports
+     * @param transactions 待聚合的交易列表
+     * @param categoryMapper 分类 Mapper，用于获取分类名称
+     * @return 分类报表 VO 列表
      */
     public static List<CategoryReportVO> aggregateByCategory(
             List<FinTransaction> transactions, FinCategoryMapper categoryMapper) {
@@ -74,7 +74,7 @@ public final class TransactionAggregator {
             }
         }
 
-        // Calculate percentage
+        // 计算占比
         for (CategoryReportVO vo : categoryMap.values()) {
             BigDecimal total = "INCOME".equalsIgnoreCase(vo.getType()) ? totalIncome : totalExpense;
             vo.setPercentage(calculatePercentage(vo.getAmount(), total));
@@ -84,12 +84,13 @@ public final class TransactionAggregator {
     }
 
     /**
-     * Aggregate transactions by day for a month.
+     * 按天聚合交易数据
+     * 生成指定时间范围内每天的收支汇总
      *
-     * @param transactions the transactions to aggregate
-     * @param startDate the start date of the period
-     * @param endDate the end date of the period
-     * @return map containing dailyData list and totals
+     * @param transactions 待聚合的交易列表
+     * @param startDate 开始日期
+     * @param endDate 结束日期
+     * @return 包含每日数据列表和汇总信息的 Map
      */
     public static Map<String, Object> aggregateByDay(
             List<FinTransaction> transactions, LocalDate startDate, LocalDate endDate) {
@@ -113,7 +114,7 @@ public final class TransactionAggregator {
             }
         }
 
-        // Build daily data list
+        // 构建每日数据列表
         List<Map<String, Object>> dailyData = new ArrayList<>();
         Map<String, BigDecimal> emptyDayData = createDefaultDayData();
 
@@ -133,13 +134,14 @@ public final class TransactionAggregator {
     }
 
     /**
-     * Aggregate transactions by period (daily, weekly, monthly).
+     * 按周期聚合交易数据
+     * 支持按日、周、月进行聚合
      *
-     * @param transactions the transactions to aggregate
-     * @param startDate the start date
-     * @param endDate the end date
-     * @param period the period type (daily, weekly, monthly)
-     * @return map with period-keyed transaction lists
+     * @param transactions 待聚合的交易列表
+     * @param startDate 开始日期
+     * @param endDate 结束日期
+     * @param period 周期类型，支持 daily、weekly、monthly
+     * @return 以周期为键的分组 Map
      */
     public static Map<String, List<FinTransaction>> aggregateByPeriod(
             List<FinTransaction> transactions,
@@ -158,7 +160,7 @@ public final class TransactionAggregator {
                         case "monthly" -> tx.getOccurredAt().getYear()
                                 + "-"
                                 + String.format("%02d", tx.getOccurredAt().getMonthValue());
-                        default -> tx.getOccurredAt().toLocalDate().toString(); // daily
+                        default -> tx.getOccurredAt().toLocalDate().toString();
                     };
 
             periodMap.computeIfAbsent(periodKey, k -> new ArrayList<>()).add(tx);
@@ -168,11 +170,11 @@ public final class TransactionAggregator {
     }
 
     /**
-     * Calculate the percentage of amount relative to total.
+     * 计算金额占总金额的百分比
      *
-     * @param amount the amount
-     * @param total the total
-     * @return percentage as Double
+     * @param amount 金额
+     * @param total 总金额
+     * @return 百分比数值
      */
     public static Double calculatePercentage(BigDecimal amount, BigDecimal total) {
         if (total.compareTo(BigDecimal.ZERO) <= 0) {
@@ -183,7 +185,7 @@ public final class TransactionAggregator {
                 .doubleValue();
     }
 
-    /** Create default day data map with zero values. */
+    /** 创建默认的每日数据 Map，收入和支出都为 0 */
     private static Map<String, BigDecimal> createDefaultDayData() {
         Map<String, BigDecimal> dayData = new HashMap<>();
         dayData.put("income", BigDecimal.ZERO);
@@ -191,7 +193,7 @@ public final class TransactionAggregator {
         return dayData;
     }
 
-    /** Create a day item for the daily data list. */
+    /** 创建单日数据项 */
     private static Map<String, Object> createDayItem(int day, Map<String, BigDecimal> dayData) {
         Map<String, Object> dayItem = new HashMap<>();
         dayItem.put("day", day);
@@ -200,16 +202,16 @@ public final class TransactionAggregator {
         return dayItem;
     }
 
-    /** Get week of year from LocalDateTime. */
+    /** 从日期时间获取年内周数 */
     private static int getWeekOfYear(java.time.LocalDateTime dateTime) {
         return dateTime.getDayOfYear() / 7 + 1;
     }
 
     /**
-     * Calculate totals from transactions.
+     * 计算交易列表的汇总数据
      *
-     * @param transactions the transactions
-     * @return map with income, expense, and netIncome
+     * @param transactions 交易列表
+     * @return 包含收入、支出、净收入的 Map
      */
     public static Map<String, BigDecimal> calculateTotals(List<FinTransaction> transactions) {
         BigDecimal totalIncome = BigDecimal.ZERO;

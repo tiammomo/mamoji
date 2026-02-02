@@ -11,8 +11,10 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-
-/** User Entity */
+/**
+ * 用户实体类
+ * 对应数据库表 sys_user，存储用户账户信息
+ */
 @Data
 @Builder
 @NoArgsConstructor
@@ -22,33 +24,33 @@ public class SysUser implements Serializable {
 
     @Serial private static final long serialVersionUID = 1L;
 
-    /** User ID */
+    /** 用户ID，自增主键 */
     @TableId(type = IdType.AUTO)
     private Long userId;
 
-    /** Username (unique) */
+    /** 用户名，唯一 */
     private String username;
 
-    /** Password (BCrypt encrypted) */
+    /** 密码，BCrypt 加密存储 */
     private String password;
 
-    /** Phone number */
+    /** 手机号 */
     private String phone;
 
-    /** Email */
+    /** 邮箱 */
     private String email;
 
-    /** Role: super_admin, admin, normal */
+    /** 角色：super_admin（超级管理员）、admin（管理员）、normal（普通用户） */
     private String role;
 
-    /** Status: 0=disabled, 1=normal */
+    /** 状态：0=禁用，1=正常 */
     private Integer status;
 
-    /** Creation time */
+    /** 创建时间 */
     @TableField(fill = FieldFill.INSERT)
     private LocalDateTime createdAt;
 
-    /** Last update time */
+    /** 最后更新时间 */
     @TableField(fill = FieldFill.INSERT_UPDATE)
     private LocalDateTime updatedAt;
 }

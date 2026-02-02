@@ -8,31 +8,34 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 
-/** Transaction Query Request DTO */
+/**
+ * 交易查询请求 DTO
+ * 用于分页查询交易记录的筛选条件
+ */
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
 public class TransactionQueryDTO {
 
-    /** Transaction type: income, expense */
+    /** 交易类型过滤：income（收入）、expense（支出） */
     private String type;
 
-    /** Account ID filter */
+    /** 账户ID过滤 */
     private Long accountId;
 
-    /** Category ID filter */
+    /** 分类ID过滤 */
     private Long categoryId;
 
-    /** Start date */
+    /** 查询开始日期 */
     private LocalDate startDate;
 
-    /** End date */
+    /** 查询结束日期 */
     private LocalDate endDate;
 
-    /** Current page */
+    /** 当前页码，从1开始 */
     private Long current;
 
-    /** Page size */
+    /** 每页显示数量 */
     private Long size;
 }

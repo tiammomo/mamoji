@@ -8,28 +8,31 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 
-/** Category Report VO */
+/**
+ * 分类报表 VO
+ * 按分类展示收支情况，用于报表页面的分类统计展示
+ */
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
 public class CategoryReportVO {
 
-    /** Category ID */
+    /** 分类ID */
     private Long categoryId;
 
-    /** Category name */
+    /** 分类名称 */
     private String categoryName;
 
-    /** Category type: income, expense */
+    /** 分类类型：income（收入）、expense（支出） */
     private String type;
 
-    /** Total amount */
+    /** 该分类的总金额 */
     private BigDecimal amount;
 
-    /** Percentage of total */
+    /** 占同类型总金额的百分比 */
     private Double percentage;
 
-    /** Transaction count */
+    /** 交易笔数 */
     private Integer count;
 }

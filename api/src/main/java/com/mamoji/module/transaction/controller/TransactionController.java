@@ -32,15 +32,11 @@ import lombok.RequiredArgsConstructor;
 
 /**
  * 交易记录控制器
- * <p>
  * 提供交易记录的完整 REST API 接口，包括：
- * <ul>
- *   <li>交易记录的增删改查</li>
- *   <li>交易分页查询和最近交易</li>
- *   <li>退款管理和退款记录查询</li>
- *   <li>交易数据导入导出</li>
- * </ul>
- * </p>
+ * - 交易记录的增删改查
+ * - 交易分页查询和最近交易
+ * - 退款管理和退款记录查询
+ * - 交易数据导入导出
  */
 @RestController
 @RequestMapping("/api/v1/transactions")

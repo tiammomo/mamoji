@@ -23,10 +23,8 @@ import lombok.NoArgsConstructor;
 
 /**
  * 交易记录实体类
- * <p>
- * 用于存储用户的每一笔收支交易，包括收入、支出和退款三种类型。
- * 支持关联账户、分类、预算等信息，便于后续统计分析。
- * </p>
+ * 用于存储用户的每一笔收支交易，包括收入、支出和退款三种类型
+ * 支持关联账户、分类、预算等信息，便于后续统计分析
  */
 @Data
 @Builder
@@ -37,41 +35,31 @@ public class FinTransaction implements Serializable {
 
     @Serial private static final long serialVersionUID = 1L;
 
-    // ==================== 主键字段 ====================
-
-    /** 交易记录唯一标识符，自增主键 */
+    /** 交易记录ID，自增主键 */
     @TableId(type = IdType.AUTO)
     private Long transactionId;
 
-    // ==================== 关联字段 ====================
-
-    /** 创建该交易记录的用户 ID */
+    /** 创建该交易记录的用户ID */
     private Long userId;
 
-    /** 所属账本 ID，用于多账本场景下的数据隔离 */
+    /** 所属账本ID，用于多账本场景下的数据隔离 */
     private Long ledgerId;
 
-    /** 关联的账户 ID，指示交易发生在哪个账户 */
+    /** 关联的账户ID，指示交易发生在哪个账户 */
     private Long accountId;
 
-    /** 关联的分类 ID，用于标识交易的收支类别 */
+    /** 关联的分类ID，用于标识交易的收支类别 */
     private Long categoryId;
 
-    /** 关联的预算 ID（可选），用于预算跟踪 */
+    /** 关联的预算ID（可选），用于预算跟踪 */
     private Long budgetId;
 
-    /** 关联的原交易 ID（退款交易专用），指向被退款的那笔支出 */
+    /** 关联的原交易ID（退款交易专用），指向被退款的那笔支出 */
     private Long refundId;
-
-    // ==================== 业务字段 ====================
 
     /**
      * 交易类型
-     * <ul>
-     *   <li>income: 收入</li>
-     *   <li>expense: 支出</li>
-     *   <li>refund: 退款</li>
-     * </ul>
+     * income：收入，expense：支出，refund：退款
      */
     private String type;
 
@@ -84,27 +72,20 @@ public class FinTransaction implements Serializable {
     /** 交易实际发生的时间，非记录创建时间 */
     private LocalDateTime occurredAt;
 
-    /** 交易备注/说明，用户可自定义的简短描述 */
+    /** 交易备注或说明，用户可自定义的简短描述 */
     private String note;
-
-    // ==================== 状态字段 ====================
 
     /**
      * 交易记录状态
-     * <ul>
-     *   <li>0: 已删除（软删除）</li>
-     *   <li>1: 正常</li>
-     * </ul>
+     * 0：已删除（软删除），1：正常
      */
     private Integer status;
 
-    // ==================== 审计字段 ====================
-
-    /** 记录创建时间，由 MyBatis-Plus 自动填充 */
+    /** 创建时间 */
     @TableField(fill = FieldFill.INSERT)
     private LocalDateTime createdAt;
 
-    /** 最后更新时间，由 MyBatis-Plus 自动填充 */
+    /** 最后更新时间 */
     @TableField(fill = FieldFill.INSERT_UPDATE)
     private LocalDateTime updatedAt;
 }

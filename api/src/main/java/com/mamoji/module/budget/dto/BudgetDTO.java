@@ -15,29 +15,32 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
-/** Budget Request DTO */
+/**
+ * 预算请求 DTO
+ * 用于创建和更新预算的请求参数
+ */
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
 public class BudgetDTO {
 
-    /** Budget ID (for update) */
+    /** 预算ID，更新时必传 */
     private Long budgetId;
 
-    /** Budget name */
+    /** 预算名称，必填 */
     @NotBlank(message = "预算名称不能为空")
     private String name;
 
-    /** Budget amount */
+    /** 预算金额，必填 */
     @NotNull(message = "预算金额不能为空")
     private BigDecimal amount;
 
-    /** Start date */
+    /** 预算开始日期，必填 */
     @NotNull(message = "开始日期不能为空")
     private LocalDate startDate;
 
-    /** End date */
+    /** 预算结束日期，必填 */
     @NotNull(message = "结束日期不能为空")
     private LocalDate endDate;
 }

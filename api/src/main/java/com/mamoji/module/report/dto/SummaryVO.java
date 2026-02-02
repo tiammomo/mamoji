@@ -8,25 +8,28 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 
-/** Summary Report VO */
+/**
+ * 收支汇总报表 VO
+ * 用于展示指定时间范围内的收支汇总数据
+ */
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
 public class SummaryVO {
 
-    /** Total income */
+    /** 总收入金额 */
     private BigDecimal totalIncome;
 
-    /** Total expense */
+    /** 总支出金额 */
     private BigDecimal totalExpense;
 
-    /** Net income (income - expense) */
+    /** 净收入（收入 - 支出） */
     private BigDecimal netIncome;
 
-    /** Transaction count */
+    /** 交易笔数 */
     private Integer transactionCount;
 
-    /** Account count */
+    /** 账户数量 */
     private Integer accountCount;
 }

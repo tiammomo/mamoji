@@ -8,19 +8,22 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 
-/** Report Query Request DTO */
+/**
+ * 报表查询请求 DTO
+ * 用于查询报表数据的请求参数
+ */
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
 public class ReportQueryDTO {
 
-    /** Start date */
+    /** 查询开始日期 */
     private LocalDate startDate;
 
-    /** End date */
+    /** 查询结束日期 */
     private LocalDate endDate;
 
-    /** Group by: day, week, month */
+    /** 分组方式：day（按天）、week（按周）、month（按月） */
     private String groupBy;
 }

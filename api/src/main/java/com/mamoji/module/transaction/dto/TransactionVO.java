@@ -9,52 +9,55 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 
-/** Transaction Response VO */
+/**
+ * 交易响应 VO
+ * 用于展示交易记录的详细信息
+ */
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
 public class TransactionVO {
 
-    /** Transaction ID */
+    /** 交易ID */
     private Long transactionId;
 
-    /** User ID */
+    /** 用户ID */
     private Long userId;
 
-    /** Account ID */
+    /** 账户ID */
     private Long accountId;
 
-    /** Account name */
+    /** 账户名称 */
     private String accountName;
 
-    /** Category ID */
+    /** 分类ID */
     private Long categoryId;
 
-    /** Category name */
+    /** 分类名称 */
     private String categoryName;
 
-    /** Budget ID */
+    /** 预算ID */
     private Long budgetId;
 
-    /** Transaction type */
+    /** 交易类型 */
     private String type;
 
-    /** Amount */
+    /** 交易金额 */
     private BigDecimal amount;
 
-    /** Currency */
+    /** 币种 */
     private String currency;
 
-    /** Occurred time */
+    /** 交易发生时间 */
     private LocalDateTime occurredAt;
 
-    /** Note */
+    /** 备注 */
     private String note;
 
-    /** Status */
+    /** 状态 */
     private Integer status;
 
-    /** Creation time */
+    /** 创建时间 */
     private LocalDateTime createdAt;
 }

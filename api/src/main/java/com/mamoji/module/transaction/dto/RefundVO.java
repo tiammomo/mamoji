@@ -9,31 +9,34 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 
-/** Refund Response VO */
+/**
+ * 退款响应 VO
+ * 用于展示退款记录的详细信息
+ */
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
 public class RefundVO {
 
-    /** Refund ID */
+    /** 退款ID */
     private Long refundId;
 
-    /** Original transaction ID */
+    /** 原交易ID */
     private Long transactionId;
 
-    /** Refund amount */
+    /** 退款金额 */
     private BigDecimal amount;
 
-    /** Note */
+    /** 备注 */
     private String note;
 
-    /** Occurred time */
+    /** 退款发生时间 */
     private LocalDateTime occurredAt;
 
-    /** Status: 0=cancelled, 1=valid */
+    /** 状态：0=已取消，1=有效 */
     private Integer status;
 
-    /** Creation time */
+    /** 创建时间 */
     private LocalDateTime createdAt;
 }

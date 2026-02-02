@@ -14,25 +14,28 @@ import jakarta.validation.constraints.NotNull;
 
 import jakarta.validation.constraints.NotNull;
 
-/** Refund Request DTO */
+/**
+ * 退款请求 DTO
+ * 用于创建退款记录的请求参数
+ */
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
 public class RefundDTO {
 
-    /** Original transaction ID (set from URL path variable, not required in body) */
+    /** 原交易ID（从URL路径参数获取，请求体中不强制要求） */
     private Long transactionId;
 
-    /** Refund amount */
+    /** 退款金额，必填 */
     @NotNull(message = "退款金额不能为空")
     private BigDecimal amount;
 
-    /** Occurred time */
+    /** 退款发生时间，必填 */
     @NotNull(message = "发生时间不能为空")
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime occurredAt;
 
-    /** Note */
+    /** 备注说明 */
     private String note;
 }
