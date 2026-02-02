@@ -18,7 +18,11 @@ import com.fasterxml.jackson.annotation.PropertyAccessor;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.jsontype.impl.LaissezFaireSubTypeValidator;
 
-/** Redis Configuration - active when Redis is available and not in test profile */
+/**
+ * Redis 配置类
+ * 配置 Redis 模板和 Redisson 客户端，用于缓存和分布式锁
+ * 仅在 Redis 可用且非 test 环境时生效
+ */
 @Configuration
 @Profile("!test")
 public class RedisConfig {
@@ -38,13 +42,17 @@ public class RedisConfig {
     @Value("${redisson.address:}")
     private String redissonAddress;
 
-    /** Configure RedisTemplate with JSON serialization */
+    /**
+     * 配置 RedisTemplate 使用 JSON 序列化
+     * @param factory Redis 连接工厂
+     * @return 配置好的 RedisTemplate
+     */
     @Bean
     public RedisTemplate<String, Object> redisTemplate(RedisConnectionFactory factory) {
         RedisTemplate<String, Object> template = new RedisTemplate<>();
         template.setConnectionFactory(factory);
 
-        // Use Jackson2JsonRedisSerializer for value serialization
+        // 使用 Jackson2JsonRedisSerializer 进行值的序列化
         Jackson2JsonRedisSerializer<Object> jsonSerializer =
                 new Jackson2JsonRedisSerializer<>(Object.class);
         ObjectMapper objectMapper = new ObjectMapper();
@@ -53,7 +61,7 @@ public class RedisConfig {
                 LaissezFaireSubTypeValidator.instance, ObjectMapper.DefaultTyping.NON_FINAL);
         jsonSerializer.setObjectMapper(objectMapper);
 
-        // Use StringRedisSerializer for key serialization
+        // 使用 StringRedisSerializer 进行键的序列化
         StringRedisSerializer stringSerializer = new StringRedisSerializer();
 
         template.setKeySerializer(stringSerializer);
@@ -65,7 +73,10 @@ public class RedisConfig {
         return template;
     }
 
-    /** Configure Redisson Client for distributed locks and advanced features */
+    /**
+     * 配置 Redisson 客户端，用于分布式锁和高级特性
+     * @return Redisson 客户端实例
+     */
     @Bean(destroyMethod = "shutdown")
     public RedissonClient redissonClient() {
         Config config = new Config();

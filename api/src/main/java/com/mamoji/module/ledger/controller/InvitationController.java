@@ -7,7 +7,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
 /**
- * 邀请相关控制器
+ * 邀请控制器
+ * 提供通过邀请码加入账本的相关接口
  */
 @RestController
 @RequestMapping("/api/v1/invitations")
@@ -19,6 +20,9 @@ public class InvitationController {
 
     /**
      * 使用邀请码加入账本
+     * @param bearerToken 授权令牌
+     * @param code 邀请码
+     * @return 加入成功的账本ID
      */
     @PostMapping("/{code}/join")
     public Result<Long> joinByInvitation(

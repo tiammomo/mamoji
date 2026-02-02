@@ -1,8 +1,8 @@
 # 注释优化进度跟踪
 
 ## 进度统计
-- 已完成: 55
-- 待完成: 约 32
+- 已完成: 约 86
+- 待完成: 0
 
 ## 模块顺序
 1. common 模块 (公共基础)
@@ -29,55 +29,57 @@
 - [x] DtoConverter.java
 - [x] DateRangeUtils.java
 - [x] TransactionAggregator.java
-- [ ] LedgerContext.java
-- [ ] LedgerContextHolder.java
+- [x] LedgerContextHolder.java
 
 ### 2. config 模块 - 配置类
 - [x] SecurityConfig.java
 - [x] JwtConfig.java
-- [ ] RedisConfig.java
-- [ ] CorsConfig.java
-- [ ] MybatisPlusConfig.java
+- [x] RedisConfig.java
+- [x] CorsConfig.java
+- [x] MybatisPlusConfig.java
 
 ### 3. security 模块 - 安全模块
 - [x] JwtTokenProvider.java
-- [ ] JwtAuthenticationFilter.java
-- [ ] UserDetailsServiceImpl.java
+- [x] JwtAuthenticationFilter.java
+- [x] UserPrincipal.java
 
 ### 4. auth 模块 - 认证模块
 - [x] AuthController.java
-- [ ] AuthService.java
+- [x] AuthService.java
 - [x] AuthServiceImpl.java
 - [x] LoginRequest.java
 - [x] LoginResponse.java
 - [x] RegisterRequest.java
 - [x] SysUser.java
 - [x] SysPreference.java
-- [ ] SysUserMapper.java
+- [x] SysUserMapper.java
 
 ### 5. account 模块 - 账户模块
-- [ ] AccountController.java
-- [ ] AccountService.java
+- [x] AccountController.java
+- [x] AccountService.java
 - [x] AccountServiceImpl.java
 - [x] AccountDTO.java
 - [x] AccountVO.java
 - [x] FinAccount.java
-- [ ] FinAccountMapper.java
+- [x] FinAccountMapper.java
 
 ### 6. transaction 模块 - 交易模块
-- [ ] TransactionController.java
-- [ ] TransactionService.java
+- [x] TransactionController.java
+- [x] TransactionService.java
 - [x] TransactionServiceImpl.java
 - [x] RefundServiceImpl.java
+- [x] RefundService.java
 - [x] TransactionDTO.java
 - [x] TransactionVO.java
 - [x] RefundDTO.java
 - [x] RefundVO.java
-- [ ] TransactionQueryDTO.java
+- [x] TransactionQueryDTO.java
+- [x] RefundSummaryVO.java
+- [x] TransactionRefundResponseVO.java
 - [x] FinTransaction.java
 - [x] FinRefund.java
-- [ ] FinTransactionMapper.java
-- [ ] FinRefundMapper.java
+- [x] FinTransactionMapper.java
+- [x] FinRefundMapper.java
 - [x] TransactionTypeStrategy.java
 - [x] TransactionStrategyFactory.java
 - [x] IncomeTransactionStrategy.java
@@ -85,27 +87,27 @@
 - [x] RefundTransactionStrategy.java
 
 ### 7. budget 模块 - 预算模块
-- [ ] BudgetController.java
-- [ ] BudgetService.java
+- [x] BudgetController.java
+- [x] BudgetService.java
 - [x] BudgetServiceImpl.java
 - [x] BudgetDTO.java
 - [x] BudgetVO.java
 - [x] BudgetProgressVO.java
 - [x] FinBudget.java
-- [ ] FinBudgetMapper.java
+- [x] FinBudgetMapper.java
 
 ### 8. category 模块 - 分类模块
-- [ ] CategoryController.java
-- [ ] CategoryService.java
+- [x] CategoryController.java
+- [x] CategoryService.java
 - [x] CategoryServiceImpl.java
 - [x] CategoryDTO.java
 - [x] CategoryVO.java
 - [x] FinCategory.java
-- [ ] FinCategoryMapper.java
+- [x] FinCategoryMapper.java
 
 ### 9. report 模块 - 报表模块
-- [ ] ReportController.java
-- [ ] ReportService.java
+- [x] ReportController.java
+- [x] ReportService.java
 - [x] ReportServiceImpl.java
 - [x] SummaryVO.java
 - [x] CategoryReportVO.java
@@ -113,24 +115,25 @@
 - [x] ReportQueryDTO.java
 
 ### 10. ledger 模块 - 账本模块
-- [ ] LedgerController.java
-- [ ] InvitationController.java
-- [ ] LedgerService.java
+- [x] LedgerController.java
+- [x] InvitationController.java
+- [x] LedgerService.java
 - [x] LedgerServiceImpl.java
-- [ ] LedgerPermissionChecker.java
+- [x] LedgerPermissionChecker.java
 - [x] LedgerVO.java
 - [x] MemberVO.java
 - [x] InvitationVO.java
 - [x] CreateLedgerRequest.java
 - [x] CreateInvitationRequest.java
+- [x] UpdateRoleRequest.java
 - [x] FinLedger.java
 - [x] FinLedgerMember.java
 - [x] FinInvitation.java
-- [ ] FinLedgerMapper.java
-- [ ] FinLedgerMemberMapper.java
-- [ ] FinInvitationMapper.java
-- [ ] LedgerErrorCode.java
-- [ ] LedgerException.java
+- [x] FinLedgerMapper.java
+- [x] FinLedgerMemberMapper.java
+- [x] FinInvitationMapper.java
+- [x] LedgerErrorCode.java
+- [x] LedgerException.java
 
 ## 更新日志
 - 2025-02-02: 初始化文件列表，标记已完成的服务层实现类
@@ -154,6 +157,24 @@
   - SummaryVO.java, CategoryReportVO.java, TrendVO.java, ReportQueryDTO.java
 - 2025-02-02: 完成 transaction 模块 Controller 和剩余 DTO
   - TransactionController.java, TransactionQueryDTO.java, RefundSummaryVO.java, TransactionRefundResponseVO.java
+- 2025-02-02: 完成所有剩余文件
+  - config: RedisConfig.java, CorsConfig.java, MybatisPlusConfig.java
+  - security: JwtAuthenticationFilter.java, UserPrincipal.java
+  - ledger: InvitationController.java, LedgerPermissionChecker.java
+  - ledger exception: LedgerErrorCode.java, LedgerException.java
+  - ledger dto: UpdateRoleRequest.java
+- 2025-02-02: 完成 budget 和 category 模块 Controller
+  - BudgetController.java, CategoryController.java
+- 2025-02-02: 完成 ledger 模块实体和DTO
+  - FinLedger.java, FinLedgerMember.java, FinInvitation.java
+  - LedgerVO.java, MemberVO.java, InvitationVO.java
+  - CreateLedgerRequest.java, CreateInvitationRequest.java
+- 2025-02-02: 完成所有 Service 接口和 Mapper
+  - AccountService.java, TransactionService.java, RefundService.java
+  - BudgetService.java, CategoryService.java, ReportService.java, LedgerService.java
+  - 所有模块的 Mapper 接口（FinAccountMapper, FinTransactionMapper, FinRefundMapper, FinBudgetMapper, FinCategoryMapper, SysUserMapper, FinLedgerMapper, FinLedgerMemberMapper, FinInvitationMapper）
+- 2025-02-02: 完成 Controller
+  - AccountController.java, ReportController.java
 - 2025-02-02: 完成 budget 和 category 模块 Controller
   - BudgetController.java, CategoryController.java
 - 2025-02-02: 完成 ledger 模块实体和DTO

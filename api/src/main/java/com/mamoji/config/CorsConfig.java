@@ -6,27 +6,35 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.web.filter.CorsFilter;
 
-/** CORS (Cross-Origin Resource Sharing) Configuration */
+/**
+ * 跨域资源配置类
+ * 配置 CORS（跨域资源共享）策略，允许前端应用跨域访问后端 API
+ */
 @Configuration
 public class CorsConfig {
 
+    /**
+     * 创建 CORS 过滤器
+     * 配置跨域请求的来源、凭证、请求头、请求方法等策略
+     * @return CORS 过滤器实例
+     */
     @Bean
     public CorsFilter corsFilter() {
         CorsConfiguration config = new CorsConfiguration();
 
-        // Allow specific origins (can be configured as needed)
+        // 允许所有来源（可根据需要配置为特定域名）
         config.addAllowedOriginPattern("*");
-        // Or for specific origins:
+        // 或指定特定来源：
         // config.addAllowedOrigin("http://localhost:3000");
         // config.addAllowedOrigin("http://localhost:5173");
 
-        // Allow credentials
+        // 允许携带凭证信息
         config.setAllowCredentials(true);
 
-        // Allow specific headers
+        // 允许所有请求头
         config.addAllowedHeader("*");
 
-        // Allow specific methods
+        // 允许的 HTTP 方法
         config.addAllowedMethod("GET");
         config.addAllowedMethod("POST");
         config.addAllowedMethod("PUT");
@@ -34,11 +42,11 @@ public class CorsConfig {
         config.addAllowedMethod("OPTIONS");
         config.addAllowedMethod("PATCH");
 
-        // Expose headers
+        // 暴露响应头
         config.addExposedHeader("Authorization");
         config.addExposedHeader("Content-Disposition");
 
-        // Cache preflight response for 1 hour
+        // 预检请求缓存 1 小时
         config.setMaxAge(3600L);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();

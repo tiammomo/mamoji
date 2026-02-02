@@ -18,7 +18,10 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
-/** JWT Authentication Filter Intercepts requests and validates JWT tokens */
+/**
+ * JWT 认证过滤器
+ * 拦截每个请求，验证 JWT Token 并设置用户认证信息
+ */
 @Slf4j
 @Component
 @RequiredArgsConstructor
@@ -43,7 +46,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     String username = jwtTokenProvider.getUsernameFromToken(jwt);
                     log.debug("Authenticated user: {} (ID: {})", username, userId);
 
-                    // Create authentication token
+                    // 创建认证令牌
                     UsernamePasswordAuthenticationToken authentication =
                             new UsernamePasswordAuthenticationToken(
                                     new UserPrincipal(userId, username),
@@ -53,7 +56,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     authentication.setDetails(
                             new WebAuthenticationDetailsSource().buildDetails(request));
 
-                    // Set authentication in security context
+                    // 在安全上下文中设置认证信息
                     SecurityContextHolder.getContext().setAuthentication(authentication);
                     log.debug("Security context authentication set for user: {}", username);
                 }
@@ -65,7 +68,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         filterChain.doFilter(request, response);
     }
 
-    /** Extract JWT token from Authorization header */
+    /**
+     * 从请求头中提取 JWT Token
+     * @param request HTTP 请求
+     * @return JWT Token 字符串
+     */
     private String getJwtFromRequest(HttpServletRequest request) {
         String bearerToken = request.getHeader("Authorization");
         if (StringUtils.hasText(bearerToken) && bearerToken.startsWith("Bearer ")) {
