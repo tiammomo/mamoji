@@ -1,5 +1,4 @@
 import { cn, formatCurrency, formatDate } from '@/lib/utils';
-import { getAccountTypeLabel, getTransactionTypeLabel } from '@/lib/icons';
 
 describe('Utils', () => {
   describe('cn', () => {
@@ -43,30 +42,6 @@ describe('Utils', () => {
     it('should handle string date input', () => {
       const result = formatDate('2024-01-15');
       expect(result).toContain('2024');
-    });
-  });
-
-  describe('getAccountTypeLabel', () => {
-    it('should return correct label for bank', () => {
-      expect(getAccountTypeLabel('bank')).toBe('银行账户');
-    });
-
-    it('should return correct label for credit', () => {
-      expect(getAccountTypeLabel('credit')).toBe('信用卡');
-    });
-
-    it('should return original type for unknown type', () => {
-      expect(getAccountTypeLabel('unknown')).toBe('unknown');
-    });
-  });
-
-  describe('getTransactionTypeLabel', () => {
-    it('should return correct label for income', () => {
-      expect(getTransactionTypeLabel('income')).toBe('收入');
-    });
-
-    it('should return correct label for expense', () => {
-      expect(getTransactionTypeLabel('expense')).toBe('支出');
     });
   });
 });

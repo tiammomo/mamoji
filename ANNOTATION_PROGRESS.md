@@ -1,20 +1,18 @@
-# 注释优化进度跟踪
+# 中文注释优化进度跟踪
+
+## 开始时间
+2025-02-02
 
 ## 进度统计
-- 已完成: 约 86
+- 已完成: 约 95+ 个 Java 文件
 - 待完成: 0
 
-## 模块顺序
-1. common 模块 (公共基础)
-2. config 模块 (配置类)
-3. security 模块 (安全模块)
-4. auth 模块 (认证模块)
-5. account 模块 (账户模块)
-6. transaction 模块 (交易模块)
-7. budget 模块 (预算模块)
-8. category 模块 (分类模块)
-9. report 模块 (报表模块)
-10. ledger 模块 (账本模块)
+## 注释规范
+- 所有注释必须使用简体中文
+- 类注释使用 `/** ... */` 格式
+- 方法注释使用 `/** ... */` 格式
+- 字段注释使用 `/** ... */` 格式
+- 不使用 markdown 风格的尖括号格式
 
 ## 文件清单
 
@@ -30,6 +28,9 @@
 - [x] DateRangeUtils.java
 - [x] TransactionAggregator.java
 - [x] LedgerContextHolder.java
+- [x] CacheService.java (已修复英文注释)
+- [x] GlobalResponseAdvice.java
+- [x] AccountTypeConstants.java
 
 ### 2. config 模块 - 配置类
 - [x] SecurityConfig.java
@@ -37,10 +38,13 @@
 - [x] RedisConfig.java
 - [x] CorsConfig.java
 - [x] MybatisPlusConfig.java
+- [x] CacheConfig.java
+- [x] SwaggerConfig.java
+- [x] LedgerContextInterceptor.java
 
 ### 3. security 模块 - 安全模块
 - [x] JwtTokenProvider.java
-- [x] JwtAuthenticationFilter.java
+- [x] JwtAuthenticationFilter.java (已修复英文注释)
 - [x] UserPrincipal.java
 
 ### 4. auth 模块 - 认证模块
@@ -53,6 +57,7 @@
 - [x] SysUser.java
 - [x] SysPreference.java
 - [x] SysUserMapper.java
+- [x] SysPreferenceMapper.java
 
 ### 5. account 模块 - 账户模块
 - [x] AccountController.java
@@ -67,8 +72,8 @@
 - [x] TransactionController.java
 - [x] TransactionService.java
 - [x] TransactionServiceImpl.java
-- [x] RefundServiceImpl.java
 - [x] RefundService.java
+- [x] RefundServiceImpl.java
 - [x] TransactionDTO.java
 - [x] TransactionVO.java
 - [x] RefundDTO.java
@@ -136,48 +141,8 @@
 - [x] LedgerException.java
 
 ## 更新日志
-- 2025-02-02: 初始化文件列表，标记已完成的服务层实现类
-- 2025-02-02: 完成 common 模块 (11个文件)
-- 2025-02-02: 完成 config 和 security 模块
-  - SecurityConfig.java, JwtConfig.java, JwtTokenProvider.java
-- 2025-02-02: 完成 auth 模块实体和DTO
-  - SysUser.java, SysPreference.java, LoginRequest.java, RegisterRequest.java, LoginResponse.java
-- 2025-02-02: 完成 account 模块
-  - AccountDTO.java, AccountVO.java, FinAccount.java, AccountServiceImpl.java
-- 2025-02-02: 完成 transaction 模块
-  - FinTransaction.java, FinRefund.java, TransactionDTO.java, TransactionVO.java, RefundDTO.java, RefundVO.java
-  - TransactionServiceImpl.java (修复markdown格式)
-- 2025-02-02: 完成 budget 模块
-  - FinBudget.java, BudgetDTO.java, BudgetVO.java, BudgetProgressVO.java
-  - BudgetServiceImpl.java (修复markdown格式)
-- 2025-02-02: 完成 category 模块
-  - FinCategory.java, CategoryDTO.java, CategoryVO.java
-  - CategoryServiceImpl.java (修复markdown格式)
-- 2025-02-02: 完成 report 模块
-  - SummaryVO.java, CategoryReportVO.java, TrendVO.java, ReportQueryDTO.java
-- 2025-02-02: 完成 transaction 模块 Controller 和剩余 DTO
-  - TransactionController.java, TransactionQueryDTO.java, RefundSummaryVO.java, TransactionRefundResponseVO.java
-- 2025-02-02: 完成所有剩余文件
-  - config: RedisConfig.java, CorsConfig.java, MybatisPlusConfig.java
-  - security: JwtAuthenticationFilter.java, UserPrincipal.java
-  - ledger: InvitationController.java, LedgerPermissionChecker.java
-  - ledger exception: LedgerErrorCode.java, LedgerException.java
-  - ledger dto: UpdateRoleRequest.java
-- 2025-02-02: 完成 budget 和 category 模块 Controller
-  - BudgetController.java, CategoryController.java
-- 2025-02-02: 完成 ledger 模块实体和DTO
-  - FinLedger.java, FinLedgerMember.java, FinInvitation.java
-  - LedgerVO.java, MemberVO.java, InvitationVO.java
-  - CreateLedgerRequest.java, CreateInvitationRequest.java
-- 2025-02-02: 完成所有 Service 接口和 Mapper
-  - AccountService.java, TransactionService.java, RefundService.java
-  - BudgetService.java, CategoryService.java, ReportService.java, LedgerService.java
-  - 所有模块的 Mapper 接口（FinAccountMapper, FinTransactionMapper, FinRefundMapper, FinBudgetMapper, FinCategoryMapper, SysUserMapper, FinLedgerMapper, FinLedgerMemberMapper, FinInvitationMapper）
-- 2025-02-02: 完成 Controller
-  - AccountController.java, ReportController.java
-- 2025-02-02: 完成 budget 和 category 模块 Controller
-  - BudgetController.java, CategoryController.java
-- 2025-02-02: 完成 ledger 模块实体和DTO
-  - FinLedger.java, FinLedgerMember.java, FinInvitation.java
-  - LedgerVO.java, MemberVO.java, InvitationVO.java
-  - CreateLedgerRequest.java, CreateInvitationRequest.java
+- 2025-02-02: 重新扫描并验证所有 Java 文件的中文注释
+- 2025-02-02: 修复 CacheService.java 英文注释 -> 中文
+- 2025-02-02: 修复 JwtAuthenticationFilter.java 英文注释 -> 中文
+- 2025-02-02: 修复 MamojiApplication.java Result.java GlobalExceptionHandler.java 的 <p> 标签
+- 2025-02-02: 验证后端编译通过 (mvn compile)

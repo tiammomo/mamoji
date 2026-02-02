@@ -16,10 +16,8 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
 
 /**
  * Mamoji 记账系统入口类
- * <p>
- * 提供完整的个人/家庭记账功能，支持多账户管理、预算控制、收支分析。
+ * 提供完整的个人/家庭记账功能，支持多账户管理、预算控制、收支分析
  * 技术栈: Spring Boot 3.5 + MyBatis-Plus 3.5 + MySQL + Redis
- * </p>
  */
 @SpringBootApplication
 @MapperScan({"com.mamoji.module.*.mapper", "com.mamoji.common.decorator"})
