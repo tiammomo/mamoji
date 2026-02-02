@@ -21,12 +21,20 @@ public class LedgerController {
     private final LedgerService ledgerService;
     private final JwtTokenProvider jwtTokenProvider;
 
+    private String extractToken(String bearerToken) {
+        if (bearerToken != null && bearerToken.startsWith("Bearer ")) {
+            return bearerToken.substring(7);
+        }
+        return bearerToken;
+    }
+
     /**
      * 获取当前用户的账本列表
      */
     @GetMapping
     public Result<List<LedgerVO>> getLedgers(
-            @RequestHeader("Authorization") String token) {
+            @RequestHeader("Authorization") String bearerToken) {
+        String token = extractToken(bearerToken);
         Long userId = jwtTokenProvider.getUserIdFromToken(token);
         List<LedgerVO> ledgers = ledgerService.getLedgers(userId);
         return Result.success(ledgers);
@@ -37,8 +45,9 @@ public class LedgerController {
      */
     @GetMapping("/{id}")
     public Result<LedgerVO> getLedger(
-            @RequestHeader("Authorization") String token,
+            @RequestHeader("Authorization") String bearerToken,
             @PathVariable Long id) {
+        String token = extractToken(bearerToken);
         Long userId = jwtTokenProvider.getUserIdFromToken(token);
         LedgerVO ledger = ledgerService.getLedger(id, userId);
         return Result.success(ledger);
@@ -49,8 +58,9 @@ public class LedgerController {
      */
     @PostMapping
     public Result<Long> createLedger(
-            @RequestHeader("Authorization") String token,
+            @RequestHeader("Authorization") String bearerToken,
             @RequestBody @Valid CreateLedgerRequest request) {
+        String token = extractToken(bearerToken);
         Long userId = jwtTokenProvider.getUserIdFromToken(token);
         Long ledgerId = ledgerService.createLedger(request, userId);
         return Result.success(ledgerId);
@@ -61,9 +71,10 @@ public class LedgerController {
      */
     @PutMapping("/{id}")
     public Result<Void> updateLedger(
-            @RequestHeader("Authorization") String token,
+            @RequestHeader("Authorization") String bearerToken,
             @PathVariable Long id,
             @RequestBody @Valid CreateLedgerRequest request) {
+        String token = extractToken(bearerToken);
         Long userId = jwtTokenProvider.getUserIdFromToken(token);
         ledgerService.updateLedger(id, request, userId);
         return Result.success();
@@ -74,8 +85,9 @@ public class LedgerController {
      */
     @DeleteMapping("/{id}")
     public Result<Void> deleteLedger(
-            @RequestHeader("Authorization") String token,
+            @RequestHeader("Authorization") String bearerToken,
             @PathVariable Long id) {
+        String token = extractToken(bearerToken);
         Long userId = jwtTokenProvider.getUserIdFromToken(token);
         ledgerService.deleteLedger(id, userId);
         return Result.success();
@@ -86,8 +98,9 @@ public class LedgerController {
      */
     @PutMapping("/{id}/default")
     public Result<Void> setDefault(
-            @RequestHeader("Authorization") String token,
+            @RequestHeader("Authorization") String bearerToken,
             @PathVariable Long id) {
+        String token = extractToken(bearerToken);
         Long userId = jwtTokenProvider.getUserIdFromToken(token);
         ledgerService.setDefaultLedger(id, userId);
         return Result.success();
@@ -98,8 +111,9 @@ public class LedgerController {
      */
     @GetMapping("/{id}/members")
     public Result<List<MemberVO>> getMembers(
-            @RequestHeader("Authorization") String token,
+            @RequestHeader("Authorization") String bearerToken,
             @PathVariable Long id) {
+        String token = extractToken(bearerToken);
         Long userId = jwtTokenProvider.getUserIdFromToken(token);
         List<MemberVO> members = ledgerService.getMembers(id, userId);
         return Result.success(members);
@@ -110,10 +124,11 @@ public class LedgerController {
      */
     @PutMapping("/{id}/members/{targetUserId}/role")
     public Result<Void> updateMemberRole(
-            @RequestHeader("Authorization") String token,
+            @RequestHeader("Authorization") String bearerToken,
             @PathVariable Long id,
             @PathVariable Long targetUserId,
             @RequestBody @Valid UpdateRoleRequest request) {
+        String token = extractToken(bearerToken);
         Long userId = jwtTokenProvider.getUserIdFromToken(token);
         ledgerService.updateMemberRole(id, targetUserId, request.getRole(), userId);
         return Result.success();
@@ -124,9 +139,10 @@ public class LedgerController {
      */
     @DeleteMapping("/{id}/members/{targetUserId}")
     public Result<Void> removeMember(
-            @RequestHeader("Authorization") String token,
+            @RequestHeader("Authorization") String bearerToken,
             @PathVariable Long id,
             @PathVariable Long targetUserId) {
+        String token = extractToken(bearerToken);
         Long userId = jwtTokenProvider.getUserIdFromToken(token);
         ledgerService.removeMember(id, targetUserId, userId);
         return Result.success();
@@ -137,8 +153,9 @@ public class LedgerController {
      */
     @DeleteMapping("/{id}/members/me")
     public Result<Void> quitLedger(
-            @RequestHeader("Authorization") String token,
+            @RequestHeader("Authorization") String bearerToken,
             @PathVariable Long id) {
+        String token = extractToken(bearerToken);
         Long userId = jwtTokenProvider.getUserIdFromToken(token);
         ledgerService.quitLedger(id, userId);
         return Result.success();
@@ -149,9 +166,10 @@ public class LedgerController {
      */
     @PostMapping("/{id}/invitations")
     public Result<InvitationVO> createInvitation(
-            @RequestHeader("Authorization") String token,
+            @RequestHeader("Authorization") String bearerToken,
             @PathVariable Long id,
             @RequestBody @Valid CreateInvitationRequest request) {
+        String token = extractToken(bearerToken);
         Long userId = jwtTokenProvider.getUserIdFromToken(token);
         InvitationVO invitation = ledgerService.createInvitation(id, request, userId);
         return Result.success(invitation);
@@ -162,8 +180,9 @@ public class LedgerController {
      */
     @GetMapping("/{id}/invitations")
     public Result<List<InvitationVO>> getInvitations(
-            @RequestHeader("Authorization") String token,
+            @RequestHeader("Authorization") String bearerToken,
             @PathVariable Long id) {
+        String token = extractToken(bearerToken);
         Long userId = jwtTokenProvider.getUserIdFromToken(token);
         List<InvitationVO> invitations = ledgerService.getInvitations(id, userId);
         return Result.success(invitations);
@@ -174,9 +193,10 @@ public class LedgerController {
      */
     @DeleteMapping("/{id}/invitations/{code}")
     public Result<Void> revokeInvitation(
-            @RequestHeader("Authorization") String token,
+            @RequestHeader("Authorization") String bearerToken,
             @PathVariable Long id,
             @PathVariable String code) {
+        String token = extractToken(bearerToken);
         Long userId = jwtTokenProvider.getUserIdFromToken(token);
         ledgerService.revokeInvitation(id, code, userId);
         return Result.success();

@@ -22,13 +22,14 @@ public class InvitationController {
      */
     @PostMapping("/{code}/join")
     public Result<Long> joinByInvitation(
-            @RequestHeader(value = "Authorization", required = false) String token,
+            @RequestHeader(value = "Authorization", required = false) String bearerToken,
             @PathVariable String code) {
         // 验证用户已登录
-        if (token == null || !token.startsWith("Bearer ")) {
+        if (bearerToken == null || !bearerToken.startsWith("Bearer ")) {
             return Result.fail(401, "请先登录后再加入账本");
         }
 
+        String token = bearerToken.substring(7);
         Long userId = jwtTokenProvider.getUserIdFromToken(token);
         Long ledgerId = ledgerService.joinByInvitation(code, userId);
         return Result.success(ledgerId);
