@@ -29,6 +29,9 @@ public class FinCategory implements Serializable {
     /** User ID (0 = system default category) */
     private Long userId;
 
+    /** Ledger ID (0 = system default category, otherwise specific to a ledger) */
+    private Long ledgerId;
+
     /** Category name */
     private String name;
 

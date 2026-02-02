@@ -31,6 +31,9 @@ public class FinBudget implements Serializable {
     /** User ID */
     private Long userId;
 
+    /** Ledger ID (账本ID) */
+    private Long ledgerId;
+
     /** Budget name */
     private String name;
 

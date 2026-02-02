@@ -12,6 +12,7 @@ import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.mamoji.common.context.LedgerContextHolder;
 import com.mamoji.common.exception.BusinessException;
 import com.mamoji.common.factory.DtoConverter;
 import com.mamoji.common.result.PageResult;
@@ -57,6 +58,12 @@ public class TransactionServiceImpl extends ServiceImpl<FinTransactionMapper, Fi
                 new LambdaQueryWrapper<FinTransaction>()
                         .eq(FinTransaction::getUserId, userId)
                         .eq(FinTransaction::getStatus, 1);
+
+        // Add ledger_id filter if available in context
+        Long ledgerId = LedgerContextHolder.getLedgerId();
+        if (ledgerId != null) {
+            wrapper.eq(FinTransaction::getLedgerId, ledgerId);
+        }
 
         if (request.getType() != null && !request.getType().isEmpty()) {
             wrapper.eq(FinTransaction::getType, request.getType());
@@ -105,9 +112,13 @@ public class TransactionServiceImpl extends ServiceImpl<FinTransactionMapper, Fi
         validateAccount(userId, request.getAccountId());
         validateCategory(request.getCategoryId());
 
+        // Get ledger_id from context or use user's default ledger
+        Long ledgerId = LedgerContextHolder.getLedgerId();
+
         FinTransaction transaction =
                 FinTransaction.builder()
                         .userId(userId)
+                        .ledgerId(ledgerId)
                         .accountId(request.getAccountId())
                         .categoryId(request.getCategoryId())
                         .budgetId(request.getBudgetId())

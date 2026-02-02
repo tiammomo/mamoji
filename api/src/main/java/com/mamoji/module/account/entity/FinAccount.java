@@ -30,6 +30,9 @@ public class FinAccount implements Serializable {
     /** User ID */
     private Long userId;
 
+    /** Ledger ID (账本ID) */
+    private Long ledgerId;
+
     /** Account name */
     private String name;
 

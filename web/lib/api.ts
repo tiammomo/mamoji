@@ -1,5 +1,6 @@
 import axios, { AxiosError, InternalAxiosRequestConfig, AxiosResponse } from 'axios';
 import { useAuthStore } from '@/hooks/useAuth';
+import { useLedgerStore } from '@/store/ledgerStore';
 
 // API Base URL - can be overridden via environment variable
 // Ensure trailing /api/v1
@@ -20,13 +21,20 @@ const api = axios.create({
   responseType: 'json',
 });
 
-// Request interceptor - add auth token
+// Request interceptor - add auth token and ledger id
 api.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
     const token = useAuthStore.getState().token;
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+
+    // Add current ledger ID to header
+    const currentLedgerId = useLedgerStore.getState().currentLedgerId;
+    if (currentLedgerId) {
+      config.headers['X-Ledger-Id'] = currentLedgerId.toString();
+    }
+
     return config;
   },
   (error: AxiosError) => {
