@@ -35,24 +35,24 @@ import lombok.extern.slf4j.Slf4j;
 
 /**
  * 退款服务实现类
- * <p>
+ * 
  * 负责处理退款相关的业务逻辑，包括：
- * <ul>
- *   <li>查询交易的退款记录列表</li>
- *   <li>创建新的退款记录</li>
- *   <li>取消（撤回）已创建的退款</li>
- *   <li>计算退款金额汇总</li>
- * </ul>
- * </p>
- * <p>
+
+ - 查询交易的退款记录列表</li>
+ - 创建新的退款记录</li>
+ - 取消（撤回）已创建的退款</li>
+ - 计算退款金额汇总</li>
+
+
+ * 
  * 退款机制说明：
- * <ul>
- *   <li>仅支持对支出（expense）交易进行退款</li>
- *   <li>支持部分退款，退款总额不能超过原交易金额</li>
- *   <li>退款时会更新账户余额（与原交易相反的方向）</li>
- *   <li>取消退款会恢复账户余额到退款前的状态</li>
- * </ul>
- * </p>
+
+ - 仅支持对支出（expense）交易进行退款</li>
+ - 支持部分退款，退款总额不能超过原交易金额</li>
+ - 退款时会更新账户余额（与原交易相反的方向）</li>
+ - 取消退款会恢复账户余额到退款前的状态</li>
+
+
  *
  * @see RefundService 退款服务接口
  * @see FinRefund 退款记录实体
@@ -79,14 +79,14 @@ public class RefundServiceImpl extends ServiceImpl<FinRefundMapper, FinRefund>
 
     /**
      * 获取交易的退款记录及汇总信息
-     * <p>
+     * 
      * 返回该交易的完整退款信息，包括：
-     * <ul>
-     *   <li>原交易基本信息（金额、类型）</li>
-     *   <li>退款记录列表</li>
-     *   <li>退款汇总（已退金额、剩余可退、是否已退款）</li>
-     * </ul>
-     * </p>
+    
+     - 原交易基本信息（金额、类型）</li>
+     - 退款记录列表</li>
+     - 退款汇总（已退金额、剩余可退、是否已退款）</li>
+    
+    
      *
      * @param userId       当前用户ID，用于验证交易归属
      * @param transactionId 原交易ID
@@ -144,24 +144,24 @@ public class RefundServiceImpl extends ServiceImpl<FinRefundMapper, FinRefund>
 
     /**
      * 创建退款记录
-     * <p>
+     * 
      * 创建退款的完整流程：
-     * <ol>
-     *   <li>验证原交易存在且属于当前用户</li>
-     *   <li>验证原交易类型为支出（expense）</li>
-     *   <li>计算已退款总额，验证退款金额不超过可退范围</li>
-     *   <li>验证原交易关联的账户存在</li>
-     *   <li>创建退款记录</li>
-     *   <li>使用策略模式更新账户余额（退款会使余额增加）</li>
-     * </ol>
-     * </p>
-     * <p>
+     1. 
+     - 验证原交易存在且属于当前用户</li>
+     - 验证原交易类型为支出（expense）</li>
+     - 计算已退款总额，验证退款金额不超过可退范围</li>
+     - 验证原交易关联的账户存在</li>
+     - 创建退款记录</li>
+     - 使用策略模式更新账户余额（退款会使余额增加）</li>
+    
+    
+     * 
      * 余额变化说明：
-     * <ul>
-     *   <li>支出交易：金额为负，退款时金额为正（钱回来）</li>
-     *   <li>收入交易（理论上不应退款）：金额为正，退款时金额为负（钱扣回）</li>
-     * </ul>
-     * </p>
+    
+     - 支出交易：金额为负，退款时金额为正（钱回来）</li>
+     - 收入交易（理论上不应退款）：金额为正，退款时金额为负（钱扣回）</li>
+    
+    
      *
      * @param userId  当前用户ID
      * @param request 退款请求数据（包含原交易ID、退款金额、退款原因等）
@@ -251,16 +251,16 @@ public class RefundServiceImpl extends ServiceImpl<FinRefundMapper, FinRefund>
 
     /**
      * 取消（撤回）已创建的退款
-     * <p>
+     * 
      * 取消退款的流程：
-     * <ol>
-     *   <li>验证原交易存在</li>
-     *   <li>验证退款记录存在且属于该交易和用户</li>
-     *   <li>验证退款状态为有效（未取消）</li>
-     *   <li>软删除退款（更新状态为0）</li>
-     *   <li>恢复账户余额（抵消退款时的余额变化）</li>
-     * </ol>
-     * </p>
+     1. 
+     - 验证原交易存在</li>
+     - 验证退款记录存在且属于该交易和用户</li>
+     - 验证退款状态为有效（未取消）</li>
+     - 软删除退款（更新状态为0）</li>
+     - 恢复账户余额（抵消退款时的余额变化）</li>
+    
+    
      *
      * @param userId       当前用户ID
      * @param transactionId 原交易ID
@@ -320,15 +320,15 @@ public class RefundServiceImpl extends ServiceImpl<FinRefundMapper, FinRefund>
 
     /**
      * 获取指定交易的退款汇总信息
-     * <p>
+     * 
      * 汇总信息包括：
-     * <ul>
-     *   <li>totalRefunded: 已退款总额</li>
-     *   <li>remainingRefundable: 剩余可退金额</li>
-     *   <li>hasRefund: 是否有退款记录</li>
-     *   <li>refundCount: 退款次数</li>
-     * </ul>
-     * </p>
+    
+     - totalRefunded: 已退款总额</li>
+     - remainingRefundable: 剩余可退金额</li>
+     - hasRefund: 是否有退款记录</li>
+     - refundCount: 退款次数</li>
+    
+    
      *
      * @param transactionId 原交易ID
      * @return 退款汇总信息
@@ -387,10 +387,10 @@ public class RefundServiceImpl extends ServiceImpl<FinRefundMapper, FinRefund>
 
     /**
      * 将退款实体转换为 VO 对象
-     * <p>
+     * 
      * 用于将数据库实体转换为 API 响应对象，
      * 复制实体属性到 VO（排除内部字段如密码等）
-     * </p>
+    
      *
      * @param refund 退款记录实体
      * @return 退款响应 VO 对象

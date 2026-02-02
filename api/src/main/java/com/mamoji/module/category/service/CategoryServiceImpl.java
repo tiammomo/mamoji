@@ -72,13 +72,9 @@ public class CategoryServiceImpl
 
     /**
      * 验证分类归属权
-     * <p>
      * 分类归属规则：
-     * <ul>
-     *   <li>系统分类（userId=0 或 userId=null）：允许所有用户访问</li>
-     *   <li>用户自定义分类：只有创建者可以修改/删除</li>
-     * </ul>
-     * </p>
+     * - 系统分类（userId=0 或 userId=null）：允许所有用户访问
+     * - 用户自定义分类：只有创建者可以修改/删除
      *
      * @param userId 当前用户ID
      * @param entity 要验证的分类实体
@@ -98,16 +94,11 @@ public class CategoryServiceImpl
 
     /**
      * 获取当前用户的所有分类列表
-     * <p>
      * 返回包含：
-     * <ul>
-     *   <li>系统预设分类（userId=0）</li>
-     *   <li>当前用户自定义分类（userId=当前用户）</li>
-     * </ul>
-     * </p>
-     * <p>
+     * - 系统预设分类（userId=0）
+     * - 当前用户自定义分类（userId=当前用户）
+     *
      * 排序规则：先按类型（收入在前/支出在后），再按分类ID
-     * </p>
      *
      * @param userId 当前用户ID
      * @return 分类列表（VO 格式）
@@ -130,9 +121,7 @@ public class CategoryServiceImpl
 
     /**
      * 按类型获取分类列表
-     * <p>
      * 仅返回指定类型的分类（收入或支出）
-     * </p>
      *
      * @param userId 当前用户ID
      * @param type   分类类型（income/expense）
@@ -158,15 +147,11 @@ public class CategoryServiceImpl
 
     /**
      * 创建自定义分类
-     * <p>
      * 创建流程：
-     * <ol>
-     *   <li>验证分类名称唯一性（同一用户下不能重复）</li>
-     *   <li>构建分类实体</li>
-     *   <li>保存到数据库</li>
-     *   <li>记录操作日志</li>
-     * </ol>
-     * </p>
+     * 1. 验证分类名称唯一性（同一用户下不能重复）
+     * 2. 构建分类实体
+     * 3. 保存到数据库
+     * 4. 记录操作日志
      *
      * @param userId  当前用户ID
      * @param request 分类创建请求数据
@@ -198,14 +183,10 @@ public class CategoryServiceImpl
 
     /**
      * 更新分类信息
-     * <p>
      * 更新规则：
-     * <ul>
-     *   <li>可更新字段：分类名称</li>
-     *   <li>系统预设分类不能修改</li>
-     *   <li>新名称在同一用户下不能重复</li>
-     * </ul>
-     * </p>
+     * - 可更新字段：分类名称
+     * - 系统预设分类不能修改
+     * - 新名称在同一用户下不能重复
      *
      * @param userId    当前用户ID
      * @param categoryId 要更新的分类ID
@@ -235,13 +216,9 @@ public class CategoryServiceImpl
 
     /**
      * 删除分类（软删除）
-     * <p>
      * 删除规则：
-     * <ul>
-     *   <li>系统预设分类不能删除</li>
-     *   <li>用户自定义分类可以软删除（状态改为 0）</li>
-     * </ul>
-     * </p>
+     * - 系统预设分类不能删除
+     * - 用户自定义分类可以软删除（状态改为 0）
      *
      * @param userId    当前用户ID
      * @param categoryId 要删除的分类ID
@@ -268,9 +245,7 @@ public class CategoryServiceImpl
 
     /**
      * 验证分类名称唯一性
-     * <p>
      * 同一用户下不能有名称相同的自定义分类
-     * </p>
      *
      * @param userId    当前用户ID
      * @param name      分类名称
@@ -294,9 +269,7 @@ public class CategoryServiceImpl
 
     /**
      * 验证是否为系统预设分类
-     * <p>
      * 系统预设分类（userId=0）不允许修改或删除
-     * </p>
      *
      * @param category 要验证的分类实体
      * @throws BusinessException 是系统预设分类

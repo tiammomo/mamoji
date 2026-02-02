@@ -91,19 +91,14 @@ public class TransactionServiceImpl extends ServiceImpl<FinTransactionMapper, Fi
 
     /**
      * 分页查询交易记录列表
-     * <p>
      * 支持多种筛选条件：
-     * <ul>
-     *   <li>按交易类型（收入/支出/退款）</li>
-     *   <li>按账户 ID</li>
-     *   <li>按分类 ID</li>
-     *   <li>按日期范围</li>
-     *   <li>按账本 ID（通过上下文自动获取）</li>
-     * </ul>
-     * </p>
-     * <p>
+     * - 按交易类型（收入/支出/退款）
+     * - 按账户 ID
+     * - 按分类 ID
+     * - 按日期范围
+     * - 按账本 ID（通过上下文自动获取）
+     *
      * 查询结果按发生时间倒序排列，支持分页
-     * </p>
      *
      * @param userId  当前用户ID
      * @param request 查询条件（分页、筛选条件）
@@ -194,9 +189,7 @@ public class TransactionServiceImpl extends ServiceImpl<FinTransactionMapper, Fi
 
     /**
      * 获取最近交易记录
-     * <p>
      * 用于首页仪表盘展示最近 N 条交易
-     * </p>
      *
      * @param userId    当前用户ID
      * @param accountId 可选的账户 ID 过滤
@@ -219,17 +212,13 @@ public class TransactionServiceImpl extends ServiceImpl<FinTransactionMapper, Fi
 
     /**
      * 创建交易记录
-     * <p>
      * 创建流程：
-     * <ol>
-     *   <li>验证账户存在且属于当前用户</li>
-     *   <li>验证分类存在且状态正常</li>
-     *   <li>获取当前账本上下文（多账本支持）</li>
-     *   <li>构建交易实体并保存</li>
-     *   <li>更新账户余额（收入加、支出减）</li>
-     *   <li>更新预算花费（如有关联预算）</li>
-     * </ol>
-     * </p>
+     * 1. 验证账户存在且属于当前用户
+     * 2. 验证分类存在且状态正常
+     * 3. 获取当前账本上下文（多账本支持）
+     * 4. 构建交易实体并保存
+     * 5. 更新账户余额（收入加、支出减）
+     * 6. 更新预算花费（如有关联预算）
      *
      * @param userId  当前用户ID
      * @param request 交易请求数据
@@ -288,21 +277,14 @@ public class TransactionServiceImpl extends ServiceImpl<FinTransactionMapper, Fi
 
     /**
      * 更新交易记录
-     * <p>
      * 更新规则：
-     * <ul>
-     *   <li>如果账户变更：先恢复原账户余额，再增加新账户余额</li>
-     *   <li>如果金额或类型变更：计算差额并调整余额</li>
-     *   <li>其他字段直接更新</li>
-     * </ul>
-     * </p>
-     * <p>
+     * - 如果账户变更：先恢复原账户余额，再增加新账户余额
+     * - 如果金额或类型变更：计算差额并调整余额
+     * - 其他字段直接更新
+     *
      * 预算关联：
-     * <ul>
-     *   <li>删除旧预算关联的花费计算</li>
-     *   <li>添加新预算关联的花费计算</li>
-     * </ul>
-     * </p>
+     * - 删除旧预算关联的花费计算
+     * - 添加新预算关联的花费计算
      *
      * @param userId       当前用户ID
      * @param transactionId 要更新的交易ID
@@ -369,15 +351,11 @@ public class TransactionServiceImpl extends ServiceImpl<FinTransactionMapper, Fi
 
     /**
      * 删除交易记录（软删除）
-     * <p>
      * 删除流程：
-     * <ol>
-     *   <li>验证交易存在且属于当前用户</li>
-     *   <li>恢复账户余额（撤销交易影响）</li>
-     *   <li>更新预算花费（移除该交易的花费）</li>
-     *   <li>软删除：更新状态为 0</li>
-     * </ol>
-     * </p>
+     * 1. 验证交易存在且属于当前用户
+     * 2. 恢复账户余额（撤销交易影响）
+     * 3. 更新预算花费（移除该交易的花费）
+     * 4. 软删除：更新状态为 0
      *
      * @param userId       当前用户ID
      * @param transactionId 要删除的交易ID
@@ -413,10 +391,8 @@ public class TransactionServiceImpl extends ServiceImpl<FinTransactionMapper, Fi
 
     /**
      * 导出交易记录为 CSV 格式
-     * <p>
      * CSV 格式：日期,类型,金额,分类,账户,备注
      * 类型显示为中文：收入/支出
-     * </p>
      *
      * @param userId   当前用户ID
      * @param startDate 可选的开始日期（yyyy-MM-dd）
@@ -470,13 +446,9 @@ public class TransactionServiceImpl extends ServiceImpl<FinTransactionMapper, Fi
 
     /**
      * 预览导入数据
-     * <p>
      * 在正式导入前，对数据进行预处理：
-     * <ul>
-     *   <li>设置默认货币（CNY）</li>
-     *   <li>设置默认发生时间（当前时间）</li>
-     * </ul>
-     * </p>
+     * - 设置默认货币（CNY）
+     * - 设置默认发生时间（当前时间）
      *
      * @param userId      当前用户ID
      * @param transactions 要导入的交易数据列表
@@ -495,9 +467,7 @@ public class TransactionServiceImpl extends ServiceImpl<FinTransactionMapper, Fi
 
     /**
      * 正式导入交易数据
-     * <p>
      * 只有经过预览确认的数据才能导入
-     * </p>
      *
      * @param userId      当前用户ID
      * @param transactions 已预览确认的交易数据列表
@@ -539,14 +509,10 @@ public class TransactionServiceImpl extends ServiceImpl<FinTransactionMapper, Fi
 
     /**
      * 应用余额变更
-     * <p>
      * 根据交易类型计算正确的余额变化方向：
-     * <ul>
-     *   <li>收入：增加余额</li>
-     *   <li>支出：减少余额</li>
-     *   <li>退款：增加余额（与支出相反）</li>
-     * </ul>
-     * </p>
+     * - 收入：增加余额
+     * - 支出：减少余额
+     * - 退款：增加余额（与支出相反）
      *
      * @param accountId  账户ID
      * @param type       交易类型

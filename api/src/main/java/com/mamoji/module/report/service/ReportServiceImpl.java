@@ -37,33 +37,23 @@ import lombok.extern.slf4j.Slf4j;
 
 /**
  * 报表服务实现类
- * <p>
  * 负责处理财务报表相关的业务逻辑，包括：
- * <ul>
- *   <li>收支汇总统计（总收入、总支出、净收入）</li>
- *   <li>分类报表（按分类汇总收支）</li>
- *   <li>趋势分析（日/周/月/年趋势）</li>
- *   <li>资产负债表（资产、负债、净资产）</li>
- *   <li>环比增长率计算</li>
- * </ul>
- * </p>
- * <p>
+ * - 收支汇总统计（总收入、总支出、净收入）
+ * - 分类报表（按分类汇总收支）
+ * - 趋势分析（日/周/月/年趋势）
+ * - 资产负债表（资产、负债、净资产）
+ * - 环比增长率计算
+ *
  * 报表数据来源：
- * <ul>
- *   <li>交易记录表（fin_transaction）：计算收支汇总、分类报表、趋势数据</li>
- *   <li>账户表（fin_account）：计算资产负债表</li>
- *   <li>分类表（fin_category）：获取分类名称</li>
- * </ul>
- * </p>
- * <p>
+ * - 交易记录表（fin_transaction）：计算收支汇总、分类报表、趋势数据
+ * - 账户表（fin_account）：计算资产负债表
+ * - 分类表（fin_category）：获取分类名称
+ *
  * 报表类型说明：
- * <ul>
- *   <li>SummaryVO: 汇总报表（总收入、总支出、交易数、账户数）</li>
- *   <li>CategoryReportVO: 分类报表（按分类的收支明细）</li>
- *   <li>TrendVO: 趋势报表（含环比变化百分比）</li>
- *   <li>资产负债表: 资产、负债、净资产汇总</li>
- * </ul>
- * </p>
+ * - SummaryVO: 汇总报表（总收入、总支出、交易数、账户数）
+ * - CategoryReportVO: 分类报表（按分类的收支明细）
+ * - TrendVO: 趋势报表（含环比变化百分比）
+ * - 资产负债表: 资产、负债、净资产汇总
  *
  * @see ReportService 报表服务接口
  * @see SummaryVO 汇总响应对象
@@ -88,23 +78,16 @@ public class ReportServiceImpl implements ReportService {
 
     /**
      * 获取收支汇总信息
-     * <p>
      * 汇总指定时间范围内的收支情况，包括：
-     * <ul>
-     *   <li>totalIncome: 总收入</li>
-     *   <li>totalExpense: 总支出</li>
-     *   <li>netIncome: 净收入（收入 - 支出）</li>
-     *   <li>transactionCount: 交易笔数</li>
-     *   <li>accountCount: 账户数量</li>
-     * </ul>
-     * </p>
-     * <p>
+     * - totalIncome: 总收入
+     * - totalExpense: 总支出
+     * - netIncome: 净收入（收入 - 支出）
+     * - transactionCount: 交易笔数
+     * - accountCount: 账户数量
+     *
      * 时间范围默认值：
-     * <ul>
-     *   <li>startDate: 当月第一天</li>
-     *   <li>endDate: 当前日期</li>
-     * </ul>
-     * </p>
+     * - startDate: 当月第一天
+     * - endDate: 当前日期
      *
      * @param userId  当前用户ID
      * @param request 报表查询条件（时间范围等）
@@ -133,19 +116,14 @@ public class ReportServiceImpl implements ReportService {
 
     /**
      * 获取分类收支报表
-     * <p>
      * 按分类汇总指定时间范围内的收支明细，
      * 返回每个分类的收入合计、支出合计以及交易笔数。
-     * </p>
-     * <p>
+     *
      * 报表数据包括：
-     * <ul>
-     *   <li>分类ID、分类名称</li>
-     *   <li>收入合计（该分类下的所有收入交易）</li>
-     *   <li>支出合计（该分类下的所有支出交易）</li>
-     *   <li>交易笔数</li>
-     * </ul>
-     * </p>
+     * - 分类ID、分类名称
+     * - 收入合计（该分类下的所有收入交易）
+     * - 支出合计（该分类下的所有支出交易）
+     * - 交易笔数
      *
      * @param userId  当前用户ID
      * @param request 报表查询条件（时间范围等）
@@ -163,11 +141,14 @@ public class ReportServiceImpl implements ReportService {
 
     /**
      * 获取月度收支趋势
-     * <p>
      * 按日汇总指定年月的每日收支数据，
      * 返回每天的收入、支出、净收入以及交易笔数。
-     * </p>
-     * <p>
+     *
+     * @param userId 当前用户ID
+     * @param year   年份
+     * @param month  月份（1-12）
+     * @return 月度趋势数据 Map
+     */
      * 返回数据结构：
      * <ul>
      *   <li>year: 年份</li>
@@ -198,19 +179,14 @@ public class ReportServiceImpl implements ReportService {
 
     /**
      * 获取自定义时间范围的趋势报表
-     * <p>
      * 按指定周期（日/周/月/年）汇总交易数据，
      * 并计算相邻周期的环比变化百分比。
-     * </p>
-     * <p>
+     *
      * 周期说明：
-     * <ul>
-     *   <li>daily: 按天汇总</li>
-     *   <li>weekly: 按周汇总</li>
-     *   <li>monthly: 按月汇总</li>
-     *   <li>yearly: 按年汇总</li>
-     * </ul>
-     * </p>
+     * - daily: 按天汇总
+     * - weekly: 按周汇总
+     * - monthly: 按月汇总
+     * - yearly: 按年汇总
      *
      * @param userId    当前用户ID
      * @param startDate 开始日期
@@ -229,9 +205,7 @@ public class ReportServiceImpl implements ReportService {
 
     /**
      * 获取指定日期范围内的每日数据
-     * <p>
      * 按日汇总交易数据，返回每日汇总信息。
-     * </p>
      *
      * @param userId    当前用户ID
      * @param startDate 开始日期
@@ -254,23 +228,16 @@ public class ReportServiceImpl implements ReportService {
 
     /**
      * 获取资产负债表
-     * <p>
      * 汇总用户所有账户的资产和负债情况：
-     * <ul>
-     *   <li>totalAssets: 总资产（现金、银行存款、投资等）</li>
-     *   <li>totalLiabilities: 总负债（信用卡、贷款等）</li>
-     *   <li>netAssets: 净资产（总资产 - 总负债）</li>
-     *   <li>assets: 资产明细列表</li>
-     *   <li>liabilities: 负债明细列表</li>
-     * </ul>
-     * </p>
-     * <p>
+     * - totalAssets: 总资产（现金、银行存款、投资等）
+     * - totalLiabilities: 总负债（信用卡、贷款等）
+     * - netAssets: 净资产（总资产 - 总负债）
+     * - assets: 资产明细列表
+     * - liabilities: 负债明细列表
+     *
      * 账户类型说明：
-     * <ul>
-     *   <li>资产类: bank, cash, alipay, wechat, stock, fund</li>
-     *   <li>负债类: credit, debt</li>
-     * </ul>
-     * </p>
+     * - 资产类: bank, cash, alipay, wechat, stock, fund
+     * - 负债类: credit, debt
      *
      * @param userId 当前用户ID
      * @return 资产负债表数据 Map
@@ -285,10 +252,8 @@ public class ReportServiceImpl implements ReportService {
 
     /**
      * 获取查询开始日期
-     * <p>
      * 如果请求中指定了开始日期则使用指定值，
      * 否则默认为当月第一天。
-     * </p>
      *
      * @param request 报表查询条件
      * @return 开始日期
@@ -301,10 +266,8 @@ public class ReportServiceImpl implements ReportService {
 
     /**
      * 获取查询结束日期
-     * <p>
      * 如果请求中指定了结束日期则使用指定值，
      * 否则默认为当前日期。
-     * </p>
      *
      * @param request 报表查询条件
      * @return 结束日期
@@ -394,9 +357,7 @@ public class ReportServiceImpl implements ReportService {
 
     /**
      * 构建资产负债表
-     * <p>
      * 将账户列表按资产和负债分类计算汇总值。
-     * </p>
      *
      * @param accounts 账户列表
      * @return 资产负债表 Map
@@ -447,10 +408,8 @@ public class ReportServiceImpl implements ReportService {
 
     /**
      * 构建趋势报表列表
-     * <p>
      * 将分组后的交易数据转换为趋势 VO 列表，
      * 并计算每个周期与前一周期的环比变化百分比。
-     * </p>
      *
      * @param grouped 按周期分组的交易数据
      * @return 趋势报表列表

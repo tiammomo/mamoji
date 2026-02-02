@@ -50,9 +50,7 @@ public class TransactionController {
 
     /**
      * 获取最近交易记录
-     * <p>
      * 注意：此接口必须放在 /{id} 之前定义，否则 /recent 会被当作交易 ID 解析
-     * </p>
      *
      * @param user      当前登录用户
      * @param accountId 可选的账户 ID 过滤条件
@@ -165,9 +163,7 @@ public class TransactionController {
 
     /**
      * 为交易创建退款记录
-     * <p>
      * 支持全额退款和部分退款，退款金额不能超过原交易金额
-     * </p>
      *
      * @param user    当前登录用户
      * @param id      原始交易记录 ID
@@ -225,9 +221,7 @@ public class TransactionController {
 
     /**
      * 获取导入模板
-     * <p>
      * 返回 CSV 格式的导入模板，包含示例数据行
-     * </p>
      *
      * @return CSV 格式的导入模板
      */
@@ -242,9 +236,7 @@ public class TransactionController {
 
     /**
      * 预览导入数据
-     * <p>
      * 在正式导入前，先验证数据格式并返回预览结果
-     * </p>
      *
      * @param user        当前登录用户
      * @param transactions 要导入的交易数据列表
@@ -261,9 +253,7 @@ public class TransactionController {
 
     /**
      * 正式导入交易数据
-     * <p>
      * 只有经过预览确认的数据才能导入系统
-     * </p>
      *
      * @param user        当前登录用户
      * @param transactions 已预览确认的交易数据列表

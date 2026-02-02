@@ -146,3 +146,13 @@
 - 2025-02-02: 修复 JwtAuthenticationFilter.java 英文注释 -> 中文
 - 2025-02-02: 修复 MamojiApplication.java Result.java GlobalExceptionHandler.java 的 <p> 标签
 - 2025-02-02: 验证后端编译通过 (mvn compile)
+- 2025-02-02: 移除所有代码注释中的 HTML 标签 (<p>, <ol>, <li>, </p>, </ol>, </li>)
+  - BudgetServiceImpl.java
+  - TransactionController.java
+  - CategoryServiceImpl.java
+  - TransactionServiceImpl.java
+  - ReportServiceImpl.java
+  - AccountServiceImpl.java
+  - RefundServiceImpl.java
+  - GlobalExceptionHandler.java
+- 2025-02-02: 重新验证后端编译通过
