@@ -1,3 +1,12 @@
+/**
+ * 项目名称: Mamoji 记账系统
+ * 文件名: TransactionController.java
+ * 功能描述: 交易记录控制器，提供交易记录的 CRUD、导入导出、退款等 REST API 接口
+ *
+ * 创建日期: 2024-01-01
+ * 作者: tiammomo
+ * 版本: 1.0.0
+ */
 package com.mamoji.module.transaction.controller;
 
 import java.util.List;
@@ -20,13 +29,19 @@ import com.mamoji.security.UserPrincipal;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
 
-import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
-
-/** Transaction Controller */
+/**
+ * 交易记录控制器
+ * <p>
+ * 提供交易记录的完整 REST API 接口，包括：
+ * <ul>
+ *   <li>交易记录的增删改查</li>
+ *   <li>交易分页查询和最近交易</li>
+ *   <li>退款管理和退款记录查询</li>
+ *   <li>交易数据导入导出</li>
+ * </ul>
+ * </p>
+ */
 @RestController
 @RequestMapping("/api/v1/transactions")
 @RequiredArgsConstructor
@@ -35,7 +50,19 @@ public class TransactionController {
     private final TransactionService transactionService;
     private final RefundService refundService;
 
-    /** Get recent transactions - must be before /{id} to avoid matching "recent" as id */
+    // ==================== 查询接口 ====================
+
+    /**
+     * 获取最近交易记录
+     * <p>
+     * 注意：此接口必须放在 /{id} 之前定义，否则 /recent 会被当作交易 ID 解析
+     * </p>
+     *
+     * @param user      当前登录用户
+     * @param accountId 可选的账户 ID 过滤条件
+     * @param limit     返回记录数量限制，默认 10 条
+     * @return 最近的交易记录列表
+     */
     @GetMapping("/recent")
     public Result<List<TransactionVO>> getRecentTransactions(
             @AuthenticationPrincipal UserPrincipal user,
@@ -46,7 +73,13 @@ public class TransactionController {
         return Result.success(transactions);
     }
 
-    /** Get transactions with pagination */
+    /**
+     * 分页查询交易记录列表
+     *
+     * @param user    当前登录用户
+     * @param request 查询条件（时间范围、分类、账户、类型等）
+     * @return 分页后的交易记录列表
+     */
     @GetMapping
     public Result<PageResult<TransactionVO>> listTransactions(
             @AuthenticationPrincipal UserPrincipal user,
@@ -56,7 +89,13 @@ public class TransactionController {
         return Result.success(result);
     }
 
-    /** Get transaction by ID */
+    /**
+     * 根据 ID 获取单笔交易详情
+     *
+     * @param user 当前登录用户
+     * @param id   交易记录 ID
+     * @return 交易记录详情
+     */
     @GetMapping("/{id}")
     public Result<TransactionVO> getTransaction(
             @AuthenticationPrincipal UserPrincipal user, @PathVariable Long id) {
@@ -64,7 +103,15 @@ public class TransactionController {
         return Result.success(transaction);
     }
 
-    /** Create a new transaction */
+    // ==================== 增删改接口 ====================
+
+    /**
+     * 创建新的交易记录
+     *
+     * @param user    当前登录用户
+     * @param request 交易记录请求数据
+     * @return 创建成功的交易记录 ID
+     */
     @PostMapping
     public Result<Long> createTransaction(
             @AuthenticationPrincipal UserPrincipal user,
@@ -73,7 +120,14 @@ public class TransactionController {
         return Result.success(transactionId);
     }
 
-    /** Update a transaction */
+    /**
+     * 更新已有交易记录
+     *
+     * @param user    当前登录用户
+     * @param id      要更新的交易记录 ID
+     * @param request 新的交易记录数据
+     * @return 操作结果
+     */
     @PutMapping("/{id}")
     public Result<Void> updateTransaction(
             @AuthenticationPrincipal UserPrincipal user,
@@ -83,7 +137,13 @@ public class TransactionController {
         return Result.success();
     }
 
-    /** Delete a transaction */
+    /**
+     * 删除交易记录
+     *
+     * @param user 当前登录用户
+     * @param id   要删除的交易记录 ID
+     * @return 操作结果
+     */
     @DeleteMapping("/{id}")
     public Result<Void> deleteTransaction(
             @AuthenticationPrincipal UserPrincipal user, @PathVariable Long id) {
@@ -91,9 +151,15 @@ public class TransactionController {
         return Result.success();
     }
 
-    // ==================== Refund Endpoints ====================
+    // ==================== 退款接口 ====================
 
-    /** Get all refunds for a transaction */
+    /**
+     * 获取某笔交易的全部退款记录
+     *
+     * @param user 当前登录用户
+     * @param id   原始交易记录 ID
+     * @return 该交易的退款信息汇总
+     */
     @GetMapping("/{id}/refunds")
     public Result<TransactionRefundResponseVO> getTransactionRefunds(
             @AuthenticationPrincipal UserPrincipal user, @PathVariable Long id) {
@@ -101,7 +167,17 @@ public class TransactionController {
         return Result.success(result);
     }
 
-    /** Create a refund for a transaction */
+    /**
+     * 为交易创建退款记录
+     * <p>
+     * 支持全额退款和部分退款，退款金额不能超过原交易金额
+     * </p>
+     *
+     * @param user    当前登录用户
+     * @param id      原始交易记录 ID
+     * @param request 退款请求数据
+     * @return 创建成功的退款记录
+     */
     @PostMapping("/{id}/refunds")
     public Result<RefundVO> createRefund(
             @AuthenticationPrincipal UserPrincipal user,
@@ -112,7 +188,14 @@ public class TransactionController {
         return Result.success(result);
     }
 
-    /** Cancel a refund */
+    /**
+     * 取消（撤回）已创建的退款
+     *
+     * @param user        当前登录用户
+     * @param transactionId 原始交易记录 ID
+     * @param refundId    要取消的退款记录 ID
+     * @return 取消后的退款汇总信息
+     */
     @DeleteMapping("/{transactionId}/refunds/{refundId}")
     public Result<RefundSummaryVO> cancelRefund(
             @AuthenticationPrincipal UserPrincipal user,
@@ -122,9 +205,17 @@ public class TransactionController {
         return Result.success(result);
     }
 
-    // ==================== Import/Export Endpoints ====================
+    // ==================== 导入导出接口 ====================
 
-    /** Export transactions to CSV */
+    /**
+     * 导出交易记录为 CSV 格式
+     *
+     * @param user      当前登录用户
+     * @param startDate 可选的开始日期（yyyy-MM-dd）
+     * @param endDate   可选的结束日期（yyyy-MM-dd）
+     * @param type      可选的交易类型过滤（income/expense）
+     * @return CSV 格式的交易数据
+     */
     @GetMapping("/export")
     public Result<String> exportTransactions(
             @AuthenticationPrincipal UserPrincipal user,
@@ -136,7 +227,14 @@ public class TransactionController {
         return Result.success(csvContent);
     }
 
-    /** Get import template */
+    /**
+     * 获取导入模板
+     * <p>
+     * 返回 CSV 格式的导入模板，包含示例数据行
+     * </p>
+     *
+     * @return CSV 格式的导入模板
+     */
     @GetMapping("/import/template")
     public Result<String> getImportTemplate() {
         String template =
@@ -146,7 +244,16 @@ public class TransactionController {
         return Result.success(template);
     }
 
-    /** Preview import data */
+    /**
+     * 预览导入数据
+     * <p>
+     * 在正式导入前，先验证数据格式并返回预览结果
+     * </p>
+     *
+     * @param user        当前登录用户
+     * @param transactions 要导入的交易数据列表
+     * @return 验证后的交易数据列表
+     */
     @PostMapping("/import/preview")
     public Result<List<TransactionDTO>> previewImport(
             @AuthenticationPrincipal UserPrincipal user,
@@ -156,7 +263,16 @@ public class TransactionController {
         return Result.success(preview);
     }
 
-    /** Import transactions from previewed data */
+    /**
+     * 正式导入交易数据
+     * <p>
+     * 只有经过预览确认的数据才能导入系统
+     * </p>
+     *
+     * @param user        当前登录用户
+     * @param transactions 已预览确认的交易数据列表
+     * @return 成功导入的交易记录 ID 列表
+     */
     @PostMapping("/import")
     public Result<List<Long>> importTransactions(
             @AuthenticationPrincipal UserPrincipal user,
