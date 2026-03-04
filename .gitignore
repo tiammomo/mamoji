@@ -52,6 +52,9 @@ target/
 *.jar
 *.war
 
+# IDE
+.idea/
+
 # OS
 Thumbs.db
 
