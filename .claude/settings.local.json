@@ -1,0 +1,24 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(ls:*)",
+      "Bash(npx skills:*)",
+      "Bash(ln:*)",
+      "Bash(cmd:*)",
+      "Bash(netstat:*)",
+      "Bash(taskkill:*)",
+      "Bash(mvn:*)",
+      "Bash(npm:*)"
+    ]
+  },
+  "mamoji": {
+    "ports": {
+      "frontend": 43000,
+      "backend": 48000
+    },
+    "testAccount": {
+      "email": "test@mamoji.com",
+      "password": "123456"
+    }
+  }
+}
