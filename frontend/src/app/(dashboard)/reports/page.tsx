@@ -18,6 +18,7 @@ import {
   Cell,
   Legend,
 } from "recharts";
+import { Calendar, ChevronDown } from "lucide-react";
 
 interface TrendData {
   month: string;
@@ -48,7 +49,11 @@ export default function ReportsPage() {
   const [monthTrend, setMonthTrend] = useState<TrendData[]>([]);
   const [categoryStats, setCategoryStats] = useState<CategoryStat[]>([]);
   const [comparison, setComparison] = useState<MonthComparison | null>(null);
-  const [month, setMonth] = useState(new Date().toISOString().slice(0, 7));
+  const [dateRange, setDateRange] = useState<{ start: string; end: string }>({
+    start: new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().slice(0, 10),
+    end: new Date().toISOString().slice(0, 10),
+  });
+  const [showDateFilter, setShowDateFilter] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -62,38 +67,36 @@ export default function ReportsPage() {
   useEffect(() => {
     setLoading(true);
 
-    const currentDate = new Date(month + "-01");
-    const prevMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1);
-    const prevMonthStr = prevMonth.toISOString().slice(0, 7);
+    // Build query params only if dates are provided (use & for subsequent params)
+    const dateParams = dateRange.start && dateRange.end
+      ? `&startDate=${dateRange.start}&endDate=${dateRange.end}`
+      : '';
 
     Promise.all([
-      api.get<TrendData[]>(`/stats/trend?startDate=${month}&endDate=${month}`),
-      api.get<TrendData[]>(`/stats/trend?startDate=${prevMonthStr}&endDate=${month}`),
-      api.get<CategoryStat[]>(`/stats/categories?type=2&month=${month}`),
-      api.get<TrendData[]>(`/stats/trend?startDate=${prevMonthStr}&endDate=${prevMonthStr}`),
+      api.get<TrendData[]>(`/stats/trend?${dateParams.slice(1)}`),
+      api.get<CategoryStat[]>(`/stats/categories?type=2${dateParams}`),
     ])
-      .then(([currentData, trendData, categoryData, prevData]) => {
-        setTrend(currentData);
+      .then(([trendData, categoryData]) => {
+        setTrend(trendData);
         setMonthTrend(trendData);
         setCategoryStats(categoryData);
 
-        const current = currentData[0] || { income: 0, expense: 0 };
-        const prev = prevData[0] || { income: 0, expense: 0 };
+        // Calculate totals from the trend data
+        const totalIncome = trendData.reduce((sum, d) => sum + (d.income || 0), 0);
+        const totalExpense = trendData.reduce((sum, d) => sum + (d.expense || 0), 0);
 
         setComparison({
-          income: current.income,
-          expense: current.expense,
-          balance: current.income - current.expense,
-          incomeChange: prev.income > 0 ? ((current.income - prev.income) / prev.income) * 100 : 0,
-          expenseChange: prev.expense > 0 ? ((current.expense - prev.expense) / prev.expense) * 100 : 0,
-          balanceChange: prev.income - prev.expense !== 0
-            ? ((current.income - current.expense) - (prev.income - prev.expense)) / Math.abs(prev.income - prev.expense) * 100
-            : 0,
+          income: totalIncome,
+          expense: totalExpense,
+          balance: totalIncome - totalExpense,
+          incomeChange: 0,
+          expenseChange: 0,
+          balanceChange: 0,
         });
       })
       .catch(console.error)
       .finally(() => setLoading(false));
-  }, [month]);
+  }, [dateRange]);
 
   const COLORS = [
     "#6366F1",
@@ -153,12 +156,59 @@ export default function ReportsPage() {
           <h1 className="text-2xl font-bold text-gray-900">统计报表</h1>
           <p className="text-gray-500 mt-1">分析您的收支情况</p>
         </div>
-        <input
-          type="month"
-          value={month}
-          onChange={(e) => setMonth(e.target.value)}
-          className="px-4 py-2 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
-        />
+        {/* Date Range Filter */}
+        <div className="relative">
+          <button
+            onClick={() => setShowDateFilter(!showDateFilter)}
+            className="flex items-center gap-2 px-4 py-2 border border-gray-200 rounded-xl hover:bg-gray-50 bg-white"
+          >
+            <Calendar className="w-5 h-5 text-gray-400" />
+            <span className="text-sm">
+              {dateRange.start} ~ {dateRange.end}
+            </span>
+            <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${showDateFilter ? "rotate-180" : ""}`} />
+          </button>
+          {showDateFilter && (
+            <div className="absolute right-0 top-full mt-2 p-4 bg-white rounded-xl shadow-lg border z-10">
+              <div className="flex items-center gap-2">
+                <input
+                  type="date"
+                  value={dateRange.start}
+                  onChange={(e) => setDateRange({ ...dateRange, start: e.target.value })}
+                  className="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                />
+                <span className="text-gray-400">至</span>
+                <input
+                  type="date"
+                  value={dateRange.end}
+                  onChange={(e) => setDateRange({ ...dateRange, end: e.target.value })}
+                  className="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                />
+              </div>
+              <div className="flex justify-end gap-2 mt-3">
+                <button
+                  onClick={() => {
+                    const today = new Date();
+                    setDateRange({
+                      start: new Date(today.getFullYear(), today.getMonth(), 1).toISOString().slice(0, 10),
+                      end: today.toISOString().slice(0, 10),
+                    });
+                    setShowDateFilter(false);
+                  }}
+                  className="px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-100 rounded-lg"
+                >
+                  本月
+                </button>
+                <button
+                  onClick={() => setShowDateFilter(false)}
+                  className="px-3 py-1.5 text-sm bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
+                >
+                  确定
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Summary Cards with Comparison */}

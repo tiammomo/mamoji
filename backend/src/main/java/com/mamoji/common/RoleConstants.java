@@ -11,11 +11,14 @@ public class RoleConstants {
     public static final String ROLE_USER = "USER";
 
     public static String getRoleName(int role) {
-        return switch (role) {
-            case ADMIN -> ROLE_ADMIN;
-            case USER -> ROLE_USER;
-            default -> "UNKNOWN";
-        };
+        switch (role) {
+            case ADMIN:
+                return ROLE_ADMIN;
+            case USER:
+                return ROLE_USER;
+            default:
+                return "UNKNOWN";
+        }
     }
 
     public static boolean isAdmin(Integer role) {

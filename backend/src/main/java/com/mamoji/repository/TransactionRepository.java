@@ -38,4 +38,8 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
     );
 
     Page<Transaction> findByUserIdAndTypeOrderByDateDesc(Long userId, Integer type, Pageable pageable);
+
+    Page<Transaction> findByUserIdAndDateBetweenOrderByDateDesc(Long userId, LocalDate startDate, LocalDate endDate, Pageable pageable);
+
+    Page<Transaction> findByUserIdAndTypeAndDateBetweenOrderByDateDesc(Long userId, Integer type, LocalDate startDate, LocalDate endDate, Pageable pageable);
 }

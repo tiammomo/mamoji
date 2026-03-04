@@ -1,29 +1,35 @@
 # 数据库设计
 
-## 1. 概述
+ 概述
 
-MVP 阶段使用 SQLite 作为开发/生产数据库，后期平滑迁移到 MySQL。
+开发## 1.阶段使用 H2 内存数据库，生产环境使用 MySQL。
 
 ### 1.1 数据库选型
 
 | 阶段 | 数据库 | 说明 |
 |------|--------|------|
-| MVP | SQLite | 轻量级，无需配置，开箱即用，适合个人/小团队 |
+| 开发 | H2 (内存/SQLite兼容) | 无需配置，开箱即用，适合开发调试 |
 | 生产 | MySQL 8.0 | 高并发，支持事务，成熟稳定 |
 
-### 1.2 MVP 连接配置（SQLite）
+### 1.2 开发环境配置（H2）
 
 ```yaml
-# application.yml (MVP 开发环境)
+# application.yml (开发环境)
 spring:
   datasource:
-    url: jdbc:sqlite:${user.home}/mamoji.db
-    driver-class-name: org.sqlite.JDBC
+    url: jdbc:h2:mem:mamoji
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
   jpa:
-    database-platform: org.hibernate.community.dialect.SQLiteDialect
+    database-platform: org.hibernate.dialect.H2Dialect
     hibernate:
       ddl-auto: update  # 开发时自动建表
-    show-sql: true
+    show-sql: false
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
 ```
 
 ### 1.3 生产配置（MySQL）

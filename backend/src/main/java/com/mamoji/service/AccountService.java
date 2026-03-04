@@ -91,6 +91,11 @@ public class AccountService {
         );
     }
 
+    public Map<String, BigDecimal> getAccountSummaryByDateRange(Long userId, java.time.LocalDate startDate, java.time.LocalDate endDate) {
+        // For now, return current summary - could be enhanced to calculate based on transactions
+        return getAccountSummary(userId);
+    }
+
     private AccountDTO toDTO(Account account) {
         AccountDTO dto = new AccountDTO();
         dto.setId(account.getId());

@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
-import { Wallet, Plus, TrendingUp, Target, Trash2, AlertTriangle, Pencil, X, Search } from "lucide-react";
+import { Wallet, Plus, TrendingUp, Target, Trash2, AlertTriangle, Pencil, X, Search, Calendar, ChevronDown } from "lucide-react";
 
 interface Budget {
   id: number;
@@ -38,6 +38,11 @@ export default function BudgetPage() {
   const [loading, setLoading] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
   const [searchKeyword, setSearchKeyword] = useState("");
+  const [dateRange, setDateRange] = useState<{ start: string; end: string }>({
+    start: "",
+    end: "",
+  });
+  const [showDateFilter, setShowDateFilter] = useState(false);
   const [editingBudget, setEditingBudget] = useState<Budget | null>(null);
   const [newBudget, setNewBudget] = useState({
     name: "",
@@ -58,9 +63,18 @@ export default function BudgetPage() {
     fetchCategories();
   }, [router]);
 
+  // Fetch budgets when date range changes
+  useEffect(() => {
+    fetchBudgets();
+  }, [dateRange]);
+
   const fetchBudgets = async () => {
     try {
-      const data = await api.get<Budget[]>("/budgets");
+      const params = new URLSearchParams();
+      if (dateRange.start) params.append("startDate", dateRange.start);
+      if (dateRange.end) params.append("endDate", dateRange.end);
+      const queryString = params.toString();
+      const data = await api.get<Budget[]>(`/budgets${queryString ? '?' + queryString : ''}`);
       setBudgets(data);
     } catch (err) {
       console.error(err);
@@ -152,23 +166,79 @@ export default function BudgetPage() {
           <h1 className="text-2xl font-bold text-gray-900">预算管理</h1>
           <p className="text-gray-500 mt-1">设置和管理您的月度预算</p>
         </div>
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-          <input
-            type="text"
-            placeholder="搜索预算..."
-            value={searchKeyword}
-            onChange={(e) => setSearchKeyword(e.target.value)}
-            className="pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent w-48"
-          />
+        <div className="flex items-center gap-4">
+          {/* Date Range Filter */}
+          <div className="relative">
+            <button
+              onClick={() => setShowDateFilter(!showDateFilter)}
+              className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                dateRange.start || dateRange.end
+                  ? "bg-indigo-100 text-indigo-700"
+                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+              }`}
+            >
+              <Calendar className="w-4 h-4" />
+              {dateRange.start && dateRange.end
+                ? `${dateRange.start} ~ ${dateRange.end}`
+                : "日期筛选"}
+              <ChevronDown className={`w-4 h-4 transition-transform ${showDateFilter ? "rotate-180" : ""}`} />
+            </button>
+            {showDateFilter && (
+              <div className="absolute right-0 top-full mt-2 p-4 bg-white rounded-xl shadow-lg border z-10">
+                <div className="flex items-center gap-2">
+                  <input
+                    type="date"
+                    value={dateRange.start}
+                    onChange={(e) => setDateRange({ ...dateRange, start: e.target.value })}
+                    className="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  />
+                  <span className="text-gray-400">至</span>
+                  <input
+                    type="date"
+                    value={dateRange.end}
+                    onChange={(e) => setDateRange({ ...dateRange, end: e.target.value })}
+                    className="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  />
+                </div>
+                <div className="flex justify-end gap-2 mt-3">
+                  <button
+                    onClick={() => {
+                      setDateRange({ start: "", end: "" });
+                      setShowDateFilter(false);
+                    }}
+                    className="px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-100 rounded-lg"
+                  >
+                    清除
+                  </button>
+                  <button
+                    onClick={() => setShowDateFilter(false)}
+                    className="px-3 py-1.5 text-sm bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
+                  >
+                    确定
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+          {/* Search */}
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+            <input
+              type="text"
+              placeholder="搜索预算..."
+              value={searchKeyword}
+              onChange={(e) => setSearchKeyword(e.target.value)}
+              className="pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent w-48"
+            />
+          </div>
+          <button
+            onClick={() => setShowAddModal(true)}
+            className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+          >
+            <Plus className="w-5 h-5" />
+            添加预算
+          </button>
         </div>
-        <button
-          onClick={() => setShowAddModal(true)}
-          className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
-        >
-          <Plus className="w-5 h-5" />
-          添加预算
-        </button>
       </div>
 
       {/* Overview Cards */}

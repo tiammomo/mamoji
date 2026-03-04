@@ -93,8 +93,17 @@ public class AccountController {
     }
 
     @GetMapping("/summary")
-    public ResponseEntity<Map<String, Object>> getSummary(@AuthenticationUser User user) {
-        Map<String, java.math.BigDecimal> summary = accountService.getAccountSummary(user.getId());
+    public ResponseEntity<Map<String, Object>> getSummary(
+            @AuthenticationUser User user,
+            @RequestParam(required = false) String startDate,
+            @RequestParam(required = false) String endDate) {
+        Map<String, java.math.BigDecimal> summary;
+        if (startDate != null && !startDate.isEmpty() && endDate != null && !endDate.isEmpty()) {
+            summary = accountService.getAccountSummaryByDateRange(user.getId(),
+                java.time.LocalDate.parse(startDate), java.time.LocalDate.parse(endDate));
+        } else {
+            summary = accountService.getAccountSummary(user.getId());
+        }
         Map<String, Object> result = new HashMap<>();
         result.put("code", 0);
         result.put("message", "success");

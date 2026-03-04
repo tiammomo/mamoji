@@ -24,6 +24,19 @@ public class BudgetService {
                 .collect(Collectors.toList());
     }
 
+    public List<BudgetDTO> getBudgetsByDateRange(Long userId, LocalDate startDate, LocalDate endDate) {
+        return budgetRepository.findByUserIdAndStatus(userId, 1)
+                .stream()
+                .filter(b -> {
+                    // Include budget if its date range overlaps with the query range
+                    LocalDate budgetStart = b.getStartDate();
+                    LocalDate budgetEnd = b.getEndDate();
+                    return !(budgetEnd.isBefore(startDate) || budgetStart.isAfter(endDate));
+                })
+                .map(this::toDTO)
+                .collect(Collectors.toList());
+    }
+
     public List<BudgetDTO> getActiveBudgets(Long userId) {
         return budgetRepository.findActiveBudgets(userId, LocalDate.now())
                 .stream()

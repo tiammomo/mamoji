@@ -254,6 +254,9 @@ POST /families/leave
 
 ## 5. 账户接口
 
+> 注意：账户列表显示当前余额，不支持日期筛选（无历史记录功能）
+> 搜索功能在前端实现
+
 ### 5.1 获取账户列表
 ```
 GET /accounts
@@ -362,7 +365,71 @@ DELETE /categories/:id
 
 ---
 
-## 7. 交易接口
+## 7. 预算接口
+
+### 7.1 获取预算列表
+```
+GET /budgets
+```
+
+**查询参数：**
+| 参数 | 类型 | 说明 |
+|------|------|------|
+| startDate | string | 开始日期 YYYY-MM-DD |
+| endDate | string | 结束日期 YYYY-MM-DD |
+
+> 搜索功能在前端实现
+
+**响应：**
+```json
+{
+  "code": 0,
+  "data": [
+    {
+      "id": 1,
+      "categoryId": 2,
+      "categoryName": "餐饮",
+      "amount": 2000.00,
+      "month": "2026-03",
+      "spent": 1500.00,
+      "remaining": 500.00
+    }
+  ]
+}
+```
+
+### 7.2 获取当前有效预算
+```
+GET /budgets/active
+```
+
+### 7.3 创建预算
+```
+POST /budgets
+```
+
+**请求体：**
+```json
+{
+  "categoryId": 2,
+  "amount": 2000,
+  "month": "2026-03"
+}
+```
+
+### 7.4 更新预算
+```
+PUT /budgets/:id
+```
+
+### 7.5 删除预算
+```
+DELETE /budgets/:id
+```
+
+---
+
+## 8. 交易接口
 
 ### 7.1 获取交易列表
 ```
@@ -373,13 +440,12 @@ GET /transactions
 | 参数 | 类型 | 说明 |
 |------|------|------|
 | page | int | 页码，默认1 |
-| page_size | int | 每页数量，默认20 |
+| pageSize | int | 每页数量，默认20 |
 | type | int | 类型：1-收入 2-支出 |
-| category_id | int | 分类ID |
-| account_id | int | 账户ID |
-| user_id | int | 成员ID |
-| start_date | string | 开始日期 YYYY-MM-DD |
-| end_date | string | 结束日期 YYYY-MM-DD |
+| startDate | string | 开始日期 YYYY-MM-DD |
+| endDate | string | 结束日期 YYYY-MM-DD |
+
+> 注意：搜索功能在前端实现，会对返回的交易记录进行关键词匹配（匹配分类名、账户名、备注、日期、成员昵称）
 
 **响应：**
 ```json
@@ -445,9 +511,9 @@ DELETE /transactions/:id
 
 ---
 
-## 8. 统计接口
+## 9. 统计接口
 
-### 8.1 收支概览
+### 9.1 收支概览
 ```
 GET /stats/overview
 ```
@@ -455,7 +521,7 @@ GET /stats/overview
 **查询参数：**
 | 参数 | 说明 |
 |------|------|
-| month | 月份 YYYY-MM，默认当月 |
+| month | 月份 YYYY-MM 或 YYYY-MM-DD，默认当月 |
 
 **响应：**
 ```json
@@ -471,7 +537,7 @@ GET /stats/overview
 }
 ```
 
-### 8.2 收支趋势
+### 9.2 收支趋势
 ```
 GET /stats/trend
 ```
@@ -479,8 +545,8 @@ GET /stats/trend
 **查询参数：**
 | 参数 | 说明 |
 |------|------|
-| start_date | 开始月份 YYYY-MM |
-| end_date | 结束月份 YYYY-MM |
+| startDate | 开始日期 YYYY-MM 或 YYYY-MM-DD |
+| endDate | 结束日期 YYYY-MM 或 YYYY-MM-DD |
 
 **响应：**
 ```json
@@ -501,7 +567,7 @@ GET /stats/trend
 }
 ```
 
-### 8.3 分类统计
+### 9.3 分类统计
 ```
 GET /stats/categories
 ```
@@ -509,8 +575,9 @@ GET /stats/categories
 **查询参数：**
 | 参数 | 说明 |
 |------|------|
-| type | 类型：1-收入 2-支出 |
-| month | 月份 YYYY-MM，默认当月 |
+| type | 类型：1-收入 2-支出 (必填) |
+| startDate | 开始日期 YYYY-MM-DD |
+| endDate | 结束日期 YYYY-MM-DD |
 
 **响应：**
 ```json
@@ -535,7 +602,7 @@ GET /stats/categories
 }
 ```
 
-### 8.4 成员统计
+### 9.4 成员统计
 ```
 GET /stats/members
 ```
@@ -566,7 +633,7 @@ GET /stats/members
 }
 ```
 
-### 8.5 账户余额
+### 9.5 账户余额
 ```
 GET /stats/accounts
 ```
@@ -592,7 +659,7 @@ GET /stats/accounts
 
 ---
 
-## 9. 错误码
+## 10. 错误码
 
 | 错误码 | 说明 |
 |--------|------|
@@ -612,7 +679,7 @@ GET /stats/accounts
 
 ---
 
-## 10. 安全性设计
+## 11. 安全性设计
 
 > 以下为生产环境建议功能，MVP 阶段可先跳过或简化实现。
 
@@ -701,7 +768,7 @@ public class FamilyController {
 
 ---
 
-## 11. 限流设计
+## 12. 限流设计
 
 ### 11.1 接口限流
 
@@ -752,7 +819,7 @@ public class RateLimitFilter implements Filter {
 
 ---
 
-## 12. API 版本控制
+## 13. API 版本控制
 
 ### 12.1 版本策略
 
@@ -780,7 +847,7 @@ public class TransactionControllerV2 {
 
 ---
 
-## 13. 日志与监控
+## 14. 日志与监控
 
 ### 13.1 请求日志
 
@@ -833,7 +900,7 @@ public class TransactionService {
 
 ---
 
-## 14. 错误处理
+## 15. 错误处理
 
 ### 14.1 全局异常处理
 

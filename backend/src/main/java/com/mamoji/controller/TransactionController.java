@@ -35,10 +35,27 @@ public class TransactionController {
             @AuthenticationUser User user,
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "20") int pageSize,
-            @RequestParam(required = false) Integer type) {
+            @RequestParam(required = false) Integer type,
+            @RequestParam(required = false) String startDate,
+            @RequestParam(required = false) String endDate) {
 
         PageRequest pageRequest = PageRequest.of(page - 1, pageSize);
-        Page<Transaction> transactionPage = transactionRepository.findByUserIdOrderByDateDesc(user.getId(), pageRequest);
+        Page<Transaction> transactionPage;
+
+        // 根据条件查询
+        if (startDate != null && !startDate.isEmpty() && endDate != null && !endDate.isEmpty()) {
+            LocalDate start = LocalDate.parse(startDate);
+            LocalDate end = LocalDate.parse(endDate);
+            if (type != null) {
+                transactionPage = transactionRepository.findByUserIdAndTypeAndDateBetweenOrderByDateDesc(user.getId(), type, start, end, pageRequest);
+            } else {
+                transactionPage = transactionRepository.findByUserIdAndDateBetweenOrderByDateDesc(user.getId(), start, end, pageRequest);
+            }
+        } else if (type != null) {
+            transactionPage = transactionRepository.findByUserIdAndTypeOrderByDateDesc(user.getId(), type, pageRequest);
+        } else {
+            transactionPage = transactionRepository.findByUserIdOrderByDateDesc(user.getId(), pageRequest);
+        }
 
         List<Map<String, Object>> list = transactionPage.getContent().stream()
             .map(this::toMap)

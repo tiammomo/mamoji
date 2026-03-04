@@ -29,9 +29,17 @@ public class StatsController {
             @AuthenticationUser User user,
             @RequestParam(required = false, defaultValue = "") String month) {
 
-        YearMonth yearMonth = month.isEmpty()
-            ? YearMonth.now()
-            : YearMonth.parse(month);
+        YearMonth yearMonth;
+        if (month == null || month.isEmpty()) {
+            yearMonth = YearMonth.now();
+        } else {
+            // Handle both YYYY-MM and YYYY-MM-DD formats
+            try {
+                yearMonth = YearMonth.parse(month);
+            } catch (Exception e) {
+                yearMonth = YearMonth.from(LocalDate.parse(month));
+            }
+        }
 
         LocalDate startDate = yearMonth.atDay(1);
         LocalDate endDate = yearMonth.atEndOfMonth();
@@ -62,11 +70,29 @@ public class StatsController {
     @GetMapping("/trend")
     public ResponseEntity<Map<String, Object>> getTrend(
             @AuthenticationUser User user,
-            @RequestParam String startDate,
-            @RequestParam String endDate) {
+            @RequestParam(required = false) String startDate,
+            @RequestParam(required = false) String endDate) {
 
-        YearMonth start = YearMonth.parse(startDate);
-        YearMonth end = YearMonth.parse(endDate);
+        // Default to current month if not provided
+        YearMonth start;
+        YearMonth end;
+        if (startDate != null && !startDate.isEmpty() && endDate != null && !endDate.isEmpty()) {
+            // Handle both YYYY-MM and YYYY-MM-DD formats
+            try {
+                start = YearMonth.parse(startDate);
+            } catch (Exception e) {
+                start = YearMonth.from(java.time.LocalDate.parse(startDate));
+            }
+            try {
+                end = YearMonth.parse(endDate);
+            } catch (Exception e) {
+                end = YearMonth.from(java.time.LocalDate.parse(endDate));
+            }
+        } else {
+            YearMonth current = YearMonth.now();
+            start = YearMonth.of(current.getYear(), current.getMonthValue());
+            end = start;
+        }
 
         List<Map<String, Object>> trend = new ArrayList<>();
 
@@ -104,17 +130,22 @@ public class StatsController {
     public ResponseEntity<Map<String, Object>> getCategoryStats(
             @AuthenticationUser User user,
             @RequestParam Integer type,
-            @RequestParam(required = false, defaultValue = "") String month) {
+            @RequestParam(required = false) String startDate,
+            @RequestParam(required = false) String endDate) {
 
-        YearMonth yearMonth = month.isEmpty()
-            ? YearMonth.now()
-            : YearMonth.parse(month);
-
-        LocalDate startDate = yearMonth.atDay(1);
-        LocalDate endDate = yearMonth.atEndOfMonth();
+        LocalDate start;
+        LocalDate end;
+        if (startDate != null && !startDate.isEmpty() && endDate != null && !endDate.isEmpty()) {
+            start = LocalDate.parse(startDate);
+            end = LocalDate.parse(endDate);
+        } else {
+            YearMonth yearMonth = YearMonth.now();
+            start = yearMonth.atDay(1);
+            end = yearMonth.atEndOfMonth();
+        }
 
         List<Object[]> results = transactionRepository.sumByCategoryAndType(
-            user.getId(), type, startDate, endDate);
+            user.getId(), type, start, end);
 
         Map<Long, Category> categoryMap = categoryRepository.findAll().stream()
             .collect(Collectors.toMap(Category::getId, c -> c));

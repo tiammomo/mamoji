@@ -34,8 +34,17 @@ public class BudgetController {
     }
 
     @GetMapping
-    public ResponseEntity<Map<String, Object>> getBudgets(@AuthenticationUser User user) {
-        List<BudgetDTO> budgets = budgetService.getBudgets(user.getId());
+    public ResponseEntity<Map<String, Object>> getBudgets(
+            @AuthenticationUser User user,
+            @RequestParam(required = false) String startDate,
+            @RequestParam(required = false) String endDate) {
+        List<BudgetDTO> budgets;
+        if (startDate != null && !startDate.isEmpty() && endDate != null && !endDate.isEmpty()) {
+            budgets = budgetService.getBudgetsByDateRange(user.getId(),
+                java.time.LocalDate.parse(startDate), java.time.LocalDate.parse(endDate));
+        } else {
+            budgets = budgetService.getBudgets(user.getId());
+        }
 
         Map<String, Object> result = new HashMap<>();
         result.put("code", 0);
