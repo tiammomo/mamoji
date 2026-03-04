@@ -1,0 +1,60 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Build
+.next/
+out/
+dist/
+build/
+
+# Testing
+coverage/
+
+# Misc
+.DS_Store
+*.pem
+
+# Debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Local env files
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+frontend/.env.local
+
+# Project config (contains local paths and secrets)
+mamoji.config.json
+
+# Backend env files
+backend/.env
+backend/.env.local
+
+# Vercel
+.vercel
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Java
+target/
+*.class
+*.log
+*.jar
+*.war
+
+# OS
+Thumbs.db
+
+# Screenshots (do not commit)
+*.png
+!.gitkeep
