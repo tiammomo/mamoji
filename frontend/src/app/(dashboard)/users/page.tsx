@@ -181,12 +181,12 @@ export default function UsersPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="p-6 lg:p-8">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <Users className="w-6 h-6 text-indigo-600" />
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+        <div>
           <h1 className="text-2xl font-bold text-gray-900">用户管理</h1>
+          <p className="text-gray-500 mt-1">管理系统用户和权限</p>
         </div>
         <button
           onClick={() => handleOpenModal()}
@@ -198,7 +198,7 @@ export default function UsersPage() {
       </div>
 
       {/* User List */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
         <table className="w-full">
           <thead className="bg-gray-50 border-b border-gray-100">
             <tr>

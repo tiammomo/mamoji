@@ -148,3 +148,14 @@ export const userApi = {
   changePassword: (oldPassword: string, newPassword: string) =>
     api.put<{ message: string }>("/auth/password", { oldPassword, newPassword }),
 };
+
+// AI 助手 API
+export interface AIChatResponse {
+  reply: string;
+}
+
+export const aiApi = {
+  // 发送聊天消息
+  chat: (message: string, assistantType?: string) =>
+    api.post<AIChatResponse>("/ai/chat", { message, assistantType }),
+};

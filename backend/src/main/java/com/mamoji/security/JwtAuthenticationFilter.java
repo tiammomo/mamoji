@@ -32,6 +32,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             throws ServletException, IOException {
 
         try {
+            // 跳过 OPTIONS 预检请求
+            if ("OPTIONS".equalsIgnoreCase(request.getMethod())) {
+                filterChain.doFilter(request, response);
+                return;
+            }
+
             String authHeader = request.getHeader("Authorization");
 
             log.debug("JWT Filter - Path: {}, AuthHeader: {}", request.getRequestURI(), authHeader != null ? "present" : "null");

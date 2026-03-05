@@ -35,3 +35,9 @@ logging:
   level:
     com.mamoji: ${LOG_LEVEL:INFO}
     org.springframework.security: ${LOG_LEVEL_SECURITY:INFO}
+
+# AI 配置
+ai:
+  base-url: ${ANTHROPIC_BASE_URL:https://api.minimaxi.com}
+  api-key: ${ANTHROPIC_AUTH_TOKEN:}
+  model: ${ANTHROPIC_DEFAULT_SONNET_MODEL:abab6.5s-chat}

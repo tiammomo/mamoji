@@ -19,6 +19,9 @@
     "testAccount": {
       "email": "test@mamoji.com",
       "password": "123456"
+    },
+    "java": {
+      "home": "C:\\Users\\pearf\\.jdks\\corretto-21.0.10"
     }
   }
 }

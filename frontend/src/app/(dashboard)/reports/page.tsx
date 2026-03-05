@@ -218,7 +218,7 @@ export default function ReportsPage() {
             <p className="text-gray-500 text-sm">本月收入</p>
             {comparison && (
               <span className={`text-xs font-medium px-2 py-1 rounded-full ${getChangeColor(comparison.incomeChange, "increase")} bg-gray-100`}>
-                {formatChange(comparison.incomeChange)} vs上月
+                环比上月: {formatChange(comparison.incomeChange)}
               </span>
             )}
           </div>
@@ -232,7 +232,7 @@ export default function ReportsPage() {
             <p className="text-gray-500 text-sm">本月支出</p>
             {comparison && (
               <span className={`text-xs font-medium px-2 py-1 rounded-full ${getChangeColor(comparison.expenseChange, "decrease")} bg-gray-100`}>
-                {formatChange(comparison.expenseChange)} vs上月
+                环比上月: {formatChange(comparison.expenseChange)}
               </span>
             )}
           </div>
@@ -246,7 +246,7 @@ export default function ReportsPage() {
             <p className="text-gray-500 text-sm">本月结余</p>
             {comparison && (
               <span className={`text-xs font-medium px-2 py-1 rounded-full ${getChangeColor(comparison.balanceChange, "increase")} bg-gray-100`}>
-                {formatChange(comparison.balanceChange)} vs上月
+                环比上月: {formatChange(comparison.balanceChange)}
               </span>
             )}
           </div>

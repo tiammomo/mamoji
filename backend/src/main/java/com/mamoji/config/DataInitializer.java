@@ -3,10 +3,12 @@ package com.mamoji.config;
 import com.mamoji.entity.Account;
 import com.mamoji.entity.Budget;
 import com.mamoji.entity.Category;
+import com.mamoji.entity.Transaction;
 import com.mamoji.entity.User;
 import com.mamoji.repository.AccountRepository;
 import com.mamoji.repository.BudgetRepository;
 import com.mamoji.repository.CategoryRepository;
+import com.mamoji.repository.TransactionRepository;
 import com.mamoji.repository.UserRepository;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
@@ -16,7 +18,9 @@ import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 
 @Component
 @RequiredArgsConstructor
@@ -27,6 +31,7 @@ public class DataInitializer {
     private final UserRepository userRepository;
     private final AccountRepository accountRepository;
     private final BudgetRepository budgetRepository;
+    private final TransactionRepository transactionRepository;
     private final PasswordEncoder passwordEncoder;
 
     @PostConstruct
@@ -127,6 +132,126 @@ public class DataInitializer {
                 .build();
             budgetRepository.save(defaultBudget);
             log.info("Default budget initialized: " + defaultBudget.getName());
+
+            // 生成测试交易数据
+            generateTestTransactions(testUser.getId());
         }
+    }
+
+    private void generateTestTransactions(Long userId) {
+        if (transactionRepository.count() > 0) {
+            return; // 已有数据，跳过
+        }
+
+        LocalDate today = LocalDate.now();
+        List<Transaction> transactions = new ArrayList<>();
+        Random random = new Random(42); // 固定种子，保证每次生成相同数据
+
+        // 获取分类
+        List<Category> incomeCategories = categoryRepository.findByTypeOrderByIdAsc(1);
+        List<Category> expenseCategories = categoryRepository.findByTypeOrderByIdAsc(2);
+
+        // 本月交易 - 收入
+        for (int day = 1; day <= today.getDayOfMonth(); day++) {
+            LocalDate date = today.withDayOfMonth(day);
+
+            // 工资 - 每月1号
+            if (day == 1) {
+                transactions.add(createTransaction(userId, date, incomeCategories.get(0), 1,
+                    new BigDecimal("15000"), "月工资"));
+            }
+
+            // 奖金 - 每月15号
+            if (day == 15) {
+                transactions.add(createTransaction(userId, date, incomeCategories.get(1), 1,
+                    new BigDecimal("3000"), "项目奖金"));
+            }
+
+            // 投资收入 - 随机
+            if (random.nextInt(10) < 2) {
+                transactions.add(createTransaction(userId, date, incomeCategories.get(2), 1,
+                    new BigDecimal(String.format("%.2f", random.nextDouble() * 500 + 100)),
+                    "投资收益"));
+            }
+        }
+
+        // 本月交易 - 支出
+        // 餐饮 - 每天
+        for (int day = 1; day <= today.getDayOfMonth(); day++) {
+            LocalDate date = today.withDayOfMonth(day);
+            transactions.add(createTransaction(userId, date, expenseCategories.get(0), 2,
+                new BigDecimal(String.format("%.2f", random.nextDouble() * 80 + 20)),
+                "午餐"));
+            transactions.add(createTransaction(userId, date, expenseCategories.get(0), 2,
+                new BigDecimal(String.format("%.2f", random.nextDouble() * 60 + 15)),
+                "晚餐"));
+        }
+
+        // 交通 - 每周
+        for (int day = 1; day <= today.getDayOfMonth(); day += 7) {
+            LocalDate date = today.withDayOfMonth(Math.min(day, today.getDayOfMonth()));
+            transactions.add(createTransaction(userId, date, expenseCategories.get(1), 2,
+                new BigDecimal("4"), "地铁"));
+            transactions.add(createTransaction(userId, date, expenseCategories.get(1), 2,
+                new BigDecimal(String.format("%.2f", random.nextDouble() * 30 + 10)),
+                "打车"));
+        }
+
+        // 购物 - 每周
+        for (int day = 5; day <= today.getDayOfMonth(); day += 7) {
+            LocalDate date = today.withDayOfMonth(Math.min(day, today.getDayOfMonth()));
+            transactions.add(createTransaction(userId, date, expenseCategories.get(2), 2,
+                new BigDecimal(String.format("%.2f", random.nextDouble() * 200 + 50)),
+                "网购"));
+        }
+
+        // 娱乐 - 每周末
+        for (int day = 6; day <= today.getDayOfMonth(); day += 7) {
+            LocalDate date = today.withDayOfMonth(Math.min(day, today.getDayOfMonth()));
+            transactions.add(createTransaction(userId, date, expenseCategories.get(3), 2,
+                new BigDecimal(String.format("%.2f", random.nextDouble() * 150 + 50)),
+                "电影/娱乐"));
+        }
+
+        // 居住 - 每月1号
+        transactions.add(createTransaction(userId, today.withDayOfMonth(1), expenseCategories.get(4), 2,
+            new BigDecimal("3000"), "房租"));
+
+        // 生活 - 每周
+        for (int day = 3; day <= today.getDayOfMonth(); day += 7) {
+            LocalDate date = today.withDayOfMonth(Math.min(day, today.getDayOfMonth()));
+            transactions.add(createTransaction(userId, date, expenseCategories.get(5), 2,
+                new BigDecimal(String.format("%.2f", random.nextDouble() * 100 + 80)),
+                "日用品"));
+        }
+
+        // 人情 - 偶尔
+        if (random.nextInt(5) < 2) {
+            transactions.add(createTransaction(userId, today.minusDays(random.nextInt(15)), expenseCategories.get(8), 2,
+                new BigDecimal(String.format("%.2f", random.nextDouble() * 500 + 200)),
+                "红包/人情"));
+        }
+
+        // 电费水费
+        transactions.add(createTransaction(userId, today.withDayOfMonth(10), expenseCategories.get(5), 2,
+            new BigDecimal("150"), "电费"));
+        transactions.add(createTransaction(userId, today.withDayOfMonth(10), expenseCategories.get(5), 2,
+            new BigDecimal("80"), "水费"));
+
+        transactionRepository.saveAll(transactions);
+        log.info("Generated {} test transactions", transactions.size());
+    }
+
+    private Transaction createTransaction(Long userId, LocalDate date, Category category, Integer type,
+                                         BigDecimal amount, String remark) {
+        return Transaction.builder()
+            .userId(userId)
+            .categoryId(category.getId())
+            .accountId(1L)
+            .type(type)
+            .amount(amount)
+            .date(date)
+            .remark(remark)
+            .build();
     }
 }

@@ -15,6 +15,7 @@ import {
   Menu,
   Users,
   Settings,
+  Sparkles,
 } from "lucide-react";
 
 // 用户信息类型
@@ -59,6 +60,7 @@ const menuItems = [
   { icon: PieChart, label: "报表", href: "/reports" },
   { icon: CreditCard, label: "账户", href: "/accounts" },
   { icon: Wallet, label: "预算", href: "/budget" },
+  { icon: Sparkles, label: "AI 助手", href: "/ai" },
   // 管理员专属菜单项
   { icon: Users, label: "用户管理", href: "/users", adminOnly: true },
 ];
