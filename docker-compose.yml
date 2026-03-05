@@ -1,0 +1,109 @@
+# Mamoji Docker Compose
+# 开发/测试环境: docker-compose -f docker-compose.yml up -d
+# 生产环境: docker-compose -f docker-compose.prod.yml up -d
+
+version: '3.8'
+
+services:
+  # MySQL 数据库
+  mysql:
+    image: mysql:8.0
+    container_name: mamoji-mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-mamoji_root_2024}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-mamoji}
+      MYSQL_USER: ${DB_USER:-mamoji}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-mamoji123}
+    ports:
+      - "${MYSQL_PORT:-3306}:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      # 初始化脚本（可选）
+      - ./docker/mysql/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    networks:
+      - mamoji-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis 缓存（预留）
+  redis:
+    image: redis:7-alpine
+    container_name: mamoji-redis
+    restart: always
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:-mamoji_redis_2024}
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - mamoji-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # 后端服务
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: mamoji-backend
+    restart: always
+    environment:
+      - SPRING_PROFILES_ACTIVE=${SPRING_PROFILES_ACTIVE:-dev}
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/${MYSQL_DATABASE:-mamoji}
+      - SPRING_DATASOURCE_USERNAME=${DB_USER:-mamoji}
+      - SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD:-mamoji123}
+      - SPRING_JPA_DATABASE_PLATFORM=org.hibernate.dialect.MySQLDialect
+      - SERVER_PORT=38080
+      - JWT_SECRET=${JWT_SECRET:-mamoji-jwt-secret-change-in-production}
+      - ANTHROPIC_AUTH_TOKEN=${ANTHROPIC_AUTH_TOKEN:-}
+    ports:
+      - "${BACKEND_PORT:-38080}:38080"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - mamoji-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:38080/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # 前端服务
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: mamoji-frontend
+    restart: always
+    environment:
+      - NEXT_PUBLIC_API_BASE=${NEXT_PUBLIC_API_BASE:-http://localhost:38080/api/v1}
+    ports:
+      - "${FRONTEND_PORT:-33000}:80"
+    depends_on:
+      - backend
+    networks:
+      - mamoji-network
+
+volumes:
+  mysql_data:
+    driver: local
+  redis_data:
+    driver: local
+
+networks:
+  mamoji-network:
+    driver: bridge
+    name: mamoji-network
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.28.0.0/16

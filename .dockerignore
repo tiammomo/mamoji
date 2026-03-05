@@ -1,0 +1,31 @@
+# Docker ignore
+# 排除不需要复制到 Docker 镜像的文件
+
+# Git
+.git
+.gitignore
+
+# IDE
+.idea
+.vscode
+*.iml
+
+# Logs
+logs
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Test
+coverage
+*.test
+
+# Docs
+README.md
+docs/
+
+# Temp
+*.tmp
+*.temp
