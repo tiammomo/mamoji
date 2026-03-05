@@ -13,6 +13,7 @@
 - **搜索功能** - 支持按关键词搜索交易、账户、预算
 - **日期筛选** - 支持自定义日期范围筛选（交易、报表、预算）
 - **用户管理** - 管理员可管理普通用户权限
+- **AI 助手** - 智能财务分析助手、股票行情查询（ReAct 模式）
 
 ## 技术栈
 
@@ -24,6 +25,7 @@
 | 图表 | Recharts |
 | 数据库 | H2 (开发) / MySQL (生产) |
 | 认证 | JWT |
+| AI | MiniMax API (abab6.5s-chat) + ReAct Agent |
 
 ## 项目结构
 
@@ -124,6 +126,7 @@ cp .env.back.example backend/.env
 - `/api/v1/budgets` - 预算管理
 - `/api/v1/categories` - 分类管理
 - `/api/v1/stats` - 统计报表
+- `/api/v1/ai/chat` - AI 助手对话
 
 ## 开发指南
 

@@ -45,6 +45,8 @@ X-Timezone: Asia/Shanghai
 | 交易 | /transactions/{id} | DELETE | 删除交易 |
 | 统计 | /stats/overview | GET | 收支概览 |
 | 统计 | /stats/trend | GET | 收支趋势 |
+| AI | /ai/chat | POST | AI 助手对话 |
+| AI | /ai/chat/legacy | POST | AI 助手对话（传统模式）|
 
 > V1.0 版本增加：家庭、账户、分类管理接口
 
@@ -945,5 +947,66 @@ public class GlobalExceptionHandler {
 | 1003 | 权限不足 | 403 |
 | 1004 | 资源不存在 | 404 |
 | 1005 | 请求方法不支持 | 405 |
+
+---
+
+## 15. AI 助手接口
+
+### 15.1 AI 对话
+
+```
+POST /api/v1/ai/chat
+```
+
+**请求头：**
+```http
+Authorization: Bearer <token>
+Content-Type: application/json
+```
+
+**请求参数：**
+```json
+{
+  "message": "我这个月支出情况怎么样？",
+  "assistantType": "finance"  // 或 "stock"
+}
+```
+
+| 参数 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| message | string | 是 | 用户消息 |
+| assistantType | string | 否 | 助手类型：finance（财务助手）、stock（股票助手），默认 finance |
+
+**响应：**
+```json
+{
+  "code": 0,
+  "message": "success",
+  "data": {
+    "reply": "根据您本月的支出数据分析，..."
+  }
+}
+```
+
+### 15.2 助手类型
+
+| 类型 | 功能 |
+|------|------|
+| finance | 财务助手：收支分析、预算查询、分类统计、交易记录 |
+| stock | 股票助手：大盘指数、股票行情、股票搜索 |
+
+### 15.3 可用工具（ReAct 模式）
+
+**财务助手工具：**
+- `query_income_expense` - 查询收支概况
+- `query_budget` - 查询预算执行情况
+- `query_transactions` - 查询交易记录
+- `query_category_stats` - 查询分类支出统计
+
+**股票助手工具：**
+- `query_market_index` - 查询大盘指数
+- `query_stock_quote` - 查询股票行情
+- `search_stock` - 搜索股票
+- `get_stock_news` - 获取股票新闻
 | 429 | 请求过于频繁 | 429 |
 | 500 | 系统错误 | 500 |
