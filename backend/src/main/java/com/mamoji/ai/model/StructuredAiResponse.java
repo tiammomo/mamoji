@@ -1,0 +1,14 @@
+package com.mamoji.ai.model;
+
+import java.util.List;
+import java.util.Map;
+
+public record StructuredAiResponse(
+    String answer,
+    List<String> sources,
+    List<String> actions,
+    List<String> warnings,
+    Map<String, Object> usage
+) {
+}
+

@@ -1,0 +1,57 @@
+package com.mamoji.ai;
+
+import com.mamoji.ai.metrics.AiMetricsService;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.support.StaticListableBeanFactory;
+
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
+
+class AiMetricsServiceTest {
+
+    @Test
+    void shouldRecordRequestMetricsWithTags() {
+        SimpleMeterRegistry registry = new SimpleMeterRegistry();
+        StaticListableBeanFactory beanFactory = new StaticListableBeanFactory(Map.of("meterRegistry", registry));
+        AiMetricsService service = new AiMetricsService(beanFactory.getBeanProvider(io.micrometer.core.instrument.MeterRegistry.class));
+
+        service.recordRequest("minimaxi", true, 120, 88);
+
+        double count = registry.get("ai.request.count")
+            .tag("provider", "minimaxi")
+            .tag("success", "true")
+            .counter()
+            .count();
+        double latencyMs = registry.get("ai.request.latency")
+            .tag("provider", "minimaxi")
+            .tag("success", "true")
+            .timer()
+            .totalTime(TimeUnit.MILLISECONDS);
+        double tokens = registry.get("ai.request.tokens")
+            .tag("provider", "minimaxi")
+            .summary()
+            .totalAmount();
+
+        Assertions.assertEquals(1.0, count);
+        Assertions.assertEquals(120.0, latencyMs);
+        Assertions.assertEquals(88.0, tokens);
+    }
+
+    @Test
+    void shouldClampNegativeEstimatedTokensToZero() {
+        SimpleMeterRegistry registry = new SimpleMeterRegistry();
+        StaticListableBeanFactory beanFactory = new StaticListableBeanFactory(Map.of("meterRegistry", registry));
+        AiMetricsService service = new AiMetricsService(beanFactory.getBeanProvider(io.micrometer.core.instrument.MeterRegistry.class));
+
+        service.recordRequest("minimaxi", false, 30, -7);
+
+        double tokens = registry.get("ai.request.tokens")
+            .tag("provider", "minimaxi")
+            .summary()
+            .totalAmount();
+
+        Assertions.assertEquals(0.0, tokens);
+    }
+}
