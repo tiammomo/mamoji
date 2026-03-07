@@ -29,13 +29,13 @@ cd mamoji
 # 2. 启动后端
 cd backend
 ./mvnw spring-boot:run
-# 后端运行在 http://localhost:8080
+# 后端运行在 http://localhost:38080
 
 # 3. 启动前端（新终端）
 cd frontend
 npm install
 npm run dev
-# 前端运行在 http://localhost:3000
+# 前端运行在 http://localhost:33000
 ```
 
 ### 2.2 方式二：Docker Compose
@@ -45,12 +45,16 @@ npm run dev
 git clone https://github.com/tiammomo/mamoji.git
 cd mamoji
 
-# 2. 启动所有服务
+# 2. 复制环境变量配置
+cp docker-compose.env.example .env
+
+# 3. 启动所有服务
 docker-compose up -d
 
-# 3. 访问应用
-# 前端: http://localhost
-# 后端: http://localhost:8080
+# 4. 访问应用
+# 前端: http://localhost:33000
+# 后端: http://localhost:38080
+# API 文档: http://localhost:38080/swagger-ui.html
 ```
 
 ---
@@ -277,10 +281,49 @@ docker exec -i mamoji-mysql mysql -u${DB_USER} -p${DB_PASSWORD} mamoji < init-da
 ### 7.2 数据库备份与恢复
 
 ```bash
-# 备份
-docker exec mamoji-mysql mysqldump -u${DB_USER} -p${DB_PASSWORD} mamoji > backup_$(date +%Y%m%d).sql
+# 使用备份脚本（推荐）
+cd tools/backup
+
+# 备份（Linux/macOS）
+./backup.sh
+
+# 备份（Windows）
+backup.bat
 
 # 恢复
+./restore.sh ./backups/mamoji_20240315_020000.sql.gz
+
+# 设置定时任务（每天凌晨 2 点）
+crontab -e
+# 添加以下行：
+# 0 2 * * * /path/to/mamoji/tools/backup/backup.sh >> /var/log/mamoji-backup.log 2>&1
+```
+
+### 7.3 自动备份配置
+
+#### Linux/macOS (Cron)
+
+```bash
+# 编辑定时任务
+crontab -e
+
+# 添加以下行：
+# 每天凌晨 2 点备份
+0 2 * * * /opt/mamoji/tools/backup/backup.sh >> /var/log/mamoji-backup.log 2>&1
+
+# 每周日凌晨 3 点备份（保留更长时间）
+0 3 * * 0 /opt/mamoji/tools/backup/backup.sh -r 30 >> /var/log/mamoji-backup.log 2>&1
+```
+
+#### Windows (任务计划程序)
+
+```cmd
+# 创建定时任务（每天凌晨 2 点）
+schtasks /create /tn "Mamoji Backup" /tr "C:\mamoji\tools\backup\backup.bat" /sc daily /st 02:00
+```
+docker exec mamoji-mysql mysqldump -u${DB_USER} -p${DB_PASSWORD} mamoji > backup_$(date +%Y%m%d).sql
+
+# Docker 环境恢复
 docker exec -i mamoji-mysql mysql -u${DB_USER} -p${DB_PASSWORD} mamoji < backup_20240301.sql
 ```
 

@@ -115,18 +115,21 @@ spring:
 | id | BIGINT | 主键，自增 | ✓ |
 | family_id | BIGINT | 家庭ID | V1.0 |
 | user_id | BIGINT | 记账人ID | ✓ |
-| type | TINYINT | 类型：1-收入 2-支出 | ✓ |
+| type | TINYINT | 类型：1-收入 2-支出 3-退款 4-转账 | ✓ |
 | amount | DECIMAL(12,2) | 金额 | ✓ |
 | category_id | BIGINT | 分类ID | ✓ |
 | account_id | BIGINT | 账户ID | P1 |
+| target_account_id | BIGINT | 转账目标账户ID | P2 |
+| related_transaction_id | BIGINT | 关联转账/退款ID | P2 |
 | date | DATE | 交易日期 | ✓ |
 | remark | VARCHAR(500) | 备注 | ✓ |
 | created_at | DATETIME | 创建时间 | ✓ |
 | updated_at | DATETIME | 更新时间 | ✓ |
 
 > MVP 阶段：account_id 可选，暂不关联账户
+> P2 版本：增加转账功能 (type=4)，包含 target_account_id 和 related_transaction_id 字段
 
-### 2.6 member_stats - 成员统计表 (V1.0)
+### 2.6 budgets - 预算表
 
 | 字段 | 类型 | 说明 |
 |------|------|------|
@@ -160,6 +163,12 @@ CREATE INDEX idx_transactions_user_id ON transactions(user_id);
 CREATE INDEX idx_transactions_date ON transactions(date);
 CREATE INDEX idx_transactions_category_id ON transactions(category_id);
 CREATE INDEX idx_transactions_account_id ON transactions(account_id);
+-- 转账相关索引
+CREATE INDEX idx_transactions_user_date ON transactions(user_id, date DESC);
+CREATE INDEX idx_transactions_user_type_date ON transactions(user_id, type, date DESC);
+CREATE INDEX idx_transactions_user_type ON transactions(user_id, type);
+CREATE INDEX idx_transactions_target_account ON transactions(target_account_id);
+CREATE INDEX idx_transactions_related ON transactions(related_transaction_id);
 
 -- member_stats 表
 CREATE INDEX idx_member_stats_user_month ON member_stats(user_id, month);

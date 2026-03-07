@@ -1,82 +1,73 @@
-"use client";
+﻿"use client";
 
-import { useState, useEffect } from "react";
+import { type ReactNode, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { api } from "@/lib/api";
-import { ArrowUpCircle, ArrowDownCircle, Calendar, FileText } from "lucide-react";
-
-interface Category {
-  id: number;
-  name: string;
-  icon: string;
-  color: string;
-}
+import { ArrowDownCircle, ArrowUpCircle, Calendar, FileText } from "lucide-react";
+import { categoryApi, getErrorMessage, transactionApi, type Category } from "@/lib/api";
 
 export default function NewTransactionPage() {
   const router = useRouter();
+
   const [type, setType] = useState<1 | 2>(2);
   const [amount, setAmount] = useState("");
   const [categoryId, setCategoryId] = useState<number | null>(null);
   const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
   const [remark, setRemark] = useState("");
-  const [categories, setCategories] = useState<{ income: Category[]; expense: Category[] }>({
-    income: [],
-    expense: [],
-  });
+
+  const [categories, setCategories] = useState<{ income: Category[]; expense: Category[] }>({ income: [], expense: [] });
   const [loading, setLoading] = useState(false);
   const [categoriesLoading, setCategoriesLoading] = useState(true);
 
   useEffect(() => {
-    api
-      .get<{ income: Category[]; expense: Category[] }>("/categories")
+    categoryApi
+      .getCategories()
       .then((data) => {
         setCategories(data);
         if (data.expense.length > 0) {
           setCategoryId(data.expense[0].id);
         }
       })
-      .catch(console.error)
+      .catch((error: unknown) => {
+        console.error(getErrorMessage(error, "获取分类失败"));
+      })
       .finally(() => setCategoriesLoading(false));
   }, []);
 
   const currentCategories = type === 1 ? categories.income : categories.expense;
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!categoryId || !amount) return;
+  async function handleSubmit(event: React.FormEvent): Promise<void> {
+    event.preventDefault();
+    if (!categoryId || !amount) {
+      return;
+    }
 
     setLoading(true);
     try {
-      await api.post("/transactions", {
+      await transactionApi.createTransaction({
         type,
-        amount: parseFloat(amount),
+        amount: Number.parseFloat(amount),
         categoryId,
         date,
         remark,
       });
       router.push("/");
-    } catch (err) {
-      console.error(err);
+    } catch (error: unknown) {
+      console.error(getErrorMessage(error, "保存失败"));
     } finally {
       setLoading(false);
     }
-  };
+  }
 
   return (
     <div className="p-6 lg:p-8">
-      {/* Header */}
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-gray-900">新增记账</h1>
-        <p className="text-gray-500 mt-1">记录您的收支明细</p>
+        <p className="text-gray-500 mt-1">记录一条收支明细</p>
       </div>
 
       <div className="max-w-2xl">
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Type Selection */}
-          <div className="bg-white rounded-2xl shadow-sm p-6">
-            <label className="block text-sm font-medium text-gray-700 mb-4">
-              类型
-            </label>
+          <Section title="类型">
             <div className="flex gap-4">
               <button
                 type="button"
@@ -113,13 +104,9 @@ export default function NewTransactionPage() {
                 支出
               </button>
             </div>
-          </div>
+          </Section>
 
-          {/* Amount */}
-          <div className="bg-white rounded-2xl shadow-sm p-6">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              金额
-            </label>
+          <Section title="金额">
             <div className="relative">
               <span className="absolute left-4 top-1/2 -translate-y-1/2 text-2xl text-gray-400">¥</span>
               <input
@@ -127,103 +114,90 @@ export default function NewTransactionPage() {
                 step="0.01"
                 min="0"
                 value={amount}
-                onChange={(e) => setAmount(e.target.value)}
+                onChange={(event) => setAmount(event.target.value)}
                 required
-                className="w-full pl-12 pr-4 py-4 text-3xl border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                className="w-full pl-12 pr-4 py-4 text-3xl border border-gray-200 rounded-xl"
                 placeholder="0.00"
               />
             </div>
-          </div>
+          </Section>
 
-          {/* Category */}
-          <div className="bg-white rounded-2xl shadow-sm p-6">
-            <label className="block text-sm font-medium text-gray-700 mb-4">
-              分类
-            </label>
+          <Section title="分类">
             {categoriesLoading ? (
               <div className="flex items-center justify-center py-8">
-                <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-indigo-600"></div>
+                <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-indigo-600" />
               </div>
             ) : (
               <div className="grid grid-cols-4 gap-3">
-                {currentCategories.map((cat) => (
+                {currentCategories.map((category) => (
                   <button
-                    key={cat.id}
+                    key={category.id}
                     type="button"
-                    onClick={() => setCategoryId(cat.id)}
+                    onClick={() => setCategoryId(category.id)}
                     className={`p-3 rounded-xl text-center transition-all ${
-                      categoryId === cat.id
-                        ? "ring-2 ring-offset-2 ring-indigo-500"
-                        : "hover:bg-gray-50"
+                      categoryId === category.id ? "ring-2 ring-offset-2 ring-indigo-500" : "hover:bg-gray-50"
                     }`}
-                    style={{ backgroundColor: categoryId === cat.id ? cat.color + "20" : undefined }}
+                    style={{ backgroundColor: categoryId === category.id ? `${category.color}20` : undefined }}
                   >
-                    <div
-                      className="w-10 h-10 mx-auto rounded-full flex items-center justify-center text-white text-sm font-medium"
-                      style={{ backgroundColor: cat.color }}
-                    >
-                      {cat.icon.charAt(0)}
+                    <div className="w-10 h-10 mx-auto rounded-full flex items-center justify-center text-white text-sm font-medium" style={{ backgroundColor: category.color }}>
+                      {category.icon.charAt(0)}
                     </div>
-                    <p className="mt-2 text-xs font-medium">{cat.name}</p>
+                    <p className="mt-2 text-xs font-medium">{category.name}</p>
                   </button>
                 ))}
               </div>
             )}
-          </div>
+          </Section>
 
-          {/* Date */}
-          <div className="bg-white rounded-2xl shadow-sm p-6">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              日期
-            </label>
+          <Section title="日期">
             <div className="relative">
               <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
               <input
                 type="date"
                 value={date}
-                onChange={(e) => setDate(e.target.value)}
+                onChange={(event) => setDate(event.target.value)}
                 required
-                className="w-full pl-12 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                className="w-full pl-12 pr-4 py-3 border border-gray-200 rounded-xl"
               />
             </div>
-          </div>
+          </Section>
 
-          {/* Remark */}
-          <div className="bg-white rounded-2xl shadow-sm p-6">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              备注
-            </label>
+          <Section title="备注">
             <div className="relative">
               <FileText className="absolute left-4 top-4 w-5 h-5 text-gray-400" />
               <textarea
                 value={remark}
-                onChange={(e) => setRemark(e.target.value)}
+                onChange={(event) => setRemark(event.target.value)}
                 rows={3}
-                className="w-full pl-12 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent resize-none"
+                className="w-full pl-12 pr-4 py-3 border border-gray-200 rounded-xl resize-none"
                 placeholder="可选备注"
               />
             </div>
-          </div>
+          </Section>
 
-          {/* Submit */}
           <div className="flex gap-4">
             <button
               type="submit"
               disabled={loading || !categoryId || !amount}
-              className="flex-1 py-4 bg-indigo-600 text-white rounded-xl font-medium hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="flex-1 py-4 bg-indigo-600 text-white rounded-xl font-medium hover:bg-indigo-700 disabled:opacity-50"
             >
               {loading ? "保存中..." : "保存"}
             </button>
-            <button
-              type="button"
-              onClick={() => router.back()}
-              className="px-6 py-4 bg-gray-100 text-gray-700 rounded-xl font-medium hover:bg-gray-200 transition-colors"
-            >
+            <button type="button" onClick={() => router.back()} className="px-6 py-4 bg-gray-100 text-gray-700 rounded-xl font-medium hover:bg-gray-200">
               取消
             </button>
           </div>
         </form>
       </div>
+    </div>
+  );
+}
+
+function Section({ title, children }: { title: string; children: ReactNode }) {
+  return (
+    <div className="bg-white rounded-2xl shadow-sm p-6">
+      <label className="block text-sm font-medium text-gray-700 mb-4">{title}</label>
+      {children}
     </div>
   );
 }

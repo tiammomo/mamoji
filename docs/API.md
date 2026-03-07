@@ -43,10 +43,16 @@ X-Timezone: Asia/Shanghai
 | 交易 | /transactions | POST | 创建交易 |
 | 交易 | /transactions/{id} | PUT | 更新交易 |
 | 交易 | /transactions/{id} | DELETE | 删除交易 |
+| 交易 | /transactions/transfer | POST | 创建转账 |
+| 交易 | /transactions/transfers | GET | 获取转账记录 |
+| 交易 | /transactions/{id}/refund | POST | 退款 |
+| 交易 | /transactions/refundable | GET | 获取可退款的支出 |
 | 统计 | /stats/overview | GET | 收支概览 |
 | 统计 | /stats/trend | GET | 收支趋势 |
 | AI | /ai/chat | POST | AI 助手对话 |
 | AI | /ai/chat/legacy | POST | AI 助手对话（传统模式）|
+| 导出 | /export/transactions/excel | GET | 导出 Excel |
+| 导出 | /export/transactions/csv | GET | 导出 CSV |
 
 > V1.0 版本增加：家庭、账户、分类管理接口
 
@@ -443,7 +449,7 @@ GET /transactions
 |------|------|------|
 | page | int | 页码，默认1 |
 | pageSize | int | 每页数量，默认20 |
-| type | int | 类型：1-收入 2-支出 |
+| type | int | 类型：1-收入 2-支出 3-退款 4-转账 |
 | startDate | string | 开始日期 YYYY-MM-DD |
 | endDate | string | 结束日期 YYYY-MM-DD |
 
@@ -509,6 +515,64 @@ PUT /transactions/:id
 ### 7.4 删除交易
 ```
 DELETE /transactions/:id
+```
+
+### 7.5 创建转账
+```
+POST /transactions/transfer
+```
+
+**请求体：**
+```json
+{
+  "amount": 1000.00,
+  "fromAccountId": 1,
+  "toAccountId": 2,
+  "date": "2024-01-15",
+  "remark": "转账备注"
+}
+```
+
+**响应：**
+```json
+{
+  "code": 0,
+  "message": "success",
+  "data": {
+    "fromTransaction": { ... },
+    "toTransaction": { ... }
+  }
+}
+```
+
+### 7.6 获取转账记录
+```
+GET /transactions/transfers
+```
+
+**查询参数：**
+| 参数 | 类型 | 说明 |
+|------|------|------|
+| page | int | 页码，默认1 |
+| pageSize | int | 每页数量，默认20 |
+| accountId | long | 账户ID筛选（可选） |
+
+### 7.7 获取可退款的支出
+```
+GET /transactions/refundable
+```
+
+### 7.8 退款
+```
+POST /transactions/:id/refund
+```
+
+**请求体：**
+```json
+{
+  "amount": 50.00,
+  "date": "2024-01-16"
+}
 ```
 
 ---
@@ -661,7 +725,58 @@ GET /stats/accounts
 
 ---
 
-## 10. 错误码
+## 10. 数据导出接口
+
+### 10.1 导出 Excel
+```
+GET /export/transactions/excel
+```
+
+**查询参数：**
+| 参数 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| ledgerId | long | 否 | 账本ID |
+| startDate | datetime | 是 | 开始时间 ISO 8601 |
+| endDate | datetime | 是 | 结束时间 ISO 8601 |
+
+**响应：** 返回 Excel 文件下载
+
+### 10.2 导出 CSV
+```
+GET /export/transactions/csv
+```
+
+**查询参数：** 同 Excel
+
+**响应：** 返回 CSV 文件下载
+
+---
+
+## 11. 通知配置
+
+### 11.1 邮件通知配置
+
+通过环境变量配置：
+
+| 环境变量 | 说明 | 默认值 |
+|----------|------|--------|
+| MAIL_ENABLED | 是否启用邮件 | false |
+| MAIL_HOST | SMTP 服务器地址 | smtp.example.com |
+| MAIL_PORT | SMTP 端口 | 587 |
+| MAIL_USERNAME | 用户名 | - |
+| MAIL_PASSWORD | 密码 | - |
+| MAIL_FROM | 发件人地址 | noreply@mamoji.com |
+
+### 11.2 定时任务
+
+| 任务 | Cron 表达式 | 说明 |
+|------|-------------|------|
+| 每日收支汇总 | 0 0 8 * * ? | 每日早上8点发送 |
+| 预算预警检查 | 0 0 * * * ? | 每小时检查 |
+
+---
+
+## 12. 错误码 (原有)
 
 | 错误码 | 说明 |
 |--------|------|
@@ -681,7 +796,7 @@ GET /stats/accounts
 
 ---
 
-## 11. 安全性设计
+## 13. 安全性设计
 
 > 以下为生产环境建议功能，MVP 阶段可先跳过或简化实现。
 
@@ -770,7 +885,7 @@ public class FamilyController {
 
 ---
 
-## 12. 限流设计
+## 14. 限流设计
 
 ### 11.1 接口限流
 
@@ -821,7 +936,7 @@ public class RateLimitFilter implements Filter {
 
 ---
 
-## 13. API 版本控制
+## 15. API 版本控制
 
 ### 12.1 版本策略
 
@@ -849,7 +964,7 @@ public class TransactionControllerV2 {
 
 ---
 
-## 14. 日志与监控
+## 16. 日志与监控
 
 ### 13.1 请求日志
 
@@ -902,7 +1017,7 @@ public class TransactionService {
 
 ---
 
-## 15. 错误处理
+## 17. 错误处理
 
 ### 14.1 全局异常处理
 
@@ -950,7 +1065,7 @@ public class GlobalExceptionHandler {
 
 ---
 
-## 15. AI 助手接口
+## 18. AI 助手接口
 
 ### 15.1 AI 对话
 

@@ -1,23 +1,30 @@
-"use client";
+﻿"use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { api, userApi, UserProfile } from "@/lib/api";
 import {
-  User,
-  Mail,
   Bell,
-  Shield,
-  Palette,
-  LogOut,
-  Camera,
   Check,
-  X,
+  Database,
+  LogOut,
   Moon,
+  Palette,
+  Shield,
   Sun,
+  User,
+  X,
 } from "lucide-react";
+import { getErrorMessage, type UserProfile, userApi } from "@/lib/api";
 
-// 预设头像颜色
+type TabKey = "profile" | "security" | "notifications" | "theme" | "backup";
+type ThemeMode = "light" | "dark";
+
+interface NotificationSettings {
+  email: boolean;
+  push: boolean;
+  budget: boolean;
+}
+
 const AVATAR_COLORS = [
   "from-rose-500 to-pink-500",
   "from-orange-500 to-red-500",
@@ -29,88 +36,91 @@ const AVATAR_COLORS = [
   "from-violet-500 to-fuchsia-500",
 ];
 
-// 预设头像图标
 const AVATAR_ICONS = [
   { emoji: "😀", label: "微笑" },
   { emoji: "😎", label: "酷" },
-  { emoji: "🤓", label: "书呆子" },
-  { emoji: "👨‍💼", label: "商务" },
+  { emoji: "🤓", label: "学者" },
+  { emoji: "👩‍💼", label: "商务" },
   { emoji: "🎨", label: "艺术" },
   { emoji: "🚀", label: "火箭" },
   { emoji: "⚡", label: "闪电" },
   { emoji: "💎", label: "钻石" },
-  { emoji: "🌟", label: "星星" },
+  { emoji: "⭐", label: "星星" },
   { emoji: "🔥", label: "火焰" },
   { emoji: "💰", label: "金钱" },
   { emoji: "🎯", label: "目标" },
 ];
 
+const DEFAULT_NOTIFICATIONS: NotificationSettings = {
+  email: true,
+  push: true,
+  budget: true,
+};
+
+const DEFAULT_ICON = "😀";
+
 export default function SettingsPage() {
   const router = useRouter();
-  const [user, setUser] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState("profile");
+  const [activeTab, setActiveTab] = useState<TabKey>("profile");
 
-  // 主题状态
-  const [theme, setTheme] = useState<"light" | "dark">("light");
-
-  // 通知设置
-  const [notifications, setNotifications] = useState({
-    email: true,
-    push: true,
-    budget: true,
-  });
-
-  // 表单状态
+  const [user, setUser] = useState<UserProfile | null>(null);
   const [nickname, setNickname] = useState("");
-  const [selectedIcon, setSelectedIcon] = useState("");
+  const [selectedIcon, setSelectedIcon] = useState(DEFAULT_ICON);
   const [selectedColor, setSelectedColor] = useState(AVATAR_COLORS[0]);
 
-  // 密码表单
+  const [theme, setTheme] = useState<ThemeMode>("light");
+  const [notifications, setNotifications] = useState<NotificationSettings>(DEFAULT_NOTIFICATIONS);
+
   const [oldPassword, setOldPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [passwordError, setPasswordError] = useState("");
   const [passwordSuccess, setPasswordSuccess] = useState(false);
 
-  // 消息提示
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
   useEffect(() => {
     const token = localStorage.getItem("token");
-    const userStr = localStorage.getItem("user");
     if (!token) {
       router.push("/login");
       return;
     }
+
+    const userStr = localStorage.getItem("user");
     if (userStr) {
-      const userData = JSON.parse(userStr);
-      setUser(userData);
-      setNickname(userData.nickname || "");
-      // 如果有自定义头像则使用，否则设置默认
-      if (userData.avatarUrl) {
-        const [icon, color] = userData.avatarUrl.split("|");
-        setSelectedIcon(icon || "😀");
-        setSelectedColor(color || AVATAR_COLORS[0]);
-      } else {
-        setSelectedIcon("😀");
-        setSelectedColor(AVATAR_COLORS[0]);
+      try {
+        const parsed = JSON.parse(userStr) as UserProfile & { avatarUrl?: string };
+        setUser(parsed);
+        setNickname(parsed.nickname || "");
+
+        if (parsed.avatarUrl) {
+          const [icon, color] = parsed.avatarUrl.split("|");
+          setSelectedIcon(icon || DEFAULT_ICON);
+          setSelectedColor(color || AVATAR_COLORS[0]);
+        }
+      } catch {
+        localStorage.removeItem("user");
       }
     }
-    // 加载主题设置
-    const savedTheme = localStorage.getItem("theme") as "light" | "dark" | null;
-    if (savedTheme) {
+
+    const savedTheme = localStorage.getItem("theme") as ThemeMode | null;
+    if (savedTheme === "light" || savedTheme === "dark") {
       setTheme(savedTheme);
     }
-    // 加载通知设置
+
     const savedNotif = localStorage.getItem("notifications");
     if (savedNotif) {
-      setNotifications(JSON.parse(savedNotif));
+      try {
+        setNotifications(JSON.parse(savedNotif) as NotificationSettings);
+      } catch {
+        setNotifications(DEFAULT_NOTIFICATIONS);
+      }
     }
+
     setLoading(false);
   }, [router]);
 
-  // 应用主题
   useEffect(() => {
     if (theme === "dark") {
       document.documentElement.classList.add("dark");
@@ -120,31 +130,32 @@ export default function SettingsPage() {
     localStorage.setItem("theme", theme);
   }, [theme]);
 
-  const showMessage = (type: "success" | "error", text: string) => {
+  function showMessage(type: "success" | "error", text: string): void {
     setMessage({ type, text });
     setTimeout(() => setMessage(null), 3000);
-  };
+  }
 
-  const handleSaveProfile = async () => {
+  async function handleSaveProfile(): Promise<void> {
     try {
       const avatarUrl = `${selectedIcon}|${selectedColor}`;
       await userApi.updateProfile({ nickname, avatarUrl });
-      // 更新 localStorage 中的用户信息
+
       const userStr = localStorage.getItem("user");
       if (userStr) {
-        const userData = JSON.parse(userStr);
-        userData.nickname = nickname;
-        userData.avatarUrl = avatarUrl;
-        localStorage.setItem("user", JSON.stringify(userData));
+        const current = JSON.parse(userStr) as UserProfile & { avatarUrl?: string };
+        current.nickname = nickname;
+        current.avatarUrl = avatarUrl;
+        localStorage.setItem("user", JSON.stringify(current));
       }
-      setUser((prev) => prev ? { ...prev, nickname, avatarUrl } : null);
-      showMessage("success", "保存成功");
-    } catch (err: any) {
-      showMessage("error", err.message || "保存失败");
-    }
-  };
 
-  const handleChangePassword = async () => {
+      setUser((prev) => (prev ? { ...prev, nickname, avatarUrl } : null));
+      showMessage("success", "保存成功");
+    } catch (error: unknown) {
+      showMessage("error", getErrorMessage(error, "保存失败"));
+    }
+  }
+
+  async function handleChangePassword(): Promise<void> {
     setPasswordError("");
     setPasswordSuccess(false);
 
@@ -153,7 +164,7 @@ export default function SettingsPage() {
       return;
     }
     if (newPassword.length < 6) {
-      setPasswordError("密码长度至少6位");
+      setPasswordError("密码长度至少 6 位");
       return;
     }
 
@@ -164,58 +175,61 @@ export default function SettingsPage() {
       setNewPassword("");
       setConfirmPassword("");
       showMessage("success", "密码修改成功");
-    } catch (err: any) {
-      setPasswordError(err.message || "修改密码失败");
+    } catch (error: unknown) {
+      setPasswordError(getErrorMessage(error, "修改密码失败"));
     }
-  };
+  }
 
-  const handleNotificationChange = (key: keyof typeof notifications) => {
-    const newNotif = { ...notifications, [key]: !notifications[key] };
-    setNotifications(newNotif);
-    localStorage.setItem("notifications", JSON.stringify(newNotif));
-  };
+  function handleNotificationChange(key: keyof NotificationSettings): void {
+    const next = { ...notifications, [key]: !notifications[key] };
+    setNotifications(next);
+    localStorage.setItem("notifications", JSON.stringify(next));
+  }
 
-  const handleLogout = () => {
+  function handleLogout(): void {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
     router.push("/login");
-  };
+  }
+
+  const tabs = useMemo(
+    () => [
+      { id: "profile" as const, label: "个人信息", icon: User },
+      { id: "security" as const, label: "安全设置", icon: Shield },
+      { id: "notifications" as const, label: "通知设置", icon: Bell },
+      { id: "theme" as const, label: "主题设置", icon: Palette },
+      { id: "backup" as const, label: "数据备份", icon: Database },
+    ],
+    []
+  );
 
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[50vh]">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-600"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-600" />
       </div>
     );
   }
 
-  const tabs = [
-    { id: "profile", label: "个人信息", icon: User },
-    { id: "security", label: "安全设置", icon: Shield },
-    { id: "notifications", label: "通知设置", icon: Bell },
-    { id: "theme", label: "主题设置", icon: Palette },
-  ];
-
   return (
     <div className="p-6 lg:p-8">
-      {/* Header */}
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white">设置</h1>
-        <p className="text-gray-500 dark:text-gray-400 mt-1">管理您的账户设置</p>
+        <p className="text-gray-500 dark:text-gray-400 mt-1">管理你的账户设置</p>
       </div>
 
-      {/* Message Toast */}
       {message && (
-        <div className={`fixed top-20 right-8 px-6 py-3 rounded-lg shadow-lg z-50 flex items-center gap-2 ${
-          message.type === "success" ? "bg-green-500 text-white" : "bg-red-500 text-white"
-        }`}>
+        <div
+          className={`fixed top-20 right-8 px-6 py-3 rounded-lg shadow-lg z-50 flex items-center gap-2 ${
+            message.type === "success" ? "bg-green-500 text-white" : "bg-red-500 text-white"
+          }`}
+        >
           {message.type === "success" ? <Check className="w-5 h-5" /> : <X className="w-5 h-5" />}
           {message.text}
         </div>
       )}
 
       <div className="flex flex-col lg:flex-row gap-8">
-        {/* Left - Tabs */}
         <div className="lg:w-64">
           <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm p-2">
             {tabs.map((tab) => (
@@ -232,6 +246,7 @@ export default function SettingsPage() {
                 {tab.label}
               </button>
             ))}
+
             <button
               onClick={handleLogout}
               className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all text-left mt-2"
@@ -242,41 +257,34 @@ export default function SettingsPage() {
           </div>
         </div>
 
-        {/* Right - Content */}
         <div className="flex-1">
           <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm p-6">
-            {/* Profile Tab */}
             {activeTab === "profile" && (
               <div className="space-y-6">
                 <h2 className="text-lg font-semibold text-gray-900 dark:text-white">个人信息</h2>
 
-                {/* Avatar Preview */}
                 <div className="flex flex-col items-center">
-                  <div className={`w-24 h-24 rounded-full bg-gradient-to-br ${selectedColor} flex items-center justify-center text-4xl shadow-lg`}>
+                  <div
+                    className={`w-24 h-24 rounded-full bg-gradient-to-br ${selectedColor} flex items-center justify-center text-4xl shadow-lg`}
+                  >
                     {selectedIcon}
                   </div>
                   <p className="text-sm text-gray-500 mt-2">头像预览</p>
                 </div>
 
-                {/* Nickname */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    昵称
-                  </label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">昵称</label>
                   <input
                     type="text"
                     value={nickname}
                     onChange={(e) => setNickname(e.target.value)}
-                    className="w-full px-4 py-3 border border-gray-200 dark:border-gray-600 rounded-xl bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    className="w-full px-4 py-3 border border-gray-200 dark:border-gray-600 rounded-xl bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white"
                     placeholder="请输入昵称"
                   />
                 </div>
 
-                {/* Avatar Selection */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    选择头像
-                  </label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">选择头像</label>
                   <div className="grid grid-cols-6 gap-2">
                     {AVATAR_ICONS.map((item) => (
                       <button
@@ -295,11 +303,8 @@ export default function SettingsPage() {
                   </div>
                 </div>
 
-                {/* Color Selection */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    选择颜色
-                  </label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">选择颜色</label>
                   <div className="flex flex-wrap gap-2">
                     {AVATAR_COLORS.map((color) => (
                       <button
@@ -313,11 +318,8 @@ export default function SettingsPage() {
                   </div>
                 </div>
 
-                {/* Email (read-only) */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    邮箱
-                  </label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">邮箱</label>
                   <input
                     type="email"
                     value={user?.email || ""}
@@ -336,57 +338,45 @@ export default function SettingsPage() {
               </div>
             )}
 
-            {/* Security Tab */}
             {activeTab === "security" && (
               <div className="space-y-6">
                 <h2 className="text-lg font-semibold text-gray-900 dark:text-white">安全设置</h2>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    当前密码
-                  </label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">当前密码</label>
                   <input
                     type="password"
                     value={oldPassword}
                     onChange={(e) => setOldPassword(e.target.value)}
-                    className="w-full px-4 py-3 border border-gray-200 dark:border-gray-600 rounded-xl bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    className="w-full px-4 py-3 border border-gray-200 dark:border-gray-600 rounded-xl bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white"
                     placeholder="请输入当前密码"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    新密码
-                  </label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">新密码</label>
                   <input
                     type="password"
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
-                    className="w-full px-4 py-3 border border-gray-200 dark:border-gray-600 rounded-xl bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                    placeholder="请输入新密码（至少6位）"
+                    className="w-full px-4 py-3 border border-gray-200 dark:border-gray-600 rounded-xl bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white"
+                    placeholder="至少 6 位"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    确认新密码
-                  </label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">确认新密码</label>
                   <input
                     type="password"
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
-                    className="w-full px-4 py-3 border border-gray-200 dark:border-gray-600 rounded-xl bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    className="w-full px-4 py-3 border border-gray-200 dark:border-gray-600 rounded-xl bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white"
                     placeholder="请再次输入新密码"
                   />
                 </div>
 
-                {passwordError && (
-                  <p className="text-red-500 text-sm">{passwordError}</p>
-                )}
-
-                {passwordSuccess && (
-                  <p className="text-green-500 text-sm">密码修改成功</p>
-                )}
+                {passwordError && <p className="text-red-500 text-sm">{passwordError}</p>}
+                {passwordSuccess && <p className="text-green-500 text-sm">密码修改成功</p>}
 
                 <button
                   onClick={handleChangePassword}
@@ -397,67 +387,31 @@ export default function SettingsPage() {
               </div>
             )}
 
-            {/* Notifications Tab */}
             {activeTab === "notifications" && (
               <div className="space-y-6">
                 <h2 className="text-lg font-semibold text-gray-900 dark:text-white">通知设置</h2>
 
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700 rounded-xl">
-                    <div>
-                      <p className="font-medium text-gray-900 dark:text-white">邮件通知</p>
-                      <p className="text-sm text-gray-500">接收账单、报表等邮件通知</p>
-                    </div>
-                    <button
-                      onClick={() => handleNotificationChange("email")}
-                      className={`w-12 h-6 rounded-full transition-colors ${
-                        notifications.email ? "bg-indigo-600" : "bg-gray-300 dark:bg-gray-600"
-                      }`}
-                    >
-                      <div className={`w-5 h-5 bg-white rounded-full shadow transition-transform ${
-                        notifications.email ? "translate-x-6" : "translate-x-0.5"
-                      }`} />
-                    </button>
-                  </div>
-
-                  <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700 rounded-xl">
-                    <div>
-                      <p className="font-medium text-gray-900 dark:text-white">推送通知</p>
-                      <p className="text-sm text-gray-500">接收浏览器推送通知</p>
-                    </div>
-                    <button
-                      onClick={() => handleNotificationChange("push")}
-                      className={`w-12 h-6 rounded-full transition-colors ${
-                        notifications.push ? "bg-indigo-600" : "bg-gray-300 dark:bg-gray-600"
-                      }`}
-                    >
-                      <div className={`w-5 h-5 bg-white rounded-full shadow transition-transform ${
-                        notifications.push ? "translate-x-6" : "translate-x-0.5"
-                      }`} />
-                    </button>
-                  </div>
-
-                  <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700 rounded-xl">
-                    <div>
-                      <p className="font-medium text-gray-900 dark:text-white">预算提醒</p>
-                      <p className="text-sm text-gray-500">预算超支时接收提醒</p>
-                    </div>
-                    <button
-                      onClick={() => handleNotificationChange("budget")}
-                      className={`w-12 h-6 rounded-full transition-colors ${
-                        notifications.budget ? "bg-indigo-600" : "bg-gray-300 dark:bg-gray-600"
-                      }`}
-                    >
-                      <div className={`w-5 h-5 bg-white rounded-full shadow transition-transform ${
-                        notifications.budget ? "translate-x-6" : "translate-x-0.5"
-                      }`} />
-                    </button>
-                  </div>
-                </div>
+                <NotificationRow
+                  title="邮件通知"
+                  description="接收账单、报表等邮件提醒"
+                  checked={notifications.email}
+                  onToggle={() => handleNotificationChange("email")}
+                />
+                <NotificationRow
+                  title="推送通知"
+                  description="接收浏览器推送"
+                  checked={notifications.push}
+                  onToggle={() => handleNotificationChange("push")}
+                />
+                <NotificationRow
+                  title="预算提醒"
+                  description="预算超支时提醒"
+                  checked={notifications.budget}
+                  onToggle={() => handleNotificationChange("budget")}
+                />
               </div>
             )}
 
-            {/* Theme Tab */}
             {activeTab === "theme" && (
               <div className="space-y-6">
                 <h2 className="text-lg font-semibold text-gray-900 dark:text-white">主题设置</h2>
@@ -490,14 +444,54 @@ export default function SettingsPage() {
                       <Moon className="w-8 h-8 text-gray-300" />
                     </div>
                     <p className="font-medium text-gray-900 dark:text-white text-center">深色模式</p>
-                    <p className="text-sm text-gray-500 text-center mt-1">护眼舒适</p>
+                    <p className="text-sm text-gray-500 text-center mt-1">夜间护眼</p>
                   </button>
                 </div>
+              </div>
+            )}
+
+            {activeTab === "backup" && (
+              <div className="space-y-6">
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-white">数据备份</h2>
+                <p className="text-gray-500 dark:text-gray-400">导出或导入你的财务数据</p>
+                <button
+                  onClick={() => router.push("/settings/backup")}
+                  className="px-6 py-3 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-colors"
+                >
+                  打开备份设置
+                </button>
               </div>
             )}
           </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+function NotificationRow({
+  title,
+  description,
+  checked,
+  onToggle,
+}: {
+  title: string;
+  description: string;
+  checked: boolean;
+  onToggle: () => void;
+}) {
+  return (
+    <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700 rounded-xl">
+      <div>
+        <p className="font-medium text-gray-900 dark:text-white">{title}</p>
+        <p className="text-sm text-gray-500">{description}</p>
+      </div>
+      <button
+        onClick={onToggle}
+        className={`w-12 h-6 rounded-full transition-colors ${checked ? "bg-indigo-600" : "bg-gray-300 dark:bg-gray-600"}`}
+      >
+        <div className={`w-5 h-5 bg-white rounded-full shadow transition-transform ${checked ? "translate-x-6" : "translate-x-0.5"}`} />
+      </button>
     </div>
   );
 }

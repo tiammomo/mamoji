@@ -1,17 +1,16 @@
-"use client";
+﻿"use client";
 
-import { useState, useEffect } from "react";
-import { api, adminUserApi, User } from "@/lib/api";
-import {
-  Users,
-  Plus,
-  Edit2,
-  Trash2,
-  X,
-  Shield,
-  ShieldOff,
-  AlertCircle,
-} from "lucide-react";
+import { useEffect, useState } from "react";
+import { AlertCircle, Edit2, Plus, Shield, ShieldOff, Trash2, Users, X } from "lucide-react";
+import { adminUserApi, getErrorMessage, type User } from "@/lib/api";
+
+interface UserForm {
+  email: string;
+  password: string;
+  nickname: string;
+  role: number;
+  permissions: number;
+}
 
 const ROLE_OPTIONS = [
   { value: 1, label: "管理员" },
@@ -19,65 +18,72 @@ const ROLE_OPTIONS = [
 ];
 
 const PERMISSION_OPTIONS = [
-  { value: 1, label: "用户管理", bit: 1 },
-  { value: 2, label: "账户管理", bit: 2 },
-  { value: 4, label: "分类管理", bit: 4 },
-  { value: 8, label: "预算管理", bit: 8 },
+  { label: "用户管理", bit: 1 },
+  { label: "账户管理", bit: 2 },
+  { label: "分类管理", bit: 4 },
+  { label: "预算管理", bit: 8 },
 ];
 
-// 检查用户是否是管理员
-function isAdmin(): boolean {
-  if (typeof window === "undefined") return false;
-  const userStr = localStorage.getItem("user");
-  if (!userStr) return false;
+function canAccessAdminPage(): boolean {
+  if (typeof window === "undefined") {
+    return false;
+  }
+
+  const rawUser = localStorage.getItem("user");
+  if (!rawUser) {
+    return false;
+  }
+
   try {
-    const user = JSON.parse(userStr);
-    return user.isAdmin === true;
+    const parsed = JSON.parse(rawUser) as { role?: number; isAdmin?: boolean };
+    return parsed.isAdmin === true || parsed.role === 1;
   } catch {
     return false;
   }
 }
 
+const EMPTY_FORM: UserForm = {
+  email: "",
+  password: "",
+  nickname: "",
+  role: 2,
+  permissions: 0,
+};
+
 export default function UsersPage() {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+
   const [showModal, setShowModal] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [submitting, setSubmitting] = useState(false);
-  const [deleteConfirm, setDeleteConfirm] = useState<number | null>(null);
-
-  // 表单状态
-  const [formData, setFormData] = useState({
-    email: "",
-    password: "",
-    nickname: "",
-    role: 2,
-    permissions: 0,
-  });
+  const [deleteConfirmId, setDeleteConfirmId] = useState<number | null>(null);
+  const [formData, setFormData] = useState<UserForm>(EMPTY_FORM);
 
   useEffect(() => {
-    if (!isAdmin()) {
-      setError("您没有权限访问此页面");
+    if (!canAccessAdminPage()) {
+      setError("你没有权限访问此页面");
       setLoading(false);
       return;
     }
-    fetchUsers();
+
+    void fetchUsers();
   }, []);
 
-  const fetchUsers = async () => {
+  async function fetchUsers(): Promise<void> {
     try {
       setLoading(true);
       const data = await adminUserApi.getUsers();
       setUsers(data || []);
-    } catch (err: any) {
-      setError(err.message || "获取用户列表失败");
+    } catch (error: unknown) {
+      setError(getErrorMessage(error, "获取用户列表失败"));
     } finally {
       setLoading(false);
     }
-  };
+  }
 
-  const handleOpenModal = (user?: User) => {
+  function openModal(user?: User): void {
     if (user) {
       setEditingUser(user);
       setFormData({
@@ -89,38 +95,28 @@ export default function UsersPage() {
       });
     } else {
       setEditingUser(null);
-      setFormData({
-        email: "",
-        password: "",
-        nickname: "",
-        role: 2,
-        permissions: 0,
-      });
+      setFormData(EMPTY_FORM);
     }
     setShowModal(true);
-  };
+  }
 
-  const handleCloseModal = () => {
+  function closeModal(): void {
     setShowModal(false);
     setEditingUser(null);
-    setFormData({
-      email: "",
-      password: "",
-      nickname: "",
-      role: 2,
-      permissions: 0,
-    });
-  };
+    setFormData(EMPTY_FORM);
+  }
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  async function handleSubmit(event: React.FormEvent): Promise<void> {
+    event.preventDefault();
+
     if (!editingUser && !formData.password) {
-      alert("创建用户需要填写密码");
+      alert("创建用户时必须填写密码");
       return;
     }
 
     try {
       setSubmitting(true);
+
       if (editingUser) {
         await adminUserApi.updateUser(editingUser.id, {
           nickname: formData.nickname,
@@ -137,36 +133,37 @@ export default function UsersPage() {
           permissions: formData.permissions,
         });
       }
-      handleCloseModal();
-      fetchUsers();
-    } catch (err: any) {
-      alert(err.message || "操作失败");
+
+      closeModal();
+      await fetchUsers();
+    } catch (error: unknown) {
+      alert(getErrorMessage(error, "操作失败"));
     } finally {
       setSubmitting(false);
     }
-  };
+  }
 
-  const handleDelete = async (id: number) => {
+  async function handleDelete(userId: number): Promise<void> {
     try {
-      await adminUserApi.deleteUser(id);
-      setDeleteConfirm(null);
-      fetchUsers();
-    } catch (err: any) {
-      alert(err.message || "删除失败");
+      await adminUserApi.deleteUser(userId);
+      setDeleteConfirmId(null);
+      await fetchUsers();
+    } catch (error: unknown) {
+      alert(getErrorMessage(error, "删除失败"));
     }
-  };
+  }
 
-  const handlePermissionChange = (bit: number) => {
+  function togglePermission(bit: number): void {
     setFormData((prev) => ({
       ...prev,
       permissions: prev.permissions & bit ? prev.permissions - bit : prev.permissions + bit,
     }));
-  };
+  }
 
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600" />
       </div>
     );
   }
@@ -182,14 +179,13 @@ export default function UsersPage() {
 
   return (
     <div className="p-6 lg:p-8">
-      {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">用户管理</h1>
-          <p className="text-gray-500 mt-1">管理系统用户和权限</p>
+          <p className="text-gray-500 mt-1">管理系统用户与权限</p>
         </div>
         <button
-          onClick={() => handleOpenModal()}
+          onClick={() => openModal()}
           className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
         >
           <Plus className="w-5 h-5" />
@@ -197,7 +193,6 @@ export default function UsersPage() {
         </button>
       </div>
 
-      {/* User List */}
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
         <table className="w-full">
           <thead className="bg-gray-50 border-b border-gray-100">
@@ -224,55 +219,45 @@ export default function UsersPage() {
                 <td className="px-6 py-4">
                   <span
                     className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium ${
-                      user.role === 1
-                        ? "bg-red-50 text-red-600"
-                        : "bg-blue-50 text-blue-600"
+                      user.role === 1 ? "bg-red-50 text-red-600" : "bg-blue-50 text-blue-600"
                     }`}
                   >
-                    {user.role === 1 ? (
-                      <Shield className="w-3 h-3" />
-                    ) : (
-                      <ShieldOff className="w-3 h-3" />
-                    )}
-                    {user.roleName}
+                    {user.role === 1 ? <Shield className="w-3 h-3" /> : <ShieldOff className="w-3 h-3" />}
+                    {user.roleName || (user.role === 1 ? "管理员" : "普通用户")}
                   </span>
                 </td>
                 <td className="px-6 py-4">
                   <div className="flex flex-wrap gap-1">
-                    {user.permissionsName?.split(" ").map((perm, idx) => (
-                      perm && (
-                        <span
-                          key={idx}
-                          className="px-2 py-0.5 bg-gray-100 text-gray-600 rounded text-xs"
-                        >
-                          {perm}
+                    {user.permissionsName?.split(" ").map((permission, index) =>
+                      permission ? (
+                        <span key={`${permission}-${index}`} className="px-2 py-0.5 bg-gray-100 text-gray-600 rounded text-xs">
+                          {permission}
                         </span>
-                      )
-                    ))}
-                    {user.permissions === 0 && (
-                      <span className="text-gray-400 text-xs">无额外权限</span>
+                      ) : null
                     )}
+                    {user.permissions === 0 && <span className="text-gray-400 text-xs">无额外权限</span>}
                   </div>
                 </td>
                 <td className="px-6 py-4">
                   <div className="flex items-center justify-end gap-2">
                     <button
-                      onClick={() => handleOpenModal(user)}
+                      onClick={() => openModal(user)}
                       className="p-2 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
                       title="编辑"
                     >
                       <Edit2 className="w-4 h-4" />
                     </button>
-                    {deleteConfirm === user.id ? (
+
+                    {deleteConfirmId === user.id ? (
                       <div className="flex items-center gap-1">
                         <button
-                          onClick={() => handleDelete(user.id)}
+                          onClick={() => void handleDelete(user.id)}
                           className="px-2 py-1 text-xs bg-red-600 text-white rounded hover:bg-red-700"
                         >
                           确认
                         </button>
                         <button
-                          onClick={() => setDeleteConfirm(null)}
+                          onClick={() => setDeleteConfirmId(null)}
                           className="px-2 py-1 text-xs bg-gray-200 text-gray-600 rounded hover:bg-gray-300"
                         >
                           取消
@@ -280,7 +265,7 @@ export default function UsersPage() {
                       </div>
                     ) : (
                       <button
-                        onClick={() => setDeleteConfirm(user.id)}
+                        onClick={() => setDeleteConfirmId(user.id)}
                         className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                         title="删除"
                       >
@@ -302,71 +287,59 @@ export default function UsersPage() {
         )}
       </div>
 
-      {/* Modal */}
       {showModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-md">
             <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
-              <h2 className="text-lg font-semibold text-gray-900">
-                {editingUser ? "编辑用户" : "添加用户"}
-              </h2>
-              <button
-                onClick={handleCloseModal}
-                className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg"
-              >
+              <h2 className="text-lg font-semibold text-gray-900">{editingUser ? "编辑用户" : "添加用户"}</h2>
+              <button onClick={closeModal} className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg">
                 <X className="w-5 h-5" />
               </button>
             </div>
 
             <form onSubmit={handleSubmit} className="p-6 space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  昵称
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">昵称</label>
                 <input
                   type="text"
                   value={formData.nickname}
-                  onChange={(e) => setFormData({ ...formData, nickname: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  onChange={(e) => setFormData((prev) => ({ ...prev, nickname: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg"
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  邮箱
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">邮箱</label>
                 <input
                   type="email"
                   value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                  disabled={!!editingUser}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, email: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg"
+                  disabled={Boolean(editingUser)}
                   required={!editingUser}
                 />
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  密码 {editingUser && <span className="text-gray-400 font-normal">(留空保持不变)</span>}
+                  密码 {editingUser && <span className="text-gray-400 font-normal">(留空不修改)</span>}
                 </label>
                 <input
                   type="password"
                   value={formData.password}
-                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  onChange={(e) => setFormData((prev) => ({ ...prev, password: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg"
                   required={!editingUser}
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  角色
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">角色</label>
                 <select
                   value={formData.role}
-                  onChange={(e) => setFormData({ ...formData, role: parseInt(e.target.value) })}
-                  className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  onChange={(e) => setFormData((prev) => ({ ...prev, role: Number.parseInt(e.target.value, 10) }))}
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg"
                 >
                   {ROLE_OPTIONS.map((option) => (
                     <option key={option.value} value={option.value}>
@@ -377,9 +350,7 @@ export default function UsersPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  权限
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">权限</label>
                 <div className="flex flex-wrap gap-2">
                   {PERMISSION_OPTIONS.map((option) => (
                     <label
@@ -392,8 +363,8 @@ export default function UsersPage() {
                     >
                       <input
                         type="checkbox"
-                        checked={!!(formData.permissions & option.bit)}
-                        onChange={() => handlePermissionChange(option.bit)}
+                        checked={Boolean(formData.permissions & option.bit)}
+                        onChange={() => togglePermission(option.bit)}
                         className="sr-only"
                       />
                       {option.label}
@@ -405,15 +376,15 @@ export default function UsersPage() {
               <div className="flex gap-3 pt-4">
                 <button
                   type="button"
-                  onClick={handleCloseModal}
-                  className="flex-1 px-4 py-2 border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                  onClick={closeModal}
+                  className="flex-1 px-4 py-2 border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50"
                 >
                   取消
                 </button>
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="flex-1 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50"
+                  className="flex-1 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50"
                 >
                   {submitting ? "保存中..." : "保存"}
                 </button>

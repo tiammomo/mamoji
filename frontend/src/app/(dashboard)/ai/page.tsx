@@ -1,9 +1,9 @@
-"use client";
+﻿"use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { aiApi } from "@/lib/api";
-import { Send, MessageCircle, TrendingUp, Wallet, Loader2 } from "lucide-react";
+import { Loader2, MessageCircle, Send, TrendingUp, Wallet } from "lucide-react";
+import { aiApi, getErrorMessage } from "@/lib/api";
 
 type AssistantType = "finance" | "stock";
 
@@ -14,42 +14,51 @@ interface ChatMessage {
   timestamp: Date;
 }
 
-const assistantConfig = {
+const assistantConfig: Record<AssistantType, {
+  name: string;
+  description: string;
+  icon: typeof Wallet;
+  welcomeMessage: string;
+  quickQuestions: string[];
+}> = {
   finance: {
     name: "财务助手",
     icon: Wallet,
-    description: "分析您的收支情况",
-    welcomeMessage: "您好！我是您的财务智能助手。我可以帮助您分析收支情况、查看预算执行进度、解答财务相关问题。请问有什么可以帮您的？",
+    description: "分析你的收支和预算执行情况",
+    welcomeMessage:
+      "你好，我是财务助手。我可以帮你分析收支结构、预算执行进度，并给出理财建议。",
     quickQuestions: [
       "我这个月支出情况怎么样？",
-      "我的预算执行情况如何？",
-      "哪个类别支出最多？",
-      "给我一些理财建议",
+      "我的预算执行率如何？",
+      "哪个分类支出最多？",
+      "给我一些本月节流建议。",
     ],
   },
   stock: {
     name: "股票助手",
     icon: TrendingUp,
-    description: "分析股票趋势和建议",
-    welcomeMessage: "您好！我是您的股票智能助手。我可以为您提供股票行情分析、投资建议和市场趋势解读。请问有什么可以帮您的？（注：股市有风险，投资需谨慎）",
+    description: "提供市场观察和投资学习建议",
+    welcomeMessage:
+      "你好，我是股票助手。我可以帮你做基础市场观察与信息整理。投资有风险，请谨慎决策。",
     quickQuestions: [
-      "大盘今天怎么样？",
-      "推荐几只消费股",
-      "新能源板块前景如何？",
-      "如何分散投资风险？",
+      "今天大盘表现如何？",
+      "消费板块近期怎么样？",
+      "如何做分散投资？",
+      "给我一个学习型的选股思路。",
     ],
   },
 };
 
 export default function AIPage() {
   const router = useRouter();
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [assistantType, setAssistantType] = useState<AssistantType>("finance");
-  const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const currentConfig = assistantConfig[assistantType];
+  const currentConfig = useMemo(() => assistantConfig[assistantType], [assistantType]);
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -58,7 +67,6 @@ export default function AIPage() {
       return;
     }
 
-    // 添加欢迎消息
     setMessages([
       {
         id: "welcome",
@@ -73,68 +81,71 @@ export default function AIPage() {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  const handleSend = async (message?: string) => {
-    const userMessage = message || input.trim();
-    if (!userMessage || loading) return;
+  async function handleSend(message?: string): Promise<void> {
+    const userContent = (message ?? input).trim();
+    if (!userContent || loading) {
+      return;
+    }
 
-    const userMsg: ChatMessage = {
-      id: Date.now().toString(),
+    const userMessage: ChatMessage = {
+      id: `${Date.now()}`,
       role: "user",
-      content: userMessage,
+      content: userContent,
       timestamp: new Date(),
     };
 
-    setMessages((prev) => [...prev, userMsg]);
+    setMessages((prev) => [...prev, userMessage]);
     setInput("");
     setLoading(true);
 
     try {
-      const response = await aiApi.chat(userMessage, assistantType);
-      const assistantMsg: ChatMessage = {
-        id: (Date.now() + 1).toString(),
-        role: "assistant",
-        content: response.reply,
-        timestamp: new Date(),
-      };
-      setMessages((prev) => [...prev, assistantMsg]);
-    } catch (error) {
-      const errorMsg: ChatMessage = {
-        id: (Date.now() + 1).toString(),
-        role: "assistant",
-        content: "抱歉，我暂时无法回答您的问题。请稍后再试。",
-        timestamp: new Date(),
-      };
-      setMessages((prev) => [...prev, errorMsg]);
-      console.error(error);
+      const response = await aiApi.chat(userContent, assistantType);
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: `${Date.now()}-assistant`,
+          role: "assistant",
+          content: response.reply,
+          timestamp: new Date(),
+        },
+      ]);
+    } catch (error: unknown) {
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: `${Date.now()}-error`,
+          role: "assistant",
+          content: getErrorMessage(error, "抱歉，我暂时无法回答，请稍后重试。"),
+          timestamp: new Date(),
+        },
+      ]);
     } finally {
       setLoading(false);
     }
-  };
+  }
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      handleSend();
+  function handleKeyDown(event: React.KeyboardEvent<HTMLInputElement>): void {
+    if (event.key === "Enter" && !event.shiftKey) {
+      event.preventDefault();
+      void handleSend();
     }
-  };
+  }
 
-  const handleAssistantChange = (type: AssistantType) => {
+  function handleAssistantChange(type: AssistantType): void {
     setAssistantType(type);
     setMessages([]);
-  };
+  }
 
   return (
     <div className="p-6 lg:p-8">
-      {/* Page Header */}
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
           <MessageCircle className="w-7 h-7 text-indigo-600" />
           AI 助手
         </h1>
-        <p className="text-gray-500 mt-1">智能分析助手</p>
+        <p className="text-gray-500 mt-1">{currentConfig.description}</p>
       </div>
 
-      {/* Assistant Type Selector */}
       <div className="flex gap-3 mb-6">
         {(Object.keys(assistantConfig) as AssistantType[]).map((type) => {
           const config = assistantConfig[type];
@@ -144,9 +155,7 @@ export default function AIPage() {
               key={type}
               onClick={() => handleAssistantChange(type)}
               className={`flex items-center gap-2 px-4 py-2 rounded-xl transition-all ${
-                assistantType === type
-                  ? "bg-indigo-600 text-white"
-                  : "bg-white text-gray-700 hover:bg-gray-100 border"
+                assistantType === type ? "bg-indigo-600 text-white" : "bg-white text-gray-700 hover:bg-gray-100 border"
               }`}
             >
               <Icon className="w-5 h-5" />
@@ -156,32 +165,18 @@ export default function AIPage() {
         })}
       </div>
 
-      {/* Chat Container */}
       <div className="bg-white rounded-2xl shadow-sm border flex flex-col h-[calc(100vh-18rem)]">
-        {/* Messages */}
         <div className="flex-1 overflow-y-auto p-6 space-y-4">
-          {messages.map((msg) => (
-            <div
-              key={msg.id}
-              className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
-            >
+          {messages.map((message) => (
+            <div key={message.id} className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}>
               <div
                 className={`max-w-[80%] rounded-2xl px-4 py-3 ${
-                  msg.role === "user"
-                    ? "bg-indigo-600 text-white"
-                    : "bg-gray-100 text-gray-900"
+                  message.role === "user" ? "bg-indigo-600 text-white" : "bg-gray-100 text-gray-900"
                 }`}
               >
-                <p className="whitespace-pre-wrap">{msg.content}</p>
-                <p
-                  className={`text-xs mt-1 ${
-                    msg.role === "user" ? "text-indigo-200" : "text-gray-400"
-                  }`}
-                >
-                  {msg.timestamp.toLocaleTimeString("zh-CN", {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })}
+                <p className="whitespace-pre-wrap">{message.content}</p>
+                <p className={`text-xs mt-1 ${message.role === "user" ? "text-indigo-200" : "text-gray-400"}`}>
+                  {message.timestamp.toLocaleTimeString("zh-CN", { hour: "2-digit", minute: "2-digit" })}
                 </p>
               </div>
             </div>
@@ -201,40 +196,38 @@ export default function AIPage() {
           <div ref={messagesEndRef} />
         </div>
 
-        {/* Quick Questions */}
         {messages.length <= 1 && (
           <div className="px-6 pb-4">
-            <p className="text-sm text-gray-500 mb-2">试试这样问：</p>
+            <p className="text-sm text-gray-500 mb-2">可以这样问：</p>
             <div className="flex flex-wrap gap-2">
-              {currentConfig.quickQuestions.map((q, idx) => (
+              {currentConfig.quickQuestions.map((question) => (
                 <button
-                  key={idx}
-                  onClick={() => handleSend(q)}
-                  className="text-sm px-3 py-1.5 bg-gray-100 text-gray-700 rounded-full hover:bg-gray-200 transition-colors"
+                  key={question}
+                  onClick={() => void handleSend(question)}
+                  className="text-sm px-3 py-1.5 bg-gray-100 text-gray-700 rounded-full hover:bg-gray-200"
                 >
-                  {q}
+                  {question}
                 </button>
               ))}
             </div>
           </div>
         )}
 
-        {/* Input */}
         <div className="border-t p-4">
           <div className="flex gap-3">
             <input
               type="text"
               value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyPress={handleKeyPress}
-              placeholder={`问${currentConfig.name}...`}
-              className="flex-1 px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+              onChange={(event) => setInput(event.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder={`问 ${currentConfig.name}...`}
+              className="flex-1 px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500"
               disabled={loading}
             />
             <button
-              onClick={() => handleSend()}
+              onClick={() => void handleSend()}
               disabled={!input.trim() || loading}
-              className="px-6 py-3 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              className="px-6 py-3 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 disabled:opacity-50 flex items-center gap-2"
             >
               <Send className="w-5 h-5" />
               <span className="hidden sm:inline">发送</span>

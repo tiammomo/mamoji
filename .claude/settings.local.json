@@ -22,6 +22,10 @@
     },
     "java": {
       "home": "C:\\Users\\pearf\\.jdks\\corretto-21.0.10"
+    },
+    "git": {
+      "autoPush": false,
+      "description": "不自动推送 git，需要用户确认后再执行 git push"
     }
   }
 }

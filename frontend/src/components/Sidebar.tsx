@@ -16,6 +16,10 @@ import {
   Users,
   Settings,
   Sparkles,
+  FileImage,
+  Repeat,
+  BarChart3,
+  Database,
 } from "lucide-react";
 
 // 用户信息类型
@@ -58,9 +62,13 @@ const menuItems = [
   { icon: Home, label: "首页", href: "/" },
   { icon: TrendingUp, label: "交易记录", href: "/transactions" },
   { icon: PieChart, label: "报表", href: "/reports" },
+  { icon: BarChart3, label: "高级报表", href: "/reports/advanced" },
   { icon: CreditCard, label: "账户", href: "/accounts" },
   { icon: Wallet, label: "预算", href: "/budget" },
+  { icon: FileImage, label: "收据管理", href: "/receipts" },
+  { icon: Repeat, label: "定期记账", href: "/recurring" },
   { icon: Sparkles, label: "AI 助手", href: "/ai" },
+  { icon: Database, label: "数据备份", href: "/settings/backup" },
   // 管理员专属菜单项
   { icon: Users, label: "用户管理", href: "/users", adminOnly: true },
 ];
