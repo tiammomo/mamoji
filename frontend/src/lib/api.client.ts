@@ -32,6 +32,11 @@ export function getErrorMessage(error: unknown, fallback: string): string {
 class ApiClient {
   constructor(private readonly baseUrl: string) {}
 
+  private looksLikeHtml(text: string): boolean {
+    const trimmed = text.trimStart();
+    return trimmed.startsWith("<!DOCTYPE") || trimmed.startsWith("<html");
+  }
+
   private getToken(): string | null {
     if (typeof window !== "undefined") {
       return localStorage.getItem("token");
@@ -101,6 +106,13 @@ class ApiClient {
 
     const text = await response.text();
     const parsedData = this.parseJsonSafely(text);
+
+    if (this.looksLikeHtml(text)) {
+      const error: ApiError = new Error("接口返回了 HTML，而不是 JSON。请检查后端服务地址和接口是否存在。");
+      error.code = response.status;
+      error.status = response.status;
+      throw error;
+    }
 
     if (!response.ok) {
       this.handleError(response, parsedData ?? { message: `请求失败 (${response.status})` });

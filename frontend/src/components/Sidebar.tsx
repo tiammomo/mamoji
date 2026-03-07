@@ -73,6 +73,13 @@ const menuItems = [
   { icon: Users, label: "用户管理", href: "/users", adminOnly: true },
 ];
 
+function isPathActive(pathname: string, href: string): boolean {
+  if (href === "/") {
+    return pathname === "/";
+  }
+  return pathname === href || pathname.startsWith(`${href}/`);
+}
+
 export default function Sidebar() {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -151,8 +158,14 @@ export default function Sidebar() {
             {menuItems
               .filter((item) => !item.adminOnly || admin)
               .map((item) => {
-              const isActive = pathname === item.href ||
-                (item.href !== "/" && pathname.startsWith(item.href));
+              const activeChildExists = menuItems
+                .filter((candidate) => candidate.href !== item.href)
+                .some(
+                  (candidate) =>
+                    candidate.href.startsWith(`${item.href}/`) &&
+                    isPathActive(pathname, candidate.href)
+                );
+              const isActive = isPathActive(pathname, item.href) && !activeChildExists;
               return (
                 <li key={item.href}>
                   <Link

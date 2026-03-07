@@ -11,6 +11,7 @@ import java.util.Optional;
 @Repository
 public interface LedgerRepository extends JpaRepository<Ledger, Long> {
     List<Ledger> findByOwnerIdAndStatus(Long ownerId, Integer status);
+    long countByOwnerIdAndStatus(Long ownerId, Integer status);
 
     @Query("SELECT l FROM Ledger l WHERE l.id IN (SELECT lm.ledgerId FROM LedgerMember lm WHERE lm.userId = :userId AND lm.status = 1) AND l.status = 1")
     List<Ledger> findByMemberId(Long userId);

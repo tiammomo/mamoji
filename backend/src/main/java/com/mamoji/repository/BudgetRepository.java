@@ -11,6 +11,7 @@ import java.util.Optional;
 @Repository
 public interface BudgetRepository extends JpaRepository<Budget, Long> {
     List<Budget> findByUserIdAndStatus(Long userId, Integer status);
+    long countByUserIdAndStatus(Long userId, Integer status);
 
     List<Budget> findByLedgerIdAndStatus(Long ledgerId, Integer status);
 

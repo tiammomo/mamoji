@@ -27,9 +27,9 @@ export default function BackupPage() {
     fetchStatus();
   }, [fetchStatus]);
 
-  const handleExport = () => {
+  const handleExport = async () => {
     try {
-      backupApi.exportData();
+      await backupApi.exportData();
       setMessage({ type: 'success', text: '导出已开始，请在浏览器下载列表中查看进度' });
     } catch (error) {
       setMessage({ type: 'error', text: '导出失败，请重试' });

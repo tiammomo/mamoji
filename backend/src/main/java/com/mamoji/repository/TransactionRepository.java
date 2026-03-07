@@ -13,6 +13,7 @@ import java.util.List;
 public interface TransactionRepository extends JpaRepository<Transaction, Long> {
 
     Page<Transaction> findByUserIdOrderByDateDesc(Long userId, Pageable pageable);
+    long countByUserId(Long userId);
 
     @Query("SELECT SUM(t.amount) FROM Transaction t WHERE t.userId = :userId AND t.type = :type AND t.date BETWEEN :startDate AND :endDate")
     BigDecimal sumByUserIdAndTypeAndDateBetween(

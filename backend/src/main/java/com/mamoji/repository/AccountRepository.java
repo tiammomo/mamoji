@@ -10,6 +10,7 @@ import java.util.List;
 @Repository
 public interface AccountRepository extends JpaRepository<Account, Long> {
     List<Account> findByUserIdAndStatus(Long userId, Integer status);
+    long countByUserIdAndStatus(Long userId, Integer status);
 
     List<Account> findByLedgerIdAndStatus(Long ledgerId, Integer status);
 
