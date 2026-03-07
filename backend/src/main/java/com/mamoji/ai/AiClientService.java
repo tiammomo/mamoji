@@ -23,6 +23,8 @@ public class AiClientService {
 
     private static final String CHAT_PATH = "/v1/text/chatcompletion_v2";
     private static final Duration STREAM_CHUNK_DELAY = Duration.ofMillis(40);
+    private static final String DEFAULT_MODEL = "abab6.5s-chat";
+    private static final String FALLBACK_ERROR_MESSAGE = "Sorry, AI service is temporarily unavailable. Please try again later.";
 
     private final AiProperties properties;
     private final WebClient.Builder webClientBuilder;
@@ -33,7 +35,7 @@ public class AiClientService {
         long start = System.currentTimeMillis();
 
         try {
-            String result = chatMono(systemPrompt, userPrompt, traceId).block();
+            String result = chatWithFallbackMono(systemPrompt, userPrompt, traceId).block();
             long elapsed = System.currentTimeMillis() - start;
             log.info("AI request success traceId={} elapsedMs={}", traceId, elapsed);
             metricsService.recordRequest("minimaxi", true, elapsed, estimateTokens(systemPrompt, userPrompt, result));
@@ -42,7 +44,7 @@ public class AiClientService {
             long elapsed = System.currentTimeMillis() - start;
             log.error("AI request failed traceId={} elapsedMs={} error={}", traceId, elapsed, ex.getMessage(), ex);
             metricsService.recordRequest("minimaxi", false, elapsed, estimateTokens(systemPrompt, userPrompt, null));
-            return "抱歉，AI 服务暂时不可用，请稍后再试。";
+            return FALLBACK_ERROR_MESSAGE;
         }
     }
 
@@ -52,15 +54,36 @@ public class AiClientService {
      */
     public Flux<String> streamChat(String systemPrompt, String userPrompt) {
         String traceId = shortTraceId();
-        return chatMono(systemPrompt, userPrompt, traceId)
+        return chatWithFallbackMono(systemPrompt, userPrompt, traceId)
             .flatMapMany(this::chunkText)
             .onErrorResume(ex -> {
                 log.error("AI stream failed traceId={} error={}", traceId, ex.getMessage(), ex);
-                return Flux.just("抱歉，AI 服务暂时不可用，请稍后再试。");
+                return Flux.just(FALLBACK_ERROR_MESSAGE);
             });
     }
 
-    private Mono<String> chatMono(String systemPrompt, String userPrompt, String traceId) {
+    private Mono<String> chatWithFallbackMono(String systemPrompt, String userPrompt, String traceId) {
+        String primaryModel = normalizeModel(properties.getModel());
+        String fallbackModel = normalizeModel(properties.getFallbackModel());
+
+        Mono<String> primary = chatMono(systemPrompt, userPrompt, traceId, primaryModel);
+        if (!shouldUseFallback(primaryModel, fallbackModel)) {
+            return primary;
+        }
+
+        return primary.onErrorResume(ex -> {
+            log.warn(
+                "AI primary model failed, switching to fallback traceId={} primaryModel={} fallbackModel={} error={}",
+                traceId,
+                primaryModel,
+                fallbackModel,
+                ex.getMessage()
+            );
+            return chatMono(systemPrompt, userPrompt, traceId, fallbackModel);
+        });
+    }
+
+    private Mono<String> chatMono(String systemPrompt, String userPrompt, String traceId, String model) {
         return webClientBuilder
             .baseUrl(properties.getBaseUrl())
             .defaultHeader("Authorization", "Bearer " + safeToken(properties.getApiKey()))
@@ -69,7 +92,7 @@ public class AiClientService {
             .post()
             .uri(CHAT_PATH)
             .contentType(MediaType.APPLICATION_JSON)
-            .bodyValue(buildRequestBody(systemPrompt, userPrompt))
+            .bodyValue(buildRequestBody(systemPrompt, userPrompt, model))
             .retrieve()
             .bodyToMono(Map.class)
             .map(this::extractReply)
@@ -81,9 +104,9 @@ public class AiClientService {
             );
     }
 
-    private Map<String, Object> buildRequestBody(String systemPrompt, String userPrompt) {
+    private Map<String, Object> buildRequestBody(String systemPrompt, String userPrompt, String model) {
         Map<String, Object> payload = new LinkedHashMap<>();
-        payload.put("model", properties.getModel());
+        payload.put("model", model);
         payload.put("max_tokens", properties.getMaxTokens());
         payload.put("temperature", properties.getTemperature());
         payload.put("messages", List.of(
@@ -150,6 +173,17 @@ public class AiClientService {
 
     private String safeToken(String token) {
         return token != null ? token : "";
+    }
+
+    private boolean shouldUseFallback(String primaryModel, String fallbackModel) {
+        return fallbackModel != null && !fallbackModel.isBlank() && !fallbackModel.equals(primaryModel);
+    }
+
+    private String normalizeModel(String model) {
+        if (model == null || model.isBlank()) {
+            return DEFAULT_MODEL;
+        }
+        return model.trim();
     }
 
     private int estimateTokens(String systemPrompt, String userPrompt, String output) {

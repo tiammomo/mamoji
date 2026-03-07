@@ -54,4 +54,33 @@ class AiMetricsServiceTest {
 
         Assertions.assertEquals(0.0, tokens);
     }
+
+    @Test
+    void shouldRecordToolAndQualityMetrics() {
+        SimpleMeterRegistry registry = new SimpleMeterRegistry();
+        StaticListableBeanFactory beanFactory = new StaticListableBeanFactory(Map.of("meterRegistry", registry));
+        AiMetricsService service = new AiMetricsService(beanFactory.getBeanProvider(io.micrometer.core.instrument.MeterRegistry.class));
+
+        service.recordToolCall("finance.query_budget", true, 42);
+        service.recordQualityWarnings("finance", 2);
+
+        double toolCount = registry.get("ai.tool.count")
+            .tag("tool", "finance.query_budget")
+            .tag("success", "true")
+            .counter()
+            .count();
+        double toolLatencyMs = registry.get("ai.tool.latency")
+            .tag("tool", "finance.query_budget")
+            .tag("success", "true")
+            .timer()
+            .totalTime(TimeUnit.MILLISECONDS);
+        double warnings = registry.get("ai.quality.warnings")
+            .tag("assistantType", "finance")
+            .summary()
+            .totalAmount();
+
+        Assertions.assertEquals(1.0, toolCount);
+        Assertions.assertEquals(42.0, toolLatencyMs);
+        Assertions.assertEquals(2.0, warnings);
+    }
 }

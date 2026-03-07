@@ -1,11 +1,13 @@
 package com.mamoji.ai.rag;
 
 import org.springframework.stereotype.Component;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 
 import java.util.ArrayList;
 import java.util.List;
 
 @Component
+@ConditionalOnMissingBean(KnowledgeRetriever.class)
 public class LocalKnowledgeRetriever implements KnowledgeRetriever {
 
     private static final List<KnowledgeSnippet> FINANCE_KNOWLEDGE = List.of(
@@ -41,4 +43,3 @@ public class LocalKnowledgeRetriever implements KnowledgeRetriever {
         return new ArrayList<>(base.subList(0, limit));
     }
 }
-

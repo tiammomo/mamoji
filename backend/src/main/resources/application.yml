@@ -23,6 +23,13 @@ spring:
       enabled: ${SPRING_H2_CONSOLE_ENABLED:true}
       path: /h2-console
 
+  data:
+    redis:
+      host: ${SPRING_REDIS_HOST:localhost}
+      port: ${SPRING_REDIS_PORT:6379}
+      password: ${SPRING_REDIS_PASSWORD:}
+      timeout: ${SPRING_REDIS_TIMEOUT:3s}
+
 server:
   port: ${SERVER_PORT:38080}
 
@@ -41,7 +48,41 @@ ai:
   base-url: ${ANTHROPIC_BASE_URL:https://api.minimaxi.com}
   api-key: ${ANTHROPIC_AUTH_TOKEN:}
   model: ${ANTHROPIC_DEFAULT_SONNET_MODEL:abab6.5s-chat}
+  fallback-model: ${AI_FALLBACK_MODEL:}
   timeout-seconds: ${AI_TIMEOUT_SECONDS:30}
   max-retries: ${AI_MAX_RETRIES:2}
   max-tokens: ${AI_MAX_TOKENS:1024}
   temperature: ${AI_TEMPERATURE:0.7}
+  prompt-ops:
+    enabled: ${AI_PROMPT_OPS_ENABLED:true}
+    default-variant: ${AI_PROMPT_DEFAULT_VARIANT:A}
+    experiment-id: ${AI_PROMPT_EXPERIMENT_ID:prompt-exp-v1}
+    finance-variant-a-weight: ${AI_PROMPT_FINANCE_A_WEIGHT:50}
+    stock-variant-a-weight: ${AI_PROMPT_STOCK_A_WEIGHT:50}
+  tool-ops:
+    enabled: ${AI_TOOL_OPS_ENABLED:true}
+    per-user-tool-per-minute: ${AI_TOOL_PER_USER_PER_MINUTE:30}
+    blocked-tools: ${AI_TOOL_BLOCKED_TOOLS:}
+  memory-ops:
+    redis-enabled: ${AI_MEMORY_REDIS_ENABLED:false}
+    max-stored-turns: ${AI_MEMORY_MAX_STORED_TURNS:40}
+    ttl-seconds: ${AI_MEMORY_TTL_SECONDS:86400}
+  rag-ops:
+    file-enabled: ${AI_RAG_FILE_ENABLED:true}
+    knowledge-path: ${AI_RAG_KNOWLEDGE_PATH:classpath:ai/knowledge-base.json}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: never
+  prometheus:
+    metrics:
+      export:
+        enabled: true
+  metrics:
+    tags:
+      application: ${spring.application.name}

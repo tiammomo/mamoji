@@ -1,6 +1,7 @@
 package com.mamoji.ai.memory;
 
 import org.springframework.stereotype.Service;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 
 import java.time.Instant;
 import java.util.ArrayDeque;
@@ -11,6 +12,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Service
+@ConditionalOnMissingBean(ConversationMemoryService.class)
 public class InMemoryConversationMemoryService implements ConversationMemoryService {
 
     private static final int MAX_STORED_TURNS = 40;
@@ -46,4 +48,3 @@ public class InMemoryConversationMemoryService implements ConversationMemoryServ
         }
     }
 }
-

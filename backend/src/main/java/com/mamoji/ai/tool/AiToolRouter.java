@@ -13,6 +13,7 @@ import java.util.UUID;
 public class AiToolRouter {
 
     private final AiToolRegistry toolRegistry;
+    private final AiToolGuardService toolGuardService;
 
     public AiToolResult route(Long userId, String toolName, Map<String, Object> params) {
         String traceId = UUID.randomUUID().toString().substring(0, 8);
@@ -20,6 +21,12 @@ public class AiToolRouter {
 
         if (toolName == null || toolName.isBlank()) {
             return AiToolResult.fail("unknown", "tool name is empty");
+        }
+
+        AiToolGuardService.GuardDecision guardDecision = toolGuardService.checkAndConsume(userId, toolName);
+        if (!guardDecision.allowed()) {
+            log.warn("AI tool denied traceId={} tool={} userId={} reason={}", traceId, toolName, userId, guardDecision.reason());
+            return AiToolResult.fail(toolName, guardDecision.reason());
         }
 
         return toolRegistry.find(toolName)
@@ -64,4 +71,3 @@ public class AiToolRouter {
         }
     }
 }
-

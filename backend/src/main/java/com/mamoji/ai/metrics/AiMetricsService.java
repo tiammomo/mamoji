@@ -40,5 +40,37 @@ public class AiMetricsService {
             .register(meterRegistry)
             .record(Math.max(0, estimatedTokens));
     }
-}
 
+    public void recordToolCall(String toolName, boolean success, long latencyMs) {
+        if (meterRegistry == null) {
+            return;
+        }
+
+        Timer.builder("ai.tool.latency")
+            .tag("tool", safeTag(toolName))
+            .tag("success", String.valueOf(success))
+            .register(meterRegistry)
+            .record(Math.max(0, latencyMs), TimeUnit.MILLISECONDS);
+
+        Counter.builder("ai.tool.count")
+            .tag("tool", safeTag(toolName))
+            .tag("success", String.valueOf(success))
+            .register(meterRegistry)
+            .increment();
+    }
+
+    public void recordQualityWarnings(String assistantType, int warningCount) {
+        if (meterRegistry == null) {
+            return;
+        }
+
+        DistributionSummary.builder("ai.quality.warnings")
+            .tag("assistantType", safeTag(assistantType))
+            .register(meterRegistry)
+            .record(Math.max(0, warningCount));
+    }
+
+    private String safeTag(String value) {
+        return (value == null || value.isBlank()) ? "unknown" : value;
+    }
+}

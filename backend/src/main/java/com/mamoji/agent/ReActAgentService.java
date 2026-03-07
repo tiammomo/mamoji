@@ -3,6 +3,7 @@ package com.mamoji.agent;
 import com.mamoji.ai.AiClientService;
 import com.mamoji.ai.memory.ConversationMemoryService;
 import com.mamoji.ai.memory.ConversationTurn;
+import com.mamoji.ai.metrics.AiMetricsService;
 import com.mamoji.ai.model.StructuredAiResponse;
 import com.mamoji.ai.prompt.PromptVariantService;
 import com.mamoji.ai.quality.AiQualityGateService;
@@ -10,6 +11,8 @@ import com.mamoji.ai.rag.KnowledgeRetriever;
 import com.mamoji.ai.rag.KnowledgeSnippet;
 import com.mamoji.ai.tool.AiToolResult;
 import com.mamoji.ai.tool.AiToolRouter;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -30,6 +33,8 @@ public class ReActAgentService {
     private final KnowledgeRetriever knowledgeRetriever;
     private final PromptVariantService promptVariantService;
     private final AiQualityGateService qualityGateService;
+    private final AiMetricsService aiMetricsService;
+    private final ObjectMapper objectMapper;
 
     public String processMessage(Long userId, String message, String assistantType, String sessionId) {
         return processMessageStructured(userId, message, assistantType, sessionId).answer();
@@ -50,7 +55,10 @@ public class ReActAgentService {
 
             String toolPayload = "";
             if (plan != null) {
+                long toolStart = System.currentTimeMillis();
                 AiToolResult toolResult = aiToolRouter.route(userId, plan.domain, plan.params);
+                long toolElapsed = System.currentTimeMillis() - toolStart;
+                aiMetricsService.recordToolCall(toolResult.toolName(), toolResult.success(), toolElapsed);
                 actions.add(toolResult.toolName());
                 if (!toolResult.success()) {
                     warnings.add("Tool call failed: " + toolResult.error());
@@ -62,18 +70,24 @@ public class ReActAgentService {
 
             String prompt = buildPromptWithContext(message, toolPayload, snippets, memoryService.recent(sessionKey, 8));
             PromptVariantService.PromptVariant promptVariant = promptVariantService.pick(type, sessionKey);
-            String answer = aiClientService.chat(promptVariant.systemPrompt(), prompt);
+            String rawAnswer = aiClientService.chat(promptVariant.systemPrompt(), prompt);
+            ParsedAnswer parsed = parseOrRepairStructuredAnswer(promptVariant.systemPrompt(), prompt, rawAnswer);
+            String answer = parsed.answer();
+            warnings.addAll(parsed.warnings());
 
             memoryService.append(sessionKey, "user", message);
             memoryService.append(sessionKey, "assistant", answer);
 
             warnings.addAll(qualityGateService.validate(type, message, answer));
+            aiMetricsService.recordQualityWarnings(type, warnings.size());
 
             Map<String, Object> usage = Map.of(
                 "inputChars", prompt.length(),
                 "outputChars", answer.length(),
                 "estimatedTokens", estimateTokens(prompt, answer),
-                "promptVariant", promptVariant.variant()
+                "promptVariant", promptVariant.variant(),
+                "promptExperimentId", promptVariant.experimentId(),
+                "promptBucket", promptVariant.bucket()
             );
 
             return new StructuredAiResponse(answer, sources, actions, warnings, usage);
@@ -128,8 +142,75 @@ public class ReActAgentService {
             prompt.append("\n");
         }
 
-        prompt.append("Please answer in Chinese, concise and actionable.");
+        prompt.append("Please answer in Chinese, concise and actionable.\n");
+        prompt.append("Return JSON only with schema: {\"answer\":\"string\",\"warnings\":[\"string\"]}.");
         return prompt.toString();
+    }
+
+    private ParsedAnswer parseOrRepairStructuredAnswer(String systemPrompt, String originalPrompt, String rawAnswer) {
+        ParsedAnswer parsed = tryParseStructuredAnswer(rawAnswer);
+        if (parsed != null) {
+            return parsed;
+        }
+
+        String repairPrompt = buildRepairPrompt(originalPrompt, rawAnswer);
+        String repairedRawAnswer = aiClientService.chat(systemPrompt, repairPrompt);
+        ParsedAnswer repaired = tryParseStructuredAnswer(repairedRawAnswer);
+        if (repaired != null) {
+            List<String> warnings = new ArrayList<>(repaired.warnings());
+            warnings.add("schema_repair_retry");
+            return new ParsedAnswer(repaired.answer(), warnings);
+        }
+
+        return new ParsedAnswer(
+            sanitizeRawAnswer(rawAnswer),
+            List.of("schema_parse_failed")
+        );
+    }
+
+    private ParsedAnswer tryParseStructuredAnswer(String rawAnswer) {
+        if (rawAnswer == null || rawAnswer.isBlank()) {
+            return null;
+        }
+
+        try {
+            JsonNode root = objectMapper.readTree(rawAnswer);
+            JsonNode answerNode = root.get("answer");
+            if (answerNode == null || answerNode.asText().isBlank()) {
+                return null;
+            }
+
+            List<String> warnings = new ArrayList<>();
+            JsonNode warningsNode = root.get("warnings");
+            if (warningsNode != null && warningsNode.isArray()) {
+                for (JsonNode warning : warningsNode) {
+                    String text = warning.asText();
+                    if (!text.isBlank()) {
+                        warnings.add(text);
+                    }
+                }
+            }
+            return new ParsedAnswer(answerNode.asText(), warnings);
+        } catch (Exception ex) {
+            return null;
+        }
+    }
+
+    private String buildRepairPrompt(String originalPrompt, String rawAnswer) {
+        return "Reformat the following model answer into strict JSON only. "
+            + "Schema: {\"answer\":\"string\",\"warnings\":[\"string\"]}. "
+            + "Do not include markdown code fences.\n\n"
+            + "Original prompt:\n"
+            + originalPrompt
+            + "\n\nRaw answer:\n"
+            + rawAnswer;
+    }
+
+    private String sanitizeRawAnswer(String rawAnswer) {
+        if (rawAnswer == null || rawAnswer.isBlank()) {
+            return "AI returned empty response";
+        }
+        return rawAnswer;
     }
 
     private ToolPlan chooseToolPlan(String assistantType, String message) {
@@ -218,5 +299,8 @@ public class ReActAgentService {
     }
 
     private record ToolPlan(String domain, Map<String, Object> params) {
+    }
+
+    private record ParsedAnswer(String answer, List<String> warnings) {
     }
 }
