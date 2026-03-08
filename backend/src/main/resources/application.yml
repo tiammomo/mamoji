@@ -1,6 +1,8 @@
 spring:
   application:
     name: mamoji
+  profiles:
+    default: dev
 
   # H2 for MVP (in-memory) - 可切换为 MySQL
   datasource:
@@ -20,7 +22,7 @@ spring:
 
   h2:
     console:
-      enabled: ${SPRING_H2_CONSOLE_ENABLED:true}
+      enabled: ${SPRING_H2_CONSOLE_ENABLED:false}
       path: /h2-console
 
   data:
@@ -35,7 +37,7 @@ server:
 
 # JWT 配置
 jwt:
-  secret: ${JWT_SECRET:mamoji-dev-secret-key-change-in-production-12345678901234567890}
+  secret: ${JWT_SECRET}
   expiration: ${JWT_EXPIRATION:86400}
 
 logging:
