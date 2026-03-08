@@ -1,6 +1,6 @@
 package com.mamoji.agent;
 
-import com.mamoji.ai.AiClientService;
+import com.mamoji.ai.AiGateway;
 import com.mamoji.ai.AiModelRouter;
 import com.mamoji.ai.memory.ConversationMemoryService;
 import com.mamoji.ai.memory.ConversationTurn;
@@ -32,7 +32,7 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class ReActAgentService {
 
-    private final AiClientService aiClientService;
+    private final AiGateway aiGateway;
     private final AiToolRouter aiToolRouter;
     private final ConversationMemoryService memoryService;
     private final KnowledgeRetriever knowledgeRetriever;
@@ -81,7 +81,7 @@ public class ReActAgentService {
             AiModelRouter.RoutingDecision routingDecision = aiModelRouter.pickPrimaryModelDecision(type, message);
             String routedModel = routingDecision.model();
             aiMetricsService.recordModelRouteReason(type, routedModel, routingDecision.reason());
-            String rawAnswer = aiClientService.chat(promptVariant.systemPrompt(), prompt, routedModel, type);
+            String rawAnswer = aiGateway.chat(promptVariant.systemPrompt(), prompt, routedModel, type);
             ParsedAnswer parsed = parseOrRepairStructuredAnswer(promptVariant.systemPrompt(), prompt, rawAnswer, traceId);
             String answer = parsed.answer();
             warnings.addAll(parsed.warnings());
@@ -169,7 +169,7 @@ public class ReActAgentService {
 
         log.warn("Structured answer parse failed traceId={} stage=primary preview={}", traceId, preview(rawAnswer));
         String repairPrompt = buildRepairPrompt(originalPrompt, rawAnswer);
-        String repairedRawAnswer = aiClientService.chat(systemPrompt, repairPrompt, null, null);
+        String repairedRawAnswer = aiGateway.chat(systemPrompt, repairPrompt, null, null);
         ParsedAnswer repaired = tryParseStructuredAnswer(repairedRawAnswer);
         if (repaired != null) {
             List<String> warnings = new ArrayList<>(repaired.warnings());
