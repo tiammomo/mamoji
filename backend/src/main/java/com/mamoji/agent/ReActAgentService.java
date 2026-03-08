@@ -5,7 +5,6 @@ import com.mamoji.ai.AiModelRouter;
 import com.mamoji.ai.memory.ConversationMemoryService;
 import com.mamoji.ai.memory.ConversationTurn;
 import com.mamoji.ai.metrics.AiMetricsService;
-import com.mamoji.ai.model.StructuredAnswerPayload;
 import com.mamoji.ai.model.StructuredAiResponse;
 import com.mamoji.ai.prompt.PromptVariantService;
 import com.mamoji.ai.quality.AiQualityGateService;
@@ -13,9 +12,6 @@ import com.mamoji.ai.rag.KnowledgeRetriever;
 import com.mamoji.ai.rag.KnowledgeSnippet;
 import com.mamoji.ai.tool.AiToolResult;
 import com.mamoji.ai.tool.AiToolRouter;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import jakarta.validation.ConstraintViolation;
-import jakarta.validation.Validator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -24,7 +20,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.UUID;
 
 @Slf4j
@@ -40,8 +35,7 @@ public class ReActAgentService {
     private final AiQualityGateService qualityGateService;
     private final AiMetricsService aiMetricsService;
     private final AiModelRouter aiModelRouter;
-    private final ObjectMapper objectMapper;
-    private final Validator validator;
+    private final StructuredAnswerParser structuredAnswerParser;
 
     public String processMessage(Long userId, String message, String assistantType, String sessionId) {
         return processMessageStructured(userId, message, assistantType, sessionId).answer();
@@ -82,7 +76,12 @@ public class ReActAgentService {
             String routedModel = routingDecision.model();
             aiMetricsService.recordModelRouteReason(type, routedModel, routingDecision.reason());
             String rawAnswer = aiGateway.chat(promptVariant.systemPrompt(), prompt, routedModel, type);
-            ParsedAnswer parsed = parseOrRepairStructuredAnswer(promptVariant.systemPrompt(), prompt, rawAnswer, traceId);
+            StructuredAnswerParser.ParsedAnswer parsed = parseOrRepairStructuredAnswer(
+                promptVariant.systemPrompt(),
+                prompt,
+                rawAnswer,
+                traceId
+            );
             String answer = parsed.answer();
             warnings.addAll(parsed.warnings());
             sources.addAll(parsed.sources());
@@ -161,8 +160,13 @@ public class ReActAgentService {
         return prompt.toString();
     }
 
-    private ParsedAnswer parseOrRepairStructuredAnswer(String systemPrompt, String originalPrompt, String rawAnswer, String traceId) {
-        ParsedAnswer parsed = tryParseStructuredAnswer(rawAnswer);
+    private StructuredAnswerParser.ParsedAnswer parseOrRepairStructuredAnswer(
+        String systemPrompt,
+        String originalPrompt,
+        String rawAnswer,
+        String traceId
+    ) {
+        StructuredAnswerParser.ParsedAnswer parsed = structuredAnswerParser.parse(rawAnswer).orElse(null);
         if (parsed != null) {
             return parsed;
         }
@@ -170,44 +174,21 @@ public class ReActAgentService {
         log.warn("Structured answer parse failed traceId={} stage=primary preview={}", traceId, preview(rawAnswer));
         String repairPrompt = buildRepairPrompt(originalPrompt, rawAnswer);
         String repairedRawAnswer = aiGateway.chat(systemPrompt, repairPrompt, null, null);
-        ParsedAnswer repaired = tryParseStructuredAnswer(repairedRawAnswer);
+        StructuredAnswerParser.ParsedAnswer repaired = structuredAnswerParser.parse(repairedRawAnswer).orElse(null);
         if (repaired != null) {
             List<String> warnings = new ArrayList<>(repaired.warnings());
             warnings.add("schema_repair_retry");
             log.info("Structured answer repaired traceId={} stage=repair-success", traceId);
-            return new ParsedAnswer(repaired.answer(), warnings, repaired.sources(), repaired.actions());
+            return new StructuredAnswerParser.ParsedAnswer(repaired.answer(), warnings, repaired.sources(), repaired.actions());
         }
 
         log.warn("Structured answer parse failed traceId={} stage=repair preview={}", traceId, preview(repairedRawAnswer));
-        return new ParsedAnswer(
+        return new StructuredAnswerParser.ParsedAnswer(
             sanitizeRawAnswer(rawAnswer),
             List.of("schema_parse_failed"),
             List.of(),
             List.of()
         );
-    }
-
-    private ParsedAnswer tryParseStructuredAnswer(String rawAnswer) {
-        if (rawAnswer == null || rawAnswer.isBlank()) {
-            return null;
-        }
-
-        try {
-            StructuredAnswerPayload payload = objectMapper.readValue(rawAnswer, StructuredAnswerPayload.class);
-            Set<ConstraintViolation<StructuredAnswerPayload>> violations = validator.validate(payload);
-            if (!violations.isEmpty()) {
-                return null;
-            }
-
-            return new ParsedAnswer(
-                payload.answer(),
-                new ArrayList<>(payload.warnings()),
-                new ArrayList<>(payload.sources()),
-                new ArrayList<>(payload.actions())
-            );
-        } catch (Exception ex) {
-            return null;
-        }
     }
 
     private String buildRepairPrompt(String originalPrompt, String rawAnswer) {
@@ -321,8 +302,5 @@ public class ReActAgentService {
     }
 
     private record ToolPlan(String domain, Map<String, Object> params) {
-    }
-
-    private record ParsedAnswer(String answer, List<String> warnings, List<String> sources, List<String> actions) {
     }
 }

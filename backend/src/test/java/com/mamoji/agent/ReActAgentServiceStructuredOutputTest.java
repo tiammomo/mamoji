@@ -10,7 +10,6 @@ import com.mamoji.ai.prompt.PromptVariantService;
 import com.mamoji.ai.quality.AiQualityGateService;
 import com.mamoji.ai.rag.KnowledgeRetriever;
 import com.mamoji.ai.tool.AiToolRouter;
-import jakarta.validation.Validation;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -52,8 +51,7 @@ class ReActAgentServiceStructuredOutputTest {
             qualityGateService,
             aiMetricsService,
             aiModelRouter,
-            new ObjectMapper(),
-            Validation.buildDefaultValidatorFactory().getValidator()
+            new StructuredAnswerParser(new ObjectMapper())
         );
 
         StructuredAiResponse response = service.processMessageStructured(1L, "hello", "finance", "s1");
