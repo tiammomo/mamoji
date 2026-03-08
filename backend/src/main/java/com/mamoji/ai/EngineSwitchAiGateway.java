@@ -2,6 +2,7 @@ package com.mamoji.ai;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
@@ -16,6 +17,7 @@ public class EngineSwitchAiGateway implements AiGateway {
 
     private final AiProperties aiProperties;
     private final LegacyAiGateway legacyAiGateway;
+    private final ObjectProvider<SpringAiGateway> springAiGatewayProvider;
 
     @Override
     public String chat(String systemPrompt, String userPrompt, String modelOverride, String assistantType) {
@@ -30,6 +32,14 @@ public class EngineSwitchAiGateway implements AiGateway {
     private AiGateway selectedGateway() {
         String engine = normalizeEngine(aiProperties.getEngine());
         if ("legacy".equals(engine)) {
+            return legacyAiGateway;
+        }
+        if ("spring-ai".equals(engine)) {
+            SpringAiGateway springAiGateway = springAiGatewayProvider.getIfAvailable();
+            if (springAiGateway != null) {
+                return springAiGateway;
+            }
+            log.warn("ai.engine=spring-ai but no SpringAiGateway bean found, fallback to legacy");
             return legacyAiGateway;
         }
         log.warn("Unsupported ai.engine={}, fallback to legacy", aiProperties.getEngine());
