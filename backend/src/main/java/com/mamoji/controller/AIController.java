@@ -1,7 +1,6 @@
 package com.mamoji.controller;
 
 import com.mamoji.agent.ReActAgentService;
-import com.mamoji.ai.AiClientService;
 import com.mamoji.ai.model.StructuredAiResponse;
 import com.mamoji.dto.AIChatRequest;
 import com.mamoji.dto.AIChatResponse;
@@ -19,6 +18,7 @@ import org.springframework.web.bind.annotation.RestController;
 import reactor.core.publisher.Flux;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -28,7 +28,6 @@ public class AIController {
 
     private final AIService aiService;
     private final ReActAgentService reActAgentService;
-    private final AiClientService aiClientService;
 
     @PostMapping("/chat")
     public ResponseEntity<Map<String, Object>> chat(@RequestBody AIChatRequest request, @AuthenticationUser User user) {
@@ -60,25 +59,44 @@ public class AIController {
 
     @PostMapping(path = "/chat/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public Flux<ServerSentEvent<Map<String, Object>>> chatStream(@RequestBody AIChatRequest request, @AuthenticationUser User user) {
-        String assistantType = request.getAssistantType() == null || request.getAssistantType().isBlank()
-            ? "finance"
-            : request.getAssistantType();
+        StructuredAiResponse response = reActAgentService.processMessageStructured(
+            user.getId(),
+            request.getMessage(),
+            request.getAssistantType(),
+            request.getSessionId()
+        );
 
-        String systemPrompt = "stock".equals(assistantType)
-            ? "You are a stock analyst assistant. Reply in Chinese and include risk warning."
-            : "You are a family finance assistant. Reply in Chinese with practical suggestions.";
+        Map<String, Object> doneData = new HashMap<>();
+        doneData.put("done", true);
+        doneData.put("warnings", response.warnings() != null ? response.warnings() : List.of());
+        doneData.put("sources", response.sources() != null ? response.sources() : List.of());
+        doneData.put("actions", response.actions() != null ? response.actions() : List.of());
+        doneData.put("usage", response.usage() != null ? response.usage() : Map.of());
 
-        String userPrompt = "userId=" + user.getId() + "\nquestion=" + request.getMessage();
-
-        return aiClientService.streamChat(systemPrompt, userPrompt)
+        return chunkAnswer(response.answer())
             .map(chunk -> ServerSentEvent.<Map<String, Object>>builder()
                 .event("chunk")
                 .data(Map.of("content", chunk))
                 .build())
             .concatWithValues(ServerSentEvent.<Map<String, Object>>builder()
                 .event("done")
-                .data(Map.of("done", true))
+                .data(doneData)
                 .build());
+    }
+
+    private Flux<String> chunkAnswer(String answer) {
+        if (answer == null || answer.isEmpty()) {
+            return Flux.just("");
+        }
+
+        int chunkSize = 24;
+        int count = (answer.length() + chunkSize - 1) / chunkSize;
+        return Flux.range(0, count)
+            .map(index -> {
+                int start = index * chunkSize;
+                int end = Math.min(start + chunkSize, answer.length());
+                return answer.substring(start, end);
+            });
     }
 
     private Map<String, Object> wrapSuccess(Object data) {
