@@ -124,6 +124,31 @@ public class AiProperties {
          * Consecutive failure threshold to open circuit.
          */
         private int failureThreshold = 3;
+
+        /**
+         * Core thread pool size for tool execution.
+         */
+        private int executorCorePoolSize = 8;
+
+        /**
+         * Max thread pool size for tool execution.
+         */
+        private int executorMaxPoolSize = 32;
+
+        /**
+         * Queue capacity for tool execution tasks.
+         */
+        private int executorQueueCapacity = 256;
+
+        /**
+         * Max idempotent cache entries for tool execution.
+         */
+        private int cacheMaxEntries = 2000;
+
+        /**
+         * Idempotent cache TTL in seconds.
+         */
+        private int cacheTtlSeconds = 60;
     }
 
     @Getter
