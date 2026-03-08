@@ -3,12 +3,19 @@ package com.mamoji.ai;
 import com.mamoji.ai.metrics.AiMetricsService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.ai.chat.memory.ChatMemory;
+import org.springframework.ai.chat.messages.AssistantMessage;
+import org.springframework.ai.chat.messages.Message;
+import org.springframework.ai.chat.messages.UserMessage;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.stereotype.Service;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.model.ChatModel;
 import reactor.core.publisher.Flux;
+
+import java.util.List;
 
 @Slf4j
 @Service
@@ -21,16 +28,20 @@ public class SpringAiGateway implements AiGateway {
 
     private final ChatModel chatModel;
     private final AiMetricsService metricsService;
+    private final ObjectProvider<ChatMemory> chatMemoryProvider;
 
     @Override
     public String chat(String systemPrompt, String userPrompt, String modelOverride, String assistantType) {
         long start = System.currentTimeMillis();
         try {
-            String prompt = buildPrompt(systemPrompt, userPrompt, modelOverride);
+            ChatMemory chatMemory = chatMemoryProvider.getIfAvailable();
+            String conversationId = conversationId(assistantType);
+            String prompt = buildPrompt(systemPrompt, userPrompt, modelOverride, chatMemory, conversationId);
             String result = ChatClient.create(chatModel)
                 .prompt(prompt)
                 .call()
                 .content();
+            saveConversation(chatMemory, conversationId, userPrompt, result);
             long elapsed = System.currentTimeMillis() - start;
             metricsService.recordRequest("spring-ai", true, elapsed, estimateTokens(prompt, result));
             metricsService.recordModelRoute(assistantType, modelOverride != null ? modelOverride : "spring-ai-default");
@@ -48,7 +59,13 @@ public class SpringAiGateway implements AiGateway {
         return chunkText(chat(systemPrompt, userPrompt, modelOverride, assistantType));
     }
 
-    private String buildPrompt(String systemPrompt, String userPrompt, String modelOverride) {
+    private String buildPrompt(
+        String systemPrompt,
+        String userPrompt,
+        String modelOverride,
+        ChatMemory chatMemory,
+        String conversationId
+    ) {
         StringBuilder prompt = new StringBuilder();
         if (systemPrompt != null && !systemPrompt.isBlank()) {
             prompt.append("System:\n").append(systemPrompt.trim()).append("\n\n");
@@ -56,8 +73,52 @@ public class SpringAiGateway implements AiGateway {
         if (modelOverride != null && !modelOverride.isBlank()) {
             prompt.append("Preferred model: ").append(modelOverride.trim()).append("\n");
         }
+        appendConversationHistory(prompt, chatMemory, conversationId);
         prompt.append("User:\n").append(userPrompt != null ? userPrompt : "");
         return prompt.toString();
+    }
+
+    private void appendConversationHistory(StringBuilder prompt, ChatMemory chatMemory, String conversationId) {
+        if (chatMemory == null || conversationId == null || conversationId.isBlank()) {
+            return;
+        }
+        List<Message> history = chatMemory.get(conversationId);
+        if (history == null || history.isEmpty()) {
+            return;
+        }
+        prompt.append("Conversation history:\n");
+        int from = Math.max(0, history.size() - 8);
+        for (int i = from; i < history.size(); i++) {
+            Message message = history.get(i);
+            if (message == null || message.getText() == null || message.getText().isBlank()) {
+                continue;
+            }
+            prompt.append("- ")
+                .append(message.getMessageType() != null ? message.getMessageType().name().toLowerCase() : "unknown")
+                .append(": ")
+                .append(message.getText())
+                .append("\n");
+        }
+        prompt.append("\n");
+    }
+
+    private void saveConversation(ChatMemory chatMemory, String conversationId, String userPrompt, String answer) {
+        if (chatMemory == null || conversationId == null || conversationId.isBlank()) {
+            return;
+        }
+        if (userPrompt != null && !userPrompt.isBlank()) {
+            chatMemory.add(conversationId, new UserMessage(userPrompt));
+        }
+        if (answer != null && !answer.isBlank()) {
+            chatMemory.add(conversationId, new AssistantMessage(answer));
+        }
+    }
+
+    private String conversationId(String assistantType) {
+        if (assistantType == null || assistantType.isBlank()) {
+            return "spring-ai:default";
+        }
+        return "spring-ai:" + assistantType.trim().toLowerCase();
     }
 
     private Flux<String> chunkText(String fullText) {
