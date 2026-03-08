@@ -1,6 +1,7 @@
 package com.mamoji.controller;
 
 import com.mamoji.agent.ReActAgentService;
+import com.mamoji.ai.AiProperties;
 import com.mamoji.ai.model.StructuredAiResponse;
 import com.mamoji.dto.AIChatRequest;
 import com.mamoji.dto.AIChatResponse;
@@ -33,6 +34,7 @@ public class AIController {
 
     private final AIService aiService;
     private final ReActAgentService reActAgentService;
+    private final AiProperties aiProperties;
 
     @PostMapping("/chat")
     public ResponseEntity<Map<String, Object>> chat(@RequestBody AIChatRequest request, @AuthenticationUser User user) {
@@ -76,6 +78,11 @@ public class AIController {
 
     @PostMapping(path = "/chat/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public Flux<ServerSentEvent<Map<String, Object>>> chatStream(@RequestBody AIChatRequest request, @AuthenticationUser User user) {
+        if (!aiProperties.getStreamOps().isReactEnabled()) {
+            AIChatResponse response = aiService.chat(user.getId(), request.getMessage(), request.getAssistantType());
+            return streamFromAnswer(response.getReply(), List.of(), List.of(), List.of());
+        }
+
         StructuredAiResponse response = reActAgentService.processMessageStructured(
             user.getId(),
             request.getMessage(),
@@ -83,14 +90,39 @@ public class AIController {
             request.getSessionId()
         );
 
+        return streamFromAnswer(
+            response.answer(),
+            response.warnings() != null ? response.warnings() : List.of(),
+            response.sources() != null ? response.sources() : List.of(),
+            response.actions() != null ? response.actions() : List.of(),
+            response.usage() != null ? response.usage() : Map.of()
+        );
+    }
+
+    private Flux<ServerSentEvent<Map<String, Object>>> streamFromAnswer(
+        String answer,
+        List<String> warnings,
+        List<String> sources,
+        List<String> actions
+    ) {
+        return streamFromAnswer(answer, warnings, sources, actions, defaultUsage(answer));
+    }
+
+    private Flux<ServerSentEvent<Map<String, Object>>> streamFromAnswer(
+        String answer,
+        List<String> warnings,
+        List<String> sources,
+        List<String> actions,
+        Map<String, Object> usage
+    ) {
         Map<String, Object> doneData = new HashMap<>();
         doneData.put("done", true);
-        doneData.put("warnings", response.warnings() != null ? response.warnings() : List.of());
-        doneData.put("sources", response.sources() != null ? response.sources() : List.of());
-        doneData.put("actions", response.actions() != null ? response.actions() : List.of());
-        doneData.put("usage", response.usage() != null ? response.usage() : Map.of());
+        doneData.put("warnings", warnings != null ? warnings : List.of());
+        doneData.put("sources", sources != null ? sources : List.of());
+        doneData.put("actions", actions != null ? actions : List.of());
+        doneData.put("usage", usage != null ? usage : Map.of());
 
-        return chunkAnswer(response.answer())
+        return chunkAnswer(answer)
             .map(chunk -> ServerSentEvent.<Map<String, Object>>builder()
                 .event("chunk")
                 .data(Map.of("content", chunk))
@@ -99,6 +131,14 @@ public class AIController {
                 .event("done")
                 .data(doneData)
                 .build());
+    }
+
+    private Map<String, Object> defaultUsage(String answer) {
+        String content = answer != null ? answer : "";
+        return Map.of(
+            "outputChars", content.length(),
+            "estimatedTokens", Math.max(1, content.length() / 4)
+        );
     }
 
     private Flux<String> chunkAnswer(String answer) {

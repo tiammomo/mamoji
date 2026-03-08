@@ -70,6 +70,8 @@ app:
 # AI 配置
 ai:
   engine: ${AI_ENGINE:legacy}
+  stream:
+    react-enabled: ${AI_STREAM_REACT_ENABLED:true}
   base-url: ${ANTHROPIC_BASE_URL:https://api.minimaxi.com}
   api-key: ${ANTHROPIC_AUTH_TOKEN:}
   model: ${ANTHROPIC_DEFAULT_SONNET_MODEL:abab6.5s-chat}

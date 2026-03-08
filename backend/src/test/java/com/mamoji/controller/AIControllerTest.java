@@ -1,6 +1,7 @@
 package com.mamoji.controller;
 
 import com.mamoji.agent.ReActAgentService;
+import com.mamoji.ai.AiProperties;
 import com.mamoji.ai.model.StructuredAiResponse;
 import com.mamoji.dto.AIChatRequest;
 import com.mamoji.dto.AIChatResponse;
@@ -21,7 +22,9 @@ class AIControllerTest {
     void shouldStreamChunksAndDoneMetadataFromReactPipeline() {
         AIService aiService = Mockito.mock(AIService.class);
         ReActAgentService reActAgentService = Mockito.mock(ReActAgentService.class);
-        AIController controller = new AIController(aiService, reActAgentService);
+        AiProperties aiProperties = new AiProperties();
+        aiProperties.getStreamOps().setReactEnabled(true);
+        AIController controller = new AIController(aiService, reActAgentService, aiProperties);
 
         String answer = "12345678901234567890123456789012345678901234567890";
         StructuredAiResponse structured = new StructuredAiResponse(
@@ -69,7 +72,8 @@ class AIControllerTest {
     void shouldExposeLegacyDeprecationHeadersAndMigrationInfo() {
         AIService aiService = Mockito.mock(AIService.class);
         ReActAgentService reActAgentService = Mockito.mock(ReActAgentService.class);
-        AIController controller = new AIController(aiService, reActAgentService);
+        AiProperties aiProperties = new AiProperties();
+        AIController controller = new AIController(aiService, reActAgentService, aiProperties);
 
         Mockito.when(aiService.chat(7L, "hello", "finance")).thenReturn(new AIChatResponse("legacy-reply"));
 
@@ -94,5 +98,31 @@ class AIControllerTest {
         Assertions.assertEquals("/api/v1/ai/chat/legacy", deprecation.get("endpoint"));
         Assertions.assertEquals("/api/v1/ai/chat", deprecation.get("successor"));
         Assertions.assertEquals("2026-04-30", deprecation.get("sunsetDate"));
+    }
+
+    @Test
+    void shouldFallbackToLegacyStreamWhenReactStreamDisabled() {
+        AIService aiService = Mockito.mock(AIService.class);
+        ReActAgentService reActAgentService = Mockito.mock(ReActAgentService.class);
+        AiProperties aiProperties = new AiProperties();
+        aiProperties.getStreamOps().setReactEnabled(false);
+        AIController controller = new AIController(aiService, reActAgentService, aiProperties);
+
+        Mockito.when(aiService.chat(7L, "hello", "finance")).thenReturn(new AIChatResponse("legacy answer body"));
+
+        AIChatRequest request = new AIChatRequest();
+        request.setMessage("hello");
+        request.setAssistantType("finance");
+        User user = User.builder().id(7L).build();
+
+        List<ServerSentEvent<Map<String, Object>>> events = controller.chatStream(request, user).collectList().block();
+
+        Assertions.assertNotNull(events);
+        Assertions.assertFalse(events.isEmpty());
+        Assertions.assertEquals("chunk", events.get(0).event());
+        Assertions.assertEquals("legacy answer body", events.get(0).data().get("content"));
+        Assertions.assertEquals("done", events.get(events.size() - 1).event());
+        Mockito.verify(aiService).chat(7L, "hello", "finance");
+        Mockito.verifyNoInteractions(reActAgentService);
     }
 }

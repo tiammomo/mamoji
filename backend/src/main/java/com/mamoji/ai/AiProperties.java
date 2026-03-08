@@ -54,6 +54,7 @@ public class AiProperties {
     private final PromptOps promptOps = new PromptOps();
     private final ToolOps toolOps = new ToolOps();
     private final ToolCallingOps toolCallingOps = new ToolCallingOps();
+    private final StreamOps streamOps = new StreamOps();
     private final ToolExecOps toolExecOps = new ToolExecOps();
     private final MemoryOps memoryOps = new MemoryOps();
     private final RagOps ragOps = new RagOps();
@@ -120,6 +121,15 @@ public class AiProperties {
          * Whether stock domain tool-calling is enabled on spring-ai bridge.
          */
         private boolean stockEnabled = true;
+    }
+
+    @Getter
+    @Setter
+    public static class StreamOps {
+        /**
+         * Whether /chat/stream uses ReAct/RAG/Tool main pipeline.
+         */
+        private boolean reactEnabled = true;
     }
 
     @Getter
