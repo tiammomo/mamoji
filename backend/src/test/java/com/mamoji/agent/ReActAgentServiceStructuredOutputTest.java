@@ -14,6 +14,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
+import jakarta.validation.Validation;
 import java.util.List;
 
 class ReActAgentServiceStructuredOutputTest {
@@ -39,7 +40,7 @@ class ReActAgentServiceStructuredOutputTest {
         Mockito.when(aiModelRouter.pickPrimaryModel(Mockito.anyString(), Mockito.anyString())).thenReturn("route-model");
         Mockito.when(aiClientService.chat(Mockito.anyString(), Mockito.anyString(), Mockito.any(), Mockito.any()))
             .thenReturn("plain text answer")
-            .thenReturn("{\"answer\":\"fixed json answer\",\"warnings\":[]}");
+            .thenReturn("{\"answer\":\"fixed json answer\",\"warnings\":[],\"sources\":[],\"actions\":[]}");
 
         ReActAgentService service = new ReActAgentService(
             aiClientService,
@@ -50,7 +51,8 @@ class ReActAgentServiceStructuredOutputTest {
             qualityGateService,
             aiMetricsService,
             aiModelRouter,
-            new ObjectMapper()
+            new ObjectMapper(),
+            Validation.buildDefaultValidatorFactory().getValidator()
         );
 
         StructuredAiResponse response = service.processMessageStructured(1L, "hello", "finance", "s1");
