@@ -83,4 +83,22 @@ class AiMetricsServiceTest {
         Assertions.assertEquals(42.0, toolLatencyMs);
         Assertions.assertEquals(2.0, warnings);
     }
+
+    @Test
+    void shouldRecordModelRouteReasonMetrics() {
+        SimpleMeterRegistry registry = new SimpleMeterRegistry();
+        StaticListableBeanFactory beanFactory = new StaticListableBeanFactory(Map.of("meterRegistry", registry));
+        AiMetricsService service = new AiMetricsService(beanFactory.getBeanProvider(io.micrometer.core.instrument.MeterRegistry.class));
+
+        service.recordModelRouteReason("finance", "finance-model", "assistant_type_finance");
+
+        double count = registry.get("ai.model.route.reason.count")
+            .tag("assistantType", "finance")
+            .tag("model", "finance-model")
+            .tag("reason", "assistant_type_finance")
+            .counter()
+            .count();
+
+        Assertions.assertEquals(1.0, count);
+    }
 }

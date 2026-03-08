@@ -78,7 +78,9 @@ public class ReActAgentService {
 
             String prompt = buildPromptWithContext(message, toolPayload, snippets, memoryService.recent(sessionKey, 8));
             PromptVariantService.PromptVariant promptVariant = promptVariantService.pick(type, sessionKey);
-            String routedModel = aiModelRouter.pickPrimaryModel(type, message);
+            AiModelRouter.RoutingDecision routingDecision = aiModelRouter.pickPrimaryModelDecision(type, message);
+            String routedModel = routingDecision.model();
+            aiMetricsService.recordModelRouteReason(type, routedModel, routingDecision.reason());
             String rawAnswer = aiClientService.chat(promptVariant.systemPrompt(), prompt, routedModel, type);
             ParsedAnswer parsed = parseOrRepairStructuredAnswer(promptVariant.systemPrompt(), prompt, rawAnswer, traceId);
             String answer = parsed.answer();

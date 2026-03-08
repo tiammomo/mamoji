@@ -52,6 +52,18 @@ public class AiMetricsService {
             .increment();
     }
 
+    public void recordModelRouteReason(String assistantType, String modelName, String reason) {
+        if (meterRegistry == null) {
+            return;
+        }
+        Counter.builder("ai.model.route.reason.count")
+            .tag("assistantType", safeTag(assistantType))
+            .tag("model", safeTag(modelName))
+            .tag("reason", safeTag(reason))
+            .register(meterRegistry)
+            .increment();
+    }
+
     public void recordModelFallback(String primaryModel, String fallbackModel) {
         if (meterRegistry == null) {
             return;
