@@ -3,11 +3,13 @@ package com.mamoji.controller;
 import com.mamoji.agent.ReActAgentService;
 import com.mamoji.ai.model.StructuredAiResponse;
 import com.mamoji.dto.AIChatRequest;
+import com.mamoji.dto.AIChatResponse;
 import com.mamoji.entity.User;
 import com.mamoji.service.AIService;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
+import org.springframework.http.ResponseEntity;
 import org.springframework.http.codec.ServerSentEvent;
 
 import java.util.List;
@@ -29,11 +31,11 @@ class AIControllerTest {
             List.of("schema_repair_retry"),
             Map.of("estimatedTokens", 42)
         );
-        Mockito.when(reActAgentService.processMessageStructured(7L, "预算如何", "finance", "s1"))
+        Mockito.when(reActAgentService.processMessageStructured(7L, "budget suggestion", "finance", "s1"))
             .thenReturn(structured);
 
         AIChatRequest request = new AIChatRequest();
-        request.setMessage("预算如何");
+        request.setMessage("budget suggestion");
         request.setAssistantType("finance");
         request.setSessionId("s1");
         User user = User.builder().id(7L).build();
@@ -59,7 +61,38 @@ class AIControllerTest {
         Assertions.assertEquals(List.of("tool:query_budget"), done.data().get("actions"));
         Assertions.assertEquals(Map.of("estimatedTokens", 42), done.data().get("usage"));
 
-        Mockito.verify(reActAgentService).processMessageStructured(7L, "预算如何", "finance", "s1");
+        Mockito.verify(reActAgentService).processMessageStructured(7L, "budget suggestion", "finance", "s1");
         Mockito.verifyNoInteractions(aiService);
+    }
+
+    @Test
+    void shouldExposeLegacyDeprecationHeadersAndMigrationInfo() {
+        AIService aiService = Mockito.mock(AIService.class);
+        ReActAgentService reActAgentService = Mockito.mock(ReActAgentService.class);
+        AIController controller = new AIController(aiService, reActAgentService);
+
+        Mockito.when(aiService.chat(7L, "hello", "finance")).thenReturn(new AIChatResponse("legacy-reply"));
+
+        AIChatRequest request = new AIChatRequest();
+        request.setMessage("hello");
+        request.setAssistantType("finance");
+        User user = User.builder().id(7L).build();
+
+        ResponseEntity<Map<String, Object>> response = controller.chatLegacy(request, user);
+
+        Assertions.assertEquals("true", response.getHeaders().getFirst("Deprecation"));
+        Assertions.assertEquals("Thu, 30 Apr 2026 23:59:59 GMT", response.getHeaders().getFirst("Sunset"));
+        Assertions.assertEquals("</api/v1/ai/chat>; rel=\"successor-version\"", response.getHeaders().getFirst("Link"));
+
+        Map<String, Object> body = response.getBody();
+        Assertions.assertNotNull(body);
+        Assertions.assertEquals(0, body.get("code"));
+
+        @SuppressWarnings("unchecked")
+        Map<String, Object> deprecation = (Map<String, Object>) body.get("deprecation");
+        Assertions.assertNotNull(deprecation);
+        Assertions.assertEquals("/api/v1/ai/chat/legacy", deprecation.get("endpoint"));
+        Assertions.assertEquals("/api/v1/ai/chat", deprecation.get("successor"));
+        Assertions.assertEquals("2026-04-30", deprecation.get("sunsetDate"));
     }
 }

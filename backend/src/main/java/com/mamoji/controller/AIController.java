@@ -8,6 +8,7 @@ import com.mamoji.entity.User;
 import com.mamoji.security.AuthenticationUser;
 import com.mamoji.service.AIService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.codec.ServerSentEvent;
@@ -24,7 +25,11 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/v1/ai")
 @RequiredArgsConstructor
+@Slf4j
 public class AIController {
+
+    private static final String LEGACY_CHAT_SUNSET_DATE = "2026-04-30";
+    private static final String LEGACY_CHAT_SUNSET_RFC1123 = "Thu, 30 Apr 2026 23:59:59 GMT";
 
     private final AIService aiService;
     private final ReActAgentService reActAgentService;
@@ -52,9 +57,21 @@ public class AIController {
     }
 
     @PostMapping("/chat/legacy")
+    @Deprecated(forRemoval = true, since = "2026-03-08")
     public ResponseEntity<Map<String, Object>> chatLegacy(@RequestBody AIChatRequest request, @AuthenticationUser User user) {
+        log.warn("Deprecated endpoint called userId={} endpoint=/api/v1/ai/chat/legacy", user.getId());
         AIChatResponse response = aiService.chat(user.getId(), request.getMessage(), request.getAssistantType());
-        return ResponseEntity.ok(wrapSuccess(response));
+        Map<String, Object> payload = wrapSuccess(response);
+        payload.put("deprecation", Map.of(
+            "endpoint", "/api/v1/ai/chat/legacy",
+            "successor", "/api/v1/ai/chat",
+            "sunsetDate", LEGACY_CHAT_SUNSET_DATE
+        ));
+        return ResponseEntity.ok()
+            .header("Deprecation", "true")
+            .header("Sunset", LEGACY_CHAT_SUNSET_RFC1123)
+            .header("Link", "</api/v1/ai/chat>; rel=\"successor-version\"")
+            .body(payload);
     }
 
     @PostMapping(path = "/chat/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
