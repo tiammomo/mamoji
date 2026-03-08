@@ -56,6 +56,16 @@ app:
       exposed-headers: ${APP_SECURITY_CORS_EXPOSED_HEADERS:Authorization,Content-Type}
       allow-credentials: ${APP_SECURITY_CORS_ALLOW_CREDENTIALS:true}
       max-age-seconds: ${APP_SECURITY_CORS_MAX_AGE_SECONDS:3600}
+  web-client:
+    max-connections: ${APP_WEB_CLIENT_MAX_CONNECTIONS:200}
+    pending-acquire-max-count: ${APP_WEB_CLIENT_PENDING_ACQUIRE_MAX_COUNT:500}
+    pending-acquire-timeout-ms: ${APP_WEB_CLIENT_PENDING_ACQUIRE_TIMEOUT_MS:2000}
+    connect-timeout-ms: ${APP_WEB_CLIENT_CONNECT_TIMEOUT_MS:3000}
+    response-timeout-ms: ${APP_WEB_CLIENT_RESPONSE_TIMEOUT_MS:10000}
+    read-timeout-ms: ${APP_WEB_CLIENT_READ_TIMEOUT_MS:10000}
+    write-timeout-ms: ${APP_WEB_CLIENT_WRITE_TIMEOUT_MS:10000}
+    max-idle-seconds: ${APP_WEB_CLIENT_MAX_IDLE_SECONDS:30}
+    max-life-seconds: ${APP_WEB_CLIENT_MAX_LIFE_SECONDS:300}
 
 # AI 配置
 ai:
