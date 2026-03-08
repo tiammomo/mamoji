@@ -53,6 +53,7 @@ public class AiProperties {
 
     private final PromptOps promptOps = new PromptOps();
     private final ToolOps toolOps = new ToolOps();
+    private final ToolCallingOps toolCallingOps = new ToolCallingOps();
     private final ToolExecOps toolExecOps = new ToolExecOps();
     private final MemoryOps memoryOps = new MemoryOps();
     private final RagOps ragOps = new RagOps();
@@ -105,6 +106,20 @@ public class AiProperties {
          * Denied tool names, case-insensitive exact match.
          */
         private List<String> blockedTools = new ArrayList<>();
+    }
+
+    @Getter
+    @Setter
+    public static class ToolCallingOps {
+        /**
+         * Whether spring-ai tool-calling bridge is enabled.
+         */
+        private boolean springEnabled = false;
+
+        /**
+         * Whether stock domain tool-calling is enabled on spring-ai bridge.
+         */
+        private boolean stockEnabled = true;
     }
 
     @Getter

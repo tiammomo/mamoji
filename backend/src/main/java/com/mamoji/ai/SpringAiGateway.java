@@ -1,6 +1,7 @@
 package com.mamoji.ai;
 
 import com.mamoji.ai.metrics.AiMetricsService;
+import com.mamoji.ai.tool.SpringAiToolCallingBridge;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.memory.ChatMemory;
@@ -29,6 +30,7 @@ public class SpringAiGateway implements AiGateway {
     private final ChatModel chatModel;
     private final AiMetricsService metricsService;
     private final ObjectProvider<ChatMemory> chatMemoryProvider;
+    private final SpringAiToolCallingBridge springAiToolCallingBridge;
 
     @Override
     public String chat(String systemPrompt, String userPrompt, String modelOverride, String assistantType) {
@@ -36,12 +38,16 @@ public class SpringAiGateway implements AiGateway {
         try {
             ChatMemory chatMemory = chatMemoryProvider.getIfAvailable();
             String conversationId = conversationId(assistantType);
-            String prompt = buildPrompt(systemPrompt, userPrompt, modelOverride, chatMemory, conversationId);
+            SpringAiToolCallingBridge.ToolCallingContext toolContext = springAiToolCallingBridge.invoke(assistantType, userPrompt);
+            String prompt = buildPrompt(systemPrompt, userPrompt, modelOverride, chatMemory, conversationId, toolContext);
             String result = ChatClient.create(chatModel)
                 .prompt(prompt)
                 .call()
                 .content();
             saveConversation(chatMemory, conversationId, userPrompt, result);
+            if (!toolContext.warnings().isEmpty()) {
+                log.warn("Spring tool-calling warnings assistantType={} warnings={}", assistantType, toolContext.warnings());
+            }
             long elapsed = System.currentTimeMillis() - start;
             metricsService.recordRequest("spring-ai", true, elapsed, estimateTokens(prompt, result));
             metricsService.recordModelRoute(assistantType, modelOverride != null ? modelOverride : "spring-ai-default");
@@ -64,7 +70,8 @@ public class SpringAiGateway implements AiGateway {
         String userPrompt,
         String modelOverride,
         ChatMemory chatMemory,
-        String conversationId
+        String conversationId,
+        SpringAiToolCallingBridge.ToolCallingContext toolContext
     ) {
         StringBuilder prompt = new StringBuilder();
         if (systemPrompt != null && !systemPrompt.isBlank()) {
@@ -74,6 +81,9 @@ public class SpringAiGateway implements AiGateway {
             prompt.append("Preferred model: ").append(modelOverride.trim()).append("\n");
         }
         appendConversationHistory(prompt, chatMemory, conversationId);
+        if (toolContext != null && toolContext.promptAddon() != null && !toolContext.promptAddon().isBlank()) {
+            prompt.append(toolContext.promptAddon());
+        }
         prompt.append("User:\n").append(userPrompt != null ? userPrompt : "");
         return prompt.toString();
     }

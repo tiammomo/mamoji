@@ -88,6 +88,9 @@ ai:
     enabled: ${AI_TOOL_OPS_ENABLED:true}
     per-user-tool-per-minute: ${AI_TOOL_PER_USER_PER_MINUTE:30}
     blocked-tools: ${AI_TOOL_BLOCKED_TOOLS:}
+  tool-calling-ops:
+    spring-enabled: ${AI_TOOL_CALLING_SPRING_ENABLED:false}
+    stock-enabled: ${AI_TOOL_CALLING_STOCK_ENABLED:true}
   tool-exec-ops:
     timeout-ms: ${AI_TOOL_TIMEOUT_MS:3000}
     max-concurrent-per-tool: ${AI_TOOL_MAX_CONCURRENT:4}
