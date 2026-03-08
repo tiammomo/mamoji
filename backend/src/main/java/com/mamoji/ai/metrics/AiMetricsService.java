@@ -103,6 +103,19 @@ public class AiMetricsService {
             .increment();
     }
 
+    public void recordCacheAccess(String layer, String cacheName, boolean hit) {
+        if (meterRegistry == null) {
+            return;
+        }
+
+        Counter.builder("ai.cache.access.count")
+            .tag("layer", safeTag(layer))
+            .tag("cache", safeTag(cacheName))
+            .tag("hit", String.valueOf(hit))
+            .register(meterRegistry)
+            .increment();
+    }
+
     private String safeTag(String value) {
         return (value == null || value.isBlank()) ? "unknown" : value;
     }
