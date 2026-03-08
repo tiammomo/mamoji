@@ -41,6 +41,28 @@ public class AiMetricsService {
             .record(Math.max(0, estimatedTokens));
     }
 
+    public void recordModelRoute(String assistantType, String modelName) {
+        if (meterRegistry == null) {
+            return;
+        }
+        Counter.builder("ai.model.route.count")
+            .tag("assistantType", safeTag(assistantType))
+            .tag("model", safeTag(modelName))
+            .register(meterRegistry)
+            .increment();
+    }
+
+    public void recordModelFallback(String primaryModel, String fallbackModel) {
+        if (meterRegistry == null) {
+            return;
+        }
+        Counter.builder("ai.model.fallback.count")
+            .tag("primary", safeTag(primaryModel))
+            .tag("fallback", safeTag(fallbackModel))
+            .register(meterRegistry)
+            .increment();
+    }
+
     public void recordToolCall(String toolName, boolean success, long latencyMs) {
         if (meterRegistry == null) {
             return;
@@ -68,6 +90,17 @@ public class AiMetricsService {
             .tag("assistantType", safeTag(assistantType))
             .register(meterRegistry)
             .record(Math.max(0, warningCount));
+    }
+
+    public void recordQualityRuleHit(String assistantType, String rule) {
+        if (meterRegistry == null) {
+            return;
+        }
+        Counter.builder("ai.quality.rule.hit")
+            .tag("assistantType", safeTag(assistantType))
+            .tag("rule", safeTag(rule))
+            .register(meterRegistry)
+            .increment();
     }
 
     private String safeTag(String value) {

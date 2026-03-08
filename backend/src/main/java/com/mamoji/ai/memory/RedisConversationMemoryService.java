@@ -45,6 +45,7 @@ public class RedisConversationMemoryService implements ConversationMemoryService
         String payload = toJson(item);
 
         redisTemplate.opsForList().rightPush(key, payload);
+        compactIfNeeded(key, maxStoredTurns);
         redisTemplate.opsForList().trim(key, -maxStoredTurns, -1);
         redisTemplate.expire(key, ttlSeconds, TimeUnit.SECONDS);
     }
@@ -94,6 +95,50 @@ public class RedisConversationMemoryService implements ConversationMemoryService
         } catch (Exception ex) {
             return null;
         }
+    }
+
+    private void compactIfNeeded(String key, int maxStoredTurns) {
+        AiProperties.MemoryOps memoryOps = aiProperties.getMemoryOps();
+        if (!memoryOps.isSummarizeOnOverflow()) {
+            return;
+        }
+        Long size = redisTemplate.opsForList().size(key);
+        if (size == null || size <= maxStoredTurns) {
+            return;
+        }
+
+        int batchSize = Math.max(2, memoryOps.getSummarizeBatchSize());
+        List<String> oldest = redisTemplate.opsForList().range(key, 0, batchSize - 1);
+        if (oldest == null || oldest.isEmpty()) {
+            return;
+        }
+
+        List<ConversationTurn> turns = new ArrayList<>();
+        for (String item : oldest) {
+            ConversationTurn turn = fromJson(item);
+            if (turn != null) {
+                turns.add(turn);
+            }
+        }
+        String summary = summarize(turns);
+
+        redisTemplate.opsForList().trim(key, batchSize, -1);
+        redisTemplate.opsForList().leftPush(key, toJson(new MemoryItem("system_summary", summary, Instant.now().toString())));
+    }
+
+    private String summarize(List<ConversationTurn> turns) {
+        StringBuilder sb = new StringBuilder("Summary:");
+        int max = Math.min(6, turns.size());
+        for (int i = 0; i < max; i++) {
+            ConversationTurn turn = turns.get(i);
+            sb.append(" [").append(turn.role()).append("] ");
+            String content = turn.content() == null ? "" : turn.content().replaceAll("\\s+", " ").trim();
+            if (content.length() > 40) {
+                content = content.substring(0, 40) + "...";
+            }
+            sb.append(content);
+        }
+        return sb.toString();
     }
 
     private record MemoryItem(String role, String content, String timestamp) {

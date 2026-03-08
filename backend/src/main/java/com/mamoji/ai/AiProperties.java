@@ -48,8 +48,11 @@ public class AiProperties {
 
     private final PromptOps promptOps = new PromptOps();
     private final ToolOps toolOps = new ToolOps();
+    private final ToolExecOps toolExecOps = new ToolExecOps();
     private final MemoryOps memoryOps = new MemoryOps();
     private final RagOps ragOps = new RagOps();
+    private final QualityOps qualityOps = new QualityOps();
+    private final RoutingOps routingOps = new RoutingOps();
 
     @Getter
     @Setter
@@ -101,6 +104,30 @@ public class AiProperties {
 
     @Getter
     @Setter
+    public static class ToolExecOps {
+        /**
+         * Tool call timeout in milliseconds.
+         */
+        private long timeoutMs = 3000;
+
+        /**
+         * Max concurrent executions for a single tool.
+         */
+        private int maxConcurrentPerTool = 4;
+
+        /**
+         * Open circuit for this duration when failure threshold is reached.
+         */
+        private int circuitOpenSeconds = 30;
+
+        /**
+         * Consecutive failure threshold to open circuit.
+         */
+        private int failureThreshold = 3;
+    }
+
+    @Getter
+    @Setter
     public static class MemoryOps {
         /**
          * Use Redis-backed memory store instead of in-memory map.
@@ -116,6 +143,16 @@ public class AiProperties {
          * Session TTL in seconds for Redis memory.
          */
         private int ttlSeconds = 86400;
+
+        /**
+         * Compress oldest turns into one summary item when size exceeds threshold.
+         */
+        private boolean summarizeOnOverflow = true;
+
+        /**
+         * Number of oldest turns to compact into one summary chunk.
+         */
+        private int summarizeBatchSize = 8;
     }
 
     @Getter
@@ -130,5 +167,63 @@ public class AiProperties {
          * Knowledge file path, supports classpath: and file:.
          */
         private String knowledgePath = "classpath:ai/knowledge-base.json";
+    }
+
+    @Getter
+    @Setter
+    public static class QualityOps {
+        /**
+         * Minimal answer length before "too_short" warning.
+         */
+        private int minAnswerLength = 10;
+
+        /**
+         * Max user question length before warning.
+         */
+        private int maxQuestionLength = 2000;
+
+        /**
+         * Require risk disclaimer for stock responses.
+         */
+        private boolean stockRiskRequired = true;
+
+        /**
+         * Require actionable hint for finance responses.
+         */
+        private boolean financeActionableRequired = true;
+
+        /**
+         * Require explicit recency statement in answers.
+         */
+        private boolean recencyStatementRequired = false;
+    }
+
+    @Getter
+    @Setter
+    public static class RoutingOps {
+        /**
+         * Enable model routing based on assistant type and complexity.
+         */
+        private boolean enabled = true;
+
+        /**
+         * Optional dedicated model for finance assistant.
+         */
+        private String financeModel;
+
+        /**
+         * Optional dedicated model for stock assistant.
+         */
+        private String stockModel;
+
+        /**
+         * Optional model used for high-complexity prompts.
+         */
+        private String highComplexityModel;
+
+        /**
+         * If question length exceeds this threshold, treat as high complexity.
+         */
+        private int highComplexityQuestionChars = 400;
     }
 }

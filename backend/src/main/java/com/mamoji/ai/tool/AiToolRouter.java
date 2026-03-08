@@ -14,6 +14,7 @@ public class AiToolRouter {
 
     private final AiToolRegistry toolRegistry;
     private final AiToolGuardService toolGuardService;
+    private final AiToolExecutionService executionService;
 
     public AiToolResult route(Long userId, String toolName, Map<String, Object> params) {
         String traceId = UUID.randomUUID().toString().substring(0, 8);
@@ -45,7 +46,7 @@ public class AiToolRouter {
         long start
     ) {
         try {
-            AiToolResult result = handler.execute(userId, params);
+            AiToolResult result = executionService.execute(handler, userId, params);
             long elapsed = System.currentTimeMillis() - start;
             log.info(
                 "AI tool done traceId={} tool={} userId={} elapsedMs={} success={}",

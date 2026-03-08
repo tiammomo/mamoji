@@ -2,6 +2,7 @@ package com.mamoji.agent;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mamoji.ai.AiClientService;
+import com.mamoji.ai.AiModelRouter;
 import com.mamoji.ai.memory.ConversationMemoryService;
 import com.mamoji.ai.metrics.AiMetricsService;
 import com.mamoji.ai.model.StructuredAiResponse;
@@ -26,6 +27,7 @@ class ReActAgentServiceStructuredOutputTest {
         PromptVariantService promptVariantService = Mockito.mock(PromptVariantService.class);
         AiQualityGateService qualityGateService = Mockito.mock(AiQualityGateService.class);
         AiMetricsService aiMetricsService = Mockito.mock(AiMetricsService.class);
+        AiModelRouter aiModelRouter = Mockito.mock(AiModelRouter.class);
 
         Mockito.when(knowledgeRetriever.retrieve(Mockito.anyString(), Mockito.anyString(), Mockito.anyInt()))
             .thenReturn(List.of());
@@ -34,7 +36,8 @@ class ReActAgentServiceStructuredOutputTest {
             .thenReturn(new PromptVariantService.PromptVariant("A", "system-prompt", "exp-v1", 11));
         Mockito.when(qualityGateService.validate(Mockito.anyString(), Mockito.anyString(), Mockito.anyString()))
             .thenReturn(List.of());
-        Mockito.when(aiClientService.chat(Mockito.anyString(), Mockito.anyString()))
+        Mockito.when(aiModelRouter.pickPrimaryModel(Mockito.anyString(), Mockito.anyString())).thenReturn("route-model");
+        Mockito.when(aiClientService.chat(Mockito.anyString(), Mockito.anyString(), Mockito.any(), Mockito.any()))
             .thenReturn("plain text answer")
             .thenReturn("{\"answer\":\"fixed json answer\",\"warnings\":[]}");
 
@@ -46,6 +49,7 @@ class ReActAgentServiceStructuredOutputTest {
             promptVariantService,
             qualityGateService,
             aiMetricsService,
+            aiModelRouter,
             new ObjectMapper()
         );
 
@@ -53,6 +57,6 @@ class ReActAgentServiceStructuredOutputTest {
 
         Assertions.assertEquals("fixed json answer", response.answer());
         Assertions.assertTrue(response.warnings().contains("schema_repair_retry"));
-        Mockito.verify(aiClientService, Mockito.times(2)).chat(Mockito.anyString(), Mockito.anyString());
+        Mockito.verify(aiClientService, Mockito.times(2)).chat(Mockito.anyString(), Mockito.anyString(), Mockito.any(), Mockito.any());
     }
 }

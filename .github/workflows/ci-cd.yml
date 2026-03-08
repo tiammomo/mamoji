@@ -57,6 +57,10 @@ jobs:
             -DMYSQL_PASSWORD=mamoji \
             -DREDIS_ENABLED=false
 
+      - name: AI Quality Gate
+        working-directory: backend
+        run: ./mvnw -Dtest=AiQualityGateThresholdTest test
+
       - name: Upload test reports
         if: always()
         uses: actions/upload-artifact@v4

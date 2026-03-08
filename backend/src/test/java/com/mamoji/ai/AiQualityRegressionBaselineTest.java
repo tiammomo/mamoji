@@ -2,9 +2,13 @@ package com.mamoji.ai;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.mamoji.ai.metrics.AiMetricsService;
 import com.mamoji.ai.quality.AiQualityGateService;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
+import org.springframework.beans.factory.ObjectProvider;
+import io.micrometer.core.instrument.MeterRegistry;
 
 import java.io.InputStream;
 import java.util.List;
@@ -13,7 +17,7 @@ import java.util.Map;
 class AiQualityRegressionBaselineTest {
 
     private final ObjectMapper objectMapper = new ObjectMapper();
-    private final AiQualityGateService qualityGateService = new AiQualityGateService();
+    private final AiQualityGateService qualityGateService = newQualityGateService();
 
     @Test
     void shouldMatchRegressionBaselineWarnings() throws Exception {
@@ -32,5 +36,11 @@ class AiQualityRegressionBaselineTest {
             Assertions.assertEquals(expectedWarnings, actual, "baseline mismatch for question: " + question);
         }
     }
-}
 
+    private AiQualityGateService newQualityGateService() {
+        @SuppressWarnings("unchecked")
+        ObjectProvider<MeterRegistry> provider = Mockito.mock(ObjectProvider.class);
+        AiMetricsService metricsService = new AiMetricsService(provider);
+        return new AiQualityGateService(new AiProperties(), metricsService);
+    }
+}

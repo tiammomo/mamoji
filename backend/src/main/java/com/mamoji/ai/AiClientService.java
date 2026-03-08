@@ -31,14 +31,19 @@ public class AiClientService {
     private final AiMetricsService metricsService;
 
     public String chat(String systemPrompt, String userPrompt) {
+        return chat(systemPrompt, userPrompt, null, null);
+    }
+
+    public String chat(String systemPrompt, String userPrompt, String modelOverride, String assistantType) {
         String traceId = shortTraceId();
         long start = System.currentTimeMillis();
 
         try {
-            String result = chatWithFallbackMono(systemPrompt, userPrompt, traceId).block();
+            String result = chatWithFallbackMono(systemPrompt, userPrompt, traceId, modelOverride).block();
             long elapsed = System.currentTimeMillis() - start;
             log.info("AI request success traceId={} elapsedMs={}", traceId, elapsed);
             metricsService.recordRequest("minimaxi", true, elapsed, estimateTokens(systemPrompt, userPrompt, result));
+            metricsService.recordModelRoute(assistantType, normalizeModel(modelOverride != null ? modelOverride : properties.getModel()));
             return result != null ? result : "AI service returned empty response";
         } catch (Exception ex) {
             long elapsed = System.currentTimeMillis() - start;
@@ -54,7 +59,7 @@ public class AiClientService {
      */
     public Flux<String> streamChat(String systemPrompt, String userPrompt) {
         String traceId = shortTraceId();
-        return chatWithFallbackMono(systemPrompt, userPrompt, traceId)
+        return chatWithFallbackMono(systemPrompt, userPrompt, traceId, null)
             .flatMapMany(this::chunkText)
             .onErrorResume(ex -> {
                 log.error("AI stream failed traceId={} error={}", traceId, ex.getMessage(), ex);
@@ -62,8 +67,8 @@ public class AiClientService {
             });
     }
 
-    private Mono<String> chatWithFallbackMono(String systemPrompt, String userPrompt, String traceId) {
-        String primaryModel = normalizeModel(properties.getModel());
+    private Mono<String> chatWithFallbackMono(String systemPrompt, String userPrompt, String traceId, String modelOverride) {
+        String primaryModel = normalizeModel(modelOverride != null ? modelOverride : properties.getModel());
         String fallbackModel = normalizeModel(properties.getFallbackModel());
 
         Mono<String> primary = chatMono(systemPrompt, userPrompt, traceId, primaryModel);
@@ -79,6 +84,7 @@ public class AiClientService {
                 fallbackModel,
                 ex.getMessage()
             );
+            metricsService.recordModelFallback(primaryModel, fallbackModel);
             return chatMono(systemPrompt, userPrompt, traceId, fallbackModel);
         });
     }

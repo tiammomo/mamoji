@@ -1,6 +1,7 @@
 package com.mamoji.agent;
 
 import com.mamoji.ai.AiClientService;
+import com.mamoji.ai.AiModelRouter;
 import com.mamoji.ai.memory.ConversationMemoryService;
 import com.mamoji.ai.memory.ConversationTurn;
 import com.mamoji.ai.metrics.AiMetricsService;
@@ -34,6 +35,7 @@ public class ReActAgentService {
     private final PromptVariantService promptVariantService;
     private final AiQualityGateService qualityGateService;
     private final AiMetricsService aiMetricsService;
+    private final AiModelRouter aiModelRouter;
     private final ObjectMapper objectMapper;
 
     public String processMessage(Long userId, String message, String assistantType, String sessionId) {
@@ -70,10 +72,13 @@ public class ReActAgentService {
 
             String prompt = buildPromptWithContext(message, toolPayload, snippets, memoryService.recent(sessionKey, 8));
             PromptVariantService.PromptVariant promptVariant = promptVariantService.pick(type, sessionKey);
-            String rawAnswer = aiClientService.chat(promptVariant.systemPrompt(), prompt);
+            String routedModel = aiModelRouter.pickPrimaryModel(type, message);
+            String rawAnswer = aiClientService.chat(promptVariant.systemPrompt(), prompt, routedModel, type);
             ParsedAnswer parsed = parseOrRepairStructuredAnswer(promptVariant.systemPrompt(), prompt, rawAnswer);
             String answer = parsed.answer();
             warnings.addAll(parsed.warnings());
+            sources.addAll(parsed.sources());
+            actions.addAll(parsed.actions());
 
             memoryService.append(sessionKey, "user", message);
             memoryService.append(sessionKey, "assistant", answer);
@@ -143,7 +148,8 @@ public class ReActAgentService {
         }
 
         prompt.append("Please answer in Chinese, concise and actionable.\n");
-        prompt.append("Return JSON only with schema: {\"answer\":\"string\",\"warnings\":[\"string\"]}.");
+        prompt.append("Return JSON only with schema: ")
+            .append("{\"answer\":\"string\",\"warnings\":[\"string\"],\"sources\":[\"string\"],\"actions\":[\"string\"]}.");
         return prompt.toString();
     }
 
@@ -154,17 +160,19 @@ public class ReActAgentService {
         }
 
         String repairPrompt = buildRepairPrompt(originalPrompt, rawAnswer);
-        String repairedRawAnswer = aiClientService.chat(systemPrompt, repairPrompt);
+        String repairedRawAnswer = aiClientService.chat(systemPrompt, repairPrompt, null, null);
         ParsedAnswer repaired = tryParseStructuredAnswer(repairedRawAnswer);
         if (repaired != null) {
             List<String> warnings = new ArrayList<>(repaired.warnings());
             warnings.add("schema_repair_retry");
-            return new ParsedAnswer(repaired.answer(), warnings);
+            return new ParsedAnswer(repaired.answer(), warnings, repaired.sources(), repaired.actions());
         }
 
         return new ParsedAnswer(
             sanitizeRawAnswer(rawAnswer),
-            List.of("schema_parse_failed")
+            List.of("schema_parse_failed"),
+            List.of(),
+            List.of()
         );
     }
 
@@ -181,6 +189,8 @@ public class ReActAgentService {
             }
 
             List<String> warnings = new ArrayList<>();
+            List<String> sources = new ArrayList<>();
+            List<String> actions = new ArrayList<>();
             JsonNode warningsNode = root.get("warnings");
             if (warningsNode != null && warningsNode.isArray()) {
                 for (JsonNode warning : warningsNode) {
@@ -190,7 +200,25 @@ public class ReActAgentService {
                     }
                 }
             }
-            return new ParsedAnswer(answerNode.asText(), warnings);
+            JsonNode sourcesNode = root.get("sources");
+            if (sourcesNode != null && sourcesNode.isArray()) {
+                for (JsonNode source : sourcesNode) {
+                    String text = source.asText();
+                    if (!text.isBlank()) {
+                        sources.add(text);
+                    }
+                }
+            }
+            JsonNode actionsNode = root.get("actions");
+            if (actionsNode != null && actionsNode.isArray()) {
+                for (JsonNode action : actionsNode) {
+                    String text = action.asText();
+                    if (!text.isBlank()) {
+                        actions.add(text);
+                    }
+                }
+            }
+            return new ParsedAnswer(answerNode.asText(), warnings, sources, actions);
         } catch (Exception ex) {
             return null;
         }
@@ -198,7 +226,7 @@ public class ReActAgentService {
 
     private String buildRepairPrompt(String originalPrompt, String rawAnswer) {
         return "Reformat the following model answer into strict JSON only. "
-            + "Schema: {\"answer\":\"string\",\"warnings\":[\"string\"]}. "
+            + "Schema: {\"answer\":\"string\",\"warnings\":[\"string\"],\"sources\":[\"string\"],\"actions\":[\"string\"]}. "
             + "Do not include markdown code fences.\n\n"
             + "Original prompt:\n"
             + originalPrompt
@@ -301,6 +329,6 @@ public class ReActAgentService {
     private record ToolPlan(String domain, Map<String, Object> params) {
     }
 
-    private record ParsedAnswer(String answer, List<String> warnings) {
+    private record ParsedAnswer(String answer, List<String> warnings, List<String> sources, List<String> actions) {
     }
 }

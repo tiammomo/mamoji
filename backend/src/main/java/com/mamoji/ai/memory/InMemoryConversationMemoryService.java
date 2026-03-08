@@ -1,7 +1,8 @@
 package com.mamoji.ai.memory;
 
-import org.springframework.stereotype.Service;
+import com.mamoji.ai.AiProperties;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.stereotype.Service;
 
 import java.time.Instant;
 import java.util.ArrayDeque;
@@ -15,8 +16,12 @@ import java.util.concurrent.ConcurrentHashMap;
 @ConditionalOnProperty(prefix = "ai.memory-ops", name = "redis-enabled", havingValue = "false", matchIfMissing = true)
 public class InMemoryConversationMemoryService implements ConversationMemoryService {
 
-    private static final int MAX_STORED_TURNS = 40;
     private final Map<String, Deque<ConversationTurn>> sessions = new ConcurrentHashMap<>();
+    private final AiProperties aiProperties;
+
+    public InMemoryConversationMemoryService(AiProperties aiProperties) {
+        this.aiProperties = aiProperties;
+    }
 
     @Override
     public void append(String sessionKey, String role, String content) {
@@ -26,7 +31,9 @@ public class InMemoryConversationMemoryService implements ConversationMemoryServ
         Deque<ConversationTurn> turns = sessions.computeIfAbsent(sessionKey, key -> new ArrayDeque<>());
         synchronized (turns) {
             turns.addLast(new ConversationTurn(role, content, Instant.now()));
-            while (turns.size() > MAX_STORED_TURNS) {
+            compactIfNeeded(turns);
+            int maxStoredTurns = Math.max(2, aiProperties.getMemoryOps().getMaxStoredTurns());
+            while (turns.size() > maxStoredTurns) {
                 turns.removeFirst();
             }
         }
@@ -46,5 +53,38 @@ public class InMemoryConversationMemoryService implements ConversationMemoryServ
             List<ConversationTurn> all = new ArrayList<>(turns);
             return all.subList(all.size() - size, all.size());
         }
+    }
+
+    private void compactIfNeeded(Deque<ConversationTurn> turns) {
+        AiProperties.MemoryOps memoryOps = aiProperties.getMemoryOps();
+        if (!memoryOps.isSummarizeOnOverflow()) {
+            return;
+        }
+        int maxStoredTurns = Math.max(2, memoryOps.getMaxStoredTurns());
+        if (turns.size() <= maxStoredTurns) {
+            return;
+        }
+
+        int batchSize = Math.max(2, memoryOps.getSummarizeBatchSize());
+        List<ConversationTurn> compactBatch = new ArrayList<>();
+        for (int i = 0; i < batchSize && !turns.isEmpty(); i++) {
+            compactBatch.add(turns.removeFirst());
+        }
+        turns.addFirst(new ConversationTurn("system_summary", summarize(compactBatch), Instant.now()));
+    }
+
+    private String summarize(List<ConversationTurn> turns) {
+        StringBuilder sb = new StringBuilder("Summary:");
+        int max = Math.min(6, turns.size());
+        for (int i = 0; i < max; i++) {
+            ConversationTurn turn = turns.get(i);
+            sb.append(" [").append(turn.role()).append("] ");
+            String content = turn.content() == null ? "" : turn.content().replaceAll("\\s+", " ").trim();
+            if (content.length() > 40) {
+                content = content.substring(0, 40) + "...";
+            }
+            sb.append(content);
+        }
+        return sb.toString();
     }
 }
