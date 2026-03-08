@@ -3,6 +3,13 @@ spring:
     console:
       enabled: false
 
+app:
+  security:
+    h2-console-enabled: false
+    frame-options: deny
+    cors:
+      allowed-origins: ${APP_SECURITY_CORS_ALLOWED_ORIGINS:}
+
 jwt:
   secret: ${JWT_SECRET}
 
